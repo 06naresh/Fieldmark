@@ -20,10 +20,10 @@ export function createTestQueryClient(): QueryClient {
 export function renderWithProviders(
   ui: ReactElement,
   { route = '/' }: RenderOptions = {},
-): { queryClient: QueryClient } {
+): { queryClient: QueryClient; unmount: () => void } {
   const queryClient = createTestQueryClient();
 
-  render(
+  const result = render(
     <MemoryRouter initialEntries={[route]}>
       <QueryClientProvider client={queryClient}>
         <ToastProvider>{ui}</ToastProvider>
@@ -31,5 +31,5 @@ export function renderWithProviders(
     </MemoryRouter>,
   );
 
-  return { queryClient };
+  return { queryClient, unmount: result.unmount };
 }

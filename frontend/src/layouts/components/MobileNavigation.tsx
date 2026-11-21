@@ -5,8 +5,19 @@ import { APP_NAME, ROUTES } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/appStore';
 import { adminNavGroups } from '@/layouts/components/AdminNav';
+import type { NavigationGroup } from '@/layouts/components/navigationTypes';
 
-export function MobileNavigation(): React.JSX.Element | null {
+interface MobileNavigationProps {
+  groups?: NavigationGroup[];
+  homeRoute?: string;
+  ariaLabel?: string;
+}
+
+export function MobileNavigation({
+  groups = adminNavGroups,
+  homeRoute = ROUTES.admin.dashboard,
+  ariaLabel = 'Mobile administration',
+}: MobileNavigationProps): React.JSX.Element | null {
   const sidebarOpen = useAppStore((state) => state.sidebarOpen);
   const closeSidebar = useAppStore((state) => state.setSidebarOpen);
 
@@ -31,11 +42,11 @@ export function MobileNavigation(): React.JSX.Element | null {
         onClick={() => closeSidebar(false)}
       />
       <nav
-        aria-label="Mobile administration"
+        aria-label={ariaLabel}
         className="absolute left-0 top-0 flex h-full w-72 flex-col border-r bg-card shadow-xl"
       >
         <div className="flex h-16 items-center justify-between border-b px-4">
-          <Link to={ROUTES.admin.dashboard} onClick={() => closeSidebar(false)} className="text-lg font-bold">
+          <Link to={homeRoute} onClick={() => closeSidebar(false)} className="text-lg font-bold">
             {APP_NAME}
           </Link>
           <Button
@@ -49,7 +60,7 @@ export function MobileNavigation(): React.JSX.Element | null {
         </div>
 
         <div className="flex-1 space-y-6 overflow-y-auto px-3 py-6">
-          {adminNavGroups.map((group) => (
+          {groups.map((group) => (
             <div key={group.label}>
               <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 {group.label}

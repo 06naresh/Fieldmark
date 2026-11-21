@@ -129,6 +129,53 @@ export interface InspectionUpdatePayload {
   version: number;
 }
 
+export type AnswerValue = string | number | boolean | string[] | null;
+export type OverallStatus = 'PASS' | 'FAIL' | 'NEEDS_REVIEW';
+
+export interface InspectionAnswer {
+  id: string;
+  inspection_id: string;
+  checklist_item_id: string;
+  answer_value: AnswerValue;
+  notes: string | null;
+  version: number;
+}
+
+export interface InspectionDetail extends Inspection {
+  site: Site;
+  template: ChecklistTemplate;
+  checklist_items: ChecklistItem[];
+  answers: InspectionAnswer[];
+}
+
+export interface AnswerSavePayload {
+  answer_value: AnswerValue;
+  notes?: string | null;
+  base_version: number;
+}
+
+export interface InspectionStartResult {
+  id: string;
+  status: InspectionStatus;
+  version: number;
+}
+
+export interface InspectionSubmitPayload {
+  summary?: string | null;
+  overall_status: OverallStatus;
+  version: number;
+  submission_id: string;
+}
+
+export interface InspectionSubmitResult {
+  result_id: string;
+  inspection_id: string;
+  submission_number: number;
+  overall_status: OverallStatus;
+  submitted_at: string;
+  inspection_status: InspectionStatus;
+}
+
 export interface DashboardSummary {
   total_inspections: number;
   assigned_inspections: number;

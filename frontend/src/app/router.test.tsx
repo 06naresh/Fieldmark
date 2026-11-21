@@ -5,12 +5,23 @@ import userEvent from '@testing-library/user-event';
 import { AppRoutes } from '@/app/router';
 import { setAccessToken } from '@/lib/axios';
 import { useAuthStore } from '@/store/authStore';
-import { adminUser, inspectorCurrentUser, paginationFixture, summaryFixture } from '@/test/fixtures';
+import {
+  adminUser,
+  inspectionFixture,
+  inspectorCurrentUser,
+  paginationFixture,
+  siteFixture,
+  summaryFixture,
+  templateFixture,
+} from '@/test/fixtures';
 import { renderWithProviders } from '@/test/renderWithProviders';
 
 const api = vi.hoisted(() => ({
   summary: vi.fn(),
   listUsers: vi.fn(),
+  listSites: vi.fn(),
+  listChecklists: vi.fn(),
+  listInspections: vi.fn(),
 }));
 
 vi.mock('@/services/api/dashboardApi', () => ({
@@ -26,6 +37,24 @@ vi.mock('@/services/api/usersApi', () => ({
   },
 }));
 
+vi.mock('@/services/api/sitesApi', () => ({
+  sitesApi: { list: api.listSites },
+}));
+
+vi.mock('@/services/api/checklistsApi', () => ({
+  checklistsApi: { list: api.listChecklists },
+}));
+
+vi.mock('@/services/api/inspectionsApi', () => ({
+  inspectionsApi: {
+    list: api.listInspections,
+    detail: vi.fn(),
+    start: vi.fn(),
+    saveAnswer: vi.fn(),
+    submit: vi.fn(),
+  },
+}));
+
 function LocationProbe(): React.JSX.Element {
   const location = useLocation();
   return <div data-testid="location">{location.pathname}</div>;
@@ -37,6 +66,12 @@ beforeEach(() => {
   useAuthStore.setState({ user: null, status: 'unauthenticated' });
   api.summary.mockResolvedValue(summaryFixture);
   api.listUsers.mockResolvedValue({ data: [], pagination: paginationFixture });
+  api.listSites.mockResolvedValue({ data: [siteFixture], pagination: paginationFixture });
+  api.listChecklists.mockResolvedValue({ data: [templateFixture], pagination: paginationFixture });
+  api.listInspections.mockResolvedValue({
+    data: [inspectionFixture],
+    pagination: paginationFixture,
+  });
 });
 
 describe('application router', () => {
@@ -74,7 +109,7 @@ describe('application router', () => {
     await waitFor(() => expect(api.listUsers).toHaveBeenCalled());
   });
 
-  it('blocks an inspector from administrator routes', () => {
+  it('blocks an inspector from administrator routes', async () => {
     useAuthStore.setState({ user: inspectorCurrentUser, status: 'authenticated' });
 
     renderWithProviders(
@@ -85,9 +120,14 @@ describe('application router', () => {
       { route: '/admin/dashboard' },
     );
 
-    expect(screen.getByRole('heading', { name: 'Inspector dashboard' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Inspector dashboard' })).toBeInTheDocument();
     expect(screen.getByTestId('location')).toHaveTextContent('/inspector/dashboard');
-    expect(api.summary).not.toHaveBeenCalled();
+    expect(
+      within(screen.getByRole('navigation', { name: 'Inspector' })).getByRole('link', {
+        name: 'My inspections',
+      }),
+    ).toBeInTheDocument();
+    await waitFor(() => expect(api.summary).toHaveBeenCalled());
   });
 
   it('redirects an authenticated administrator away from the login page', () => {

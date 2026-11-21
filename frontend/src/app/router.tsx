@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { HomeRedirect, PublicOnly, RequireAuth } from '@/app/guards';
 import { AdminLayout } from '@/layouts/AdminLayout';
 import { AuthenticatedLayout } from '@/layouts/AuthenticatedLayout';
+import { InspectorLayout } from '@/layouts/InspectorLayout';
 import { LoginPage } from '@/features/auth/pages/LoginPage';
 import { ProfilePage } from '@/features/auth/pages/ProfilePage';
 import { SettingsPage } from '@/features/auth/pages/SettingsPage';
@@ -10,6 +11,10 @@ import { UsersPage } from '@/features/users/pages/UsersPage';
 import { SitesPage } from '@/features/sites/pages/SitesPage';
 import { ChecklistsPage } from '@/features/checklists/pages/ChecklistsPage';
 import { InspectionsPage } from '@/features/inspections/pages/InspectionsPage';
+import { ExecuteInspectionPage } from '@/features/inspections/pages/ExecuteInspectionPage';
+import { InspectionDetailsPage } from '@/features/inspections/pages/InspectionDetailsPage';
+import { InspectorDashboardPage } from '@/features/inspections/pages/InspectorDashboardPage';
+import { MyInspectionsPage } from '@/features/inspections/pages/MyInspectionsPage';
 import { ROUTES } from '@/lib/constants';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { PlaceholderPage } from '@/pages/PlaceholderPage';
@@ -49,26 +54,14 @@ export function AppRoutes(): React.JSX.Element {
       <Route
         element={
           <RequireAuth roles={['INSPECTOR']}>
-            <AuthenticatedLayout />
+            <InspectorLayout />
           </RequireAuth>
         }
       >
-        <Route
-          path={ROUTES.inspector.dashboard}
-          element={<PlaceholderPage title="Inspector dashboard" description="The inspector workflow is implemented in a later phase." />}
-        />
-        <Route
-          path={ROUTES.inspector.inspections}
-          element={<PlaceholderPage title="My inspections" description="The inspector workflow is implemented in a later phase." />}
-        />
-        <Route
-          path={ROUTES.inspector.inspectionDetails(':id')}
-          element={<PlaceholderPage title="Inspection details" description="The inspector workflow is implemented in a later phase." />}
-        />
-        <Route
-          path={ROUTES.inspector.executeInspection(':id')}
-          element={<PlaceholderPage title="Execute inspection" description="The inspector workflow is implemented in a later phase." />}
-        />
+        <Route path={ROUTES.inspector.dashboard} element={<InspectorDashboardPage />} />
+        <Route path={ROUTES.inspector.inspections} element={<MyInspectionsPage />} />
+        <Route path={ROUTES.inspector.inspectionDetails(':id')} element={<InspectionDetailsPage />} />
+        <Route path={ROUTES.inspector.executeInspection(':id')} element={<ExecuteInspectionPage />} />
         <Route
           path={ROUTES.inspector.sync}
           element={<PlaceholderPage title="Sync Center" description="Synchronization monitoring is implemented in a later phase." />}

@@ -2,18 +2,29 @@ import { Link, NavLink } from 'react-router-dom';
 import { APP_NAME, ROUTES } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { adminNavGroups } from '@/layouts/components/AdminNav';
+import type { NavigationGroup } from '@/layouts/components/navigationTypes';
 
-export function Sidebar(): React.JSX.Element {
+interface SidebarProps {
+  groups?: NavigationGroup[];
+  homeRoute?: string;
+  ariaLabel?: string;
+}
+
+export function Sidebar({
+  groups = adminNavGroups,
+  homeRoute = ROUTES.admin.dashboard,
+  ariaLabel = 'Administration',
+}: SidebarProps): React.JSX.Element {
   return (
     <aside className="hidden w-64 shrink-0 border-r bg-card lg:flex lg:flex-col">
       <div className="flex h-16 items-center border-b px-6">
-        <Link to={ROUTES.admin.dashboard} className="text-lg font-bold tracking-tight">
+        <Link to={homeRoute} className="text-lg font-bold tracking-tight">
           {APP_NAME}
         </Link>
       </div>
 
-      <nav aria-label="Administration" className="flex-1 space-y-6 overflow-y-auto px-3 py-6">
-        {adminNavGroups.map((group) => (
+      <nav aria-label={ariaLabel} className="flex-1 space-y-6 overflow-y-auto px-3 py-6">
+        {groups.map((group) => (
           <div key={group.label}>
             <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               {group.label}

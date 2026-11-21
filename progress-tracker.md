@@ -92,9 +92,9 @@ The next agent must be able to continue without repeating completed work.
 | Authentication | JWT |
 | State management | Zustand + TanStack Query |
 | Testing | pytest, Vitest, React Testing Library, Playwright |
-| Current development phase | Phase 7 — Frontend Authentication and Admin Features (Completed) |
-| Current feature | F-015 Frontend Authentication and Admin Features |
-| Overall status | In Progress |
+| Current development phase | Phase 8 — Inspector Workflow (Completed) |
+| Current feature | F-012 Inspection Execution and F-016 Inspector Dashboard |
+| Overall status | Phase 8 verified; awaiting approval for Phase 9 |
 
 ---
 
@@ -112,7 +112,7 @@ Update this table whenever a development phase changes.
 | 5 | Backend Synchronization Foundation | Completed | 100% |
 | 6 | Frontend Foundation | Completed | 100% |
 | 7 | Frontend Authentication and Admin Features | Completed | 100% |
-| 8 | Inspector Workflow | Not Started | 0% |
+| 8 | Inspector Workflow | Completed | 100% |
 | 9 | Offline Persistence | Not Started | 0% |
 | 10 | Synchronization Engine | Not Started | 0% |
 | 11 | Conflict Management | Not Started | 0% |
@@ -144,8 +144,8 @@ Update this section whenever a new feature implementation session begins.
 |---|---|
 | Session date | 2026-11-21 |
 | Agent/session identifier | OpenCode (Big Pickle) |
-| Current phase | Phase 7 — Frontend Authentication and Admin Features |
-| Current feature | F-015 Frontend Authentication and Admin Features |
+| Current phase | Phase 8 — Inspector Workflow (Completed) |
+| Current feature | F-012 Inspection Execution and F-016 Inspector Dashboard |
 | Feature status | Completed |
 | Last updated | 2026-11-21 |
 
@@ -153,47 +153,46 @@ Update this section whenever a new feature implementation session begins.
 
 **Objective:**
 
-Implement Phase 7 Frontend Authentication and Admin Features: browser login, access-token lifecycle, refresh handling, protected role-aware routes, the admin shell, dashboard, user/site/checklist management, and inspection assignment against the approved backend contracts.
+Implement Phase 8 Inspector Workflow: inspector layout, dashboard, My Inspections, inspection details, execution UI, dynamic checklist controls, validation, progress calculation, draft preservation, and backend submission integration.
 
 ## 5.2 Current implementation scope
 
 **Included:**
 
-- Login form and session bootstrap through `/auth/login`, `/auth/me`, `/auth/refresh`, and `/auth/logout`.
-- In-memory access token, HTTP-only refresh cookie, readable CSRF cookie header, and single-flight 401 refresh retry.
-- Public-only, authenticated, role-specific, and home-redirect route guards.
-- Admin layout with sidebar, header, mobile navigation, user menu, and theme toggle.
-- Admin dashboard backed by `/dashboard/summary`.
-- User, site, checklist template, and inspection assignment management pages with create, read, update, and status/revision actions.
-- Profile and settings pages for authenticated users.
-- Vitest and React Testing Library coverage for token handling, session lifecycle, route guards, and admin workflows.
+- Inspector layout and role-aware navigation.
+- Backend-backed inspector dashboard and assigned-inspection list.
+- Inspection details and execution pages.
+- Dynamic answer controls for all approved response types.
+- Required-answer validation and progress calculation.
+- Local draft persistence through an account-scoped in-memory Zustand repository; durable Dexie/IndexedDB storage is intentionally deferred to Phase 9.
+- Backend start, answer, and submission integration with local-first save ordering and a stable submission ID.
 
 **Not included:**
 
-- Inspector workflow execution and dynamic checklist answering.
-- IndexedDB/Dexie persistence, durable sync queue, and synchronization engine.
-- Conflict management UI and Sync Center behavior.
-- PWA manifest, service worker, and offline application shell.
+- Full Phase 9 IndexedDB schema, inspection downloads, and local checklist cache.
+- Durable synchronization queue, push/pull engine, retry/backoff, and Sync Center behavior.
+- Conflict resolution UI and PWA offline shell.
 
 **Dependencies:**
 
-- Phases 0–6 are completed and verified.
-- Phase 6 was committed as `f2b0932 feat: implement phase 6 frontend foundation`; it was not pushed.
-- Backend auth, admin, and dashboard contracts were inspected in `docs/api-contracts.md`, `docs/security-design.md`, and the FastAPI endpoints.
+- Phases 0–7 are completed and verified.
+- Phase 7 was committed as `3c75a6d feat: implement phase 7 frontend authentication and admin features`; it was not pushed.
+- Backend inspection, answer, and submission contracts were inspected in `docs/api-contracts.md` and the FastAPI endpoints.
 
 ## 5.3 Current progress
 
 | Task | Status | Notes |
 |---|---|---|
-| Review requirements | Completed | Phase 7 tasks, frontend design, API contracts, and security design reviewed |
-| Inspect existing implementation | Completed | Phase 6 frontend source, auth endpoints, CSRF handling, and admin schemas inspected |
-| Implement authentication and token lifecycle | Completed | Login, logout, bootstrap, refresh, CSRF header, and single-flight retry implemented |
-| Implement route guards and admin layout | Completed | Role-aware protected routes, admin sidebar/header, mobile navigation, profile, and settings implemented |
-| Implement admin dashboard and management pages | Completed | Dashboard, users, sites, checklists, and inspection assignment implemented |
-| Add frontend tests | Completed | 16 new Phase 7 tests added; total suite is 29 tests across 7 files |
-| Execute tests | Completed | `npm test` 29/29; `npx tsc --noEmit`, `npm run lint`, `npm run build`, preview HTTP 200, and `npm audit` all passed |
-| Review implementation | Completed | Fixed ES2020 string replacement, Zod resolver generics, hook dependency warning, and refresh retry token persistence |
-| Update documentation | Completed | Tracker, frontend README, and frontend design Phase 7 baseline updated |
+| Review Phase 8 documentation | Completed | Phase tasks, frontend design, API contracts, offline-sync principles, and testing strategy reviewed |
+| Inspect existing implementation | Completed | Phase 7 router/layouts/services, backend inspection endpoints/schemas, and test helpers inspected |
+| Commit Phase 7 work | Completed | Committed as `3c75a6d feat: implement phase 7 frontend authentication and admin features`; includes `.gitignore` and `frontend/src/lib/` sources |
+| Implement inspector layout and dashboard | Completed | `InspectorLayout`, `InspectorNav`, shared sidebar/mobile navigation, and `InspectorDashboardPage` |
+| Implement My Inspections and details pages | Completed | Filterable assignment list and version-aware inspection details with start action |
+| Implement execution UI and answer controls | Completed | Dynamic checklist rendering for YES_NO, TEXT, NUMBER, SINGLE_CHOICE, and MULTIPLE_CHOICE |
+| Implement local draft persistence | Completed | Account-scoped in-memory draft repository with local save before server calls |
+| Implement validation, progress, and submission | Completed | Dynamic Zod validation, progress bar, required-answer checks, and stable-ID submission |
+| Add frontend tests | Completed | 5 new inspector workflow tests plus updated router test coverage |
+| Run verification | Completed | 34/34 tests, clean typecheck and lint, successful build/preview, zero audit vulnerabilities |
 
 Update the task statuses as work progresses.
 
@@ -1157,7 +1156,7 @@ Implement browser authentication, token refresh, route protection, the admin app
 
 **Current stopping point:**
 
-Phase 7 is complete and verified. Do not start Phase 8 without explicit approval. Phase 7 changes remain uncommitted unless the user explicitly requests a commit.
+Historical Phase 7 stopping point: Phase 7 was complete and verified, and Phase 8 required explicit approval. This was subsequently superseded: Phase 7 was committed as `3c75a6d feat: implement phase 7 frontend authentication and admin features`, Phase 8 was explicitly approved, and Phase 8 is now complete.
 
 **Next agent must:**
 
@@ -1168,6 +1167,123 @@ Phase 7 is complete and verified. Do not start Phase 8 without explicit approval
 5. Preserve the in-memory access-token and HTTP-only refresh-cookie strategy.
 6. Run frontend verification again after Phase 8 changes.
 7. Update this tracker before stopping.
+
+---
+
+## Feature: F-012/F-016 Inspector Workflow
+
+| Property | Value |
+|---|---|
+| Feature ID | F-012, F-016 |
+| Development phase | Phase 8 |
+| Status | Completed |
+| Priority | High |
+| Started date | 2026-11-21 |
+| Last updated | 2026-11-21 |
+| Completed date | 2026-11-21 |
+| Implemented by | OpenCode (Big Pickle) |
+
+### Phase8.1 Feature objective
+
+Implement the complete inspector-facing workflow: dashboard, assigned-inspection list, inspection details, execution UI, dynamic checklist rendering, validation, progress, local draft preservation, and submission integration.
+
+### Phase8.2 Current implementation scope
+
+**Included:** Inspector layout/navigation, dashboard, My Inspections, details, execution, dynamic answer controls, validation, progress, account-scoped in-memory draft persistence, and start/answer/submit API integration.
+
+**Not included:** Full IndexedDB download/cache model, durable operation queue, sync engine, Sync Center, conflict resolution, and PWA shell; these remain Phases 9–12.
+
+**Dependencies:** Phases 0–7 are complete. Phase 7 was committed as `3c75a6d`. Backend inspection endpoints and contracts were inspected.
+
+### Phase8.3 Progress
+
+| Task | Status | Notes |
+|---|---|---|
+| Review Phase 8 documentation | Completed | Development phases, frontend design, API contracts, offline-sync design, and testing strategy reviewed |
+| Inspect existing implementation | Completed | Phase 7 frontend and backend inspection endpoints/schemas inspected |
+| Implement inspector layout and dashboard | Completed | `InspectorLayout`, `InspectorNav`, generic sidebar/mobile navigation, and `InspectorDashboardPage` |
+| Implement My Inspections and details pages | Completed | Filterable assignment list and version-aware details with start action |
+| Implement execution UI and answer controls | Completed | Dynamic controls for YES_NO, TEXT, NUMBER, SINGLE_CHOICE, and MULTIPLE_CHOICE |
+| Implement local draft persistence | Completed | Account-scoped in-memory repository; local save occurs before backend calls |
+| Implement validation, progress, and submission | Completed | Dynamic Zod schema, progress bar, required-answer checks, and stable submission ID |
+| Add frontend tests | Completed | 5 inspector workflow tests and updated router coverage |
+| Run verification | Completed | Full frontend suite, typecheck, lint, build, preview, and audit passed |
+
+### Phase8.4 Files created
+
+| File path | Purpose | Status |
+|---|---|---|
+| `frontend/src/features/inspections/pages/InspectorDashboardPage.tsx` | Inspector summary and next assignment | Created |
+| `frontend/src/features/inspections/pages/MyInspectionsPage.tsx` | Searchable and filterable assignment list | Created |
+| `frontend/src/features/inspections/pages/InspectionDetailsPage.tsx` | Inspection overview and start action | Created |
+| `frontend/src/features/inspections/pages/ExecuteInspectionPage.tsx` | Checklist execution, draft save, and submission | Created |
+| `frontend/src/features/inspections/components/ChecklistAnswerField.tsx` | Dynamic answer control renderer | Created |
+| `frontend/src/features/inspections/components/InspectionStatusBadge.tsx` | Shared inspection status indicator | Created |
+| `frontend/src/features/inspections/hooks/useInspectionReferences.ts` | Site/template label lookup | Created |
+| `frontend/src/features/inspections/schemas/inspectionExecutionSchemas.ts` | Dynamic Zod validation and progress calculation | Created |
+| `frontend/src/features/inspections/store/inspectionDraftStore.ts` | Account-scoped in-memory draft repository | Created |
+| `frontend/src/features/inspections/types/inspectionWorkflow.ts` | Draft/form types and helpers | Created |
+| `frontend/src/features/inspections/utils/inspectionAnswers.ts` | Choice parsing and answer comparison helpers | Created |
+| `frontend/src/features/inspections/inspectorFlows.test.tsx` | Inspector workflow tests | Created |
+| `frontend/src/layouts/InspectorLayout.tsx` | Inspector application shell | Created |
+| `frontend/src/layouts/components/InspectorNav.tsx` | Inspector navigation groups | Created |
+| `frontend/src/layouts/components/navigationTypes.ts` | Shared navigation group type | Created |
+
+### Phase8.5 Files modified
+
+| File path | Modification | Reason |
+|---|---|---|
+| `frontend/src/app/router.tsx` | Replaced inspector placeholders with guarded InspectorLayout and real pages | Wire Phase 8 workflow |
+| `frontend/src/app/router.test.tsx` | Added inspector API mocks and updated role-redirect assertions | Verify new dashboard behavior |
+| `frontend/src/layouts/components/Sidebar.tsx` | Accepted navigation groups, home route, and aria label | Reuse shell for admin and inspector roles |
+| `frontend/src/layouts/components/MobileNavigation.tsx` | Accepted the same configurable navigation props | Keep mobile navigation role-aware |
+| `frontend/src/layouts/components/AdminNav.tsx` | Used the shared navigation type | Avoid duplicate navigation type definitions |
+| `frontend/src/lib/formResolver.ts` | Built nested field errors and widened schema type | Support dynamic per-item validation |
+| `frontend/src/services/api/inspectionsApi.ts` | Added detail, start, saveAnswer, and submit methods | Integrate approved backend contracts |
+| `frontend/src/types/entities.ts` | Added answer, detail, start, submit, and status types | Match API contracts |
+| `frontend/src/test/fixtures.ts` | Added checklist item and inspection detail workflow fixtures | Support inspector tests |
+| `frontend/src/test/renderWithProviders.tsx` | Returned an unmount function | Simulate navigation and remounting in draft tests |
+
+### Phase8.6 Important decisions
+
+- Account-scoped in-memory drafts are a deliberate Phase 8 boundary; Phase 9 replaces the repository with durable Dexie/IndexedDB storage.
+- Answer and summary changes are written to the local draft store before any backend request; only confirmed server saves set the `synced` state.
+- A stable `submission_id` is created with the draft and reused across failed submission retries.
+- New answers use `base_version=1`; existing answers use their current server version.
+- Dynamic response types are validated with generated Zod schemas, and the local resolver produces nested React Hook Form errors.
+- Answer controls expose the checklist question as their accessible name.
+
+### Phase8.7 Verification
+
+| Check | Result |
+|---|---|
+| `npx tsc --noEmit` | Passed |
+| `npm run lint` | Passed with zero warnings |
+| `npm test` | 34 passed across 8 test files |
+| `npm run build` | Passed; non-blocking chunk-size and Zod annotation warnings |
+| Vite preview smoke check | HTTP 200 |
+| `npm audit --audit-level=moderate` | 0 vulnerabilities |
+
+### Phase8.8 Known issues
+
+- Drafts are not durable across a full browser restart; this is intentionally deferred to Phase 9 Offline Persistence.
+- Vitest emits a non-blocking `--localstorage-file` warning in this environment; the injected test Storage shim keeps tests deterministic.
+- The production bundle emits a non-blocking chunk-size warning.
+
+### Phase8.9 Acceptance criteria
+
+- [x] Inspectors can view their assignments.
+- [x] Inspectors can open an inspection.
+- [x] Checklist items render dynamically.
+- [x] Required answers are validated.
+- [x] Inspection progress is calculated correctly.
+- [x] Drafts are preserved.
+- [x] Submission follows backend rules.
+- [x] Inspector workflow tests pass.
+
+### Phase8.10 Handoff instructions
+
+Phase 8 is complete and verified. Stop at the phase boundary. Begin Phase 9 — Offline Persistence only after explicit approval. Replace `useInspectionDraftStore` with the approved Dexie repository while preserving the page-level draft contract.
 
 ---
 
@@ -1191,12 +1307,12 @@ Add a new row when a feature is identified.
 | F-010 | Checklist templates | 4 | Completed | PRD.md, database-design.md |
 | F-011 | Inspection assignments | 4 | Completed | PRD.md, api-contracts.md |
 | F-029 | Dashboard summary API | 4 | Completed | PRD.md, api-contracts.md |
-| F-012 | Inspection execution | 8 | Not Started | PRD.md, frontend-design.md |
+| F-012 | Inspection execution | 8 | Completed | PRD.md, frontend-design.md |
 | F-013 | Backend sync operations | 5 | Completed | offline-sync-design.md, api-contracts.md |
 | F-014 | Frontend foundation | 6 | Completed | frontend-design.md, development-phases.md |
 | F-015 | Frontend authentication and admin features | 7 | Completed | frontend-design.md, development-phases.md, api-contracts.md, security-design.md |
 | F-015 | Admin dashboard | 7 | Completed | frontend-design.md |
-| F-016 | Inspector dashboard | 8 | Not Started | frontend-design.md |
+| F-016 | Inspector dashboard | 8 | Completed | frontend-design.md |
 | F-017 | IndexedDB persistence | 9 | Not Started | offline-sync-design.md |
 | F-018 | Durable sync queue | 9 | Not Started | offline-sync-design.md |
 | F-019 | Push synchronization | 10 | Not Started | offline-sync-design.md |
@@ -1298,6 +1414,7 @@ Because synchronization is a critical Fieldmark feature, maintain its progress s
 | Dexie database initialization | Not Started | No |
 | Local inspection repository | Not Started | No |
 | Local answer persistence | Not Started | No |
+| In-memory account-scoped inspection drafts | Completed | Yes — Phase 8 only; not durable across browser restarts |
 | Durable operation queue | Not Started | No |
 | Stable operation IDs | Completed | Yes |
 | Payload hash validation | Completed | Yes |
@@ -1334,8 +1451,9 @@ Track testing at project level.
 | Database tests | Completed | 8 passed | Schema, constraints, relationships, latest migrations, unique `submission_id`, `submitted_version`, `template_key`, and cursor ordering; expected head now `0005_sync_scope_and_retry` |
 | Authentication tests | Completed | 19 passed | 4 password-hashing and 15 authentication tests |
 | RBAC tests | Completed | 12 passed | Phase 3 authorization tests plus Phase 4 and Phase 5 endpoint authorization coverage |
-| Frontend unit tests | Completed | 13 passed | Vitest tests for API client, theme store, online status, and router |
+| Frontend unit tests | Completed | 34 passed | Full Vitest suite for API client, theme, online status, router, admin flows, inspector workflow, and shared UI |
 | Component tests | Completed | 5 passed | Shared UI component test suite covering rendering, interactions, dialogs, menus, tabs, toast, and error states |
+| Inspector workflow tests | Completed | 5 passed | Assignment list, start action, validation, local drafts, answer saves, draft restore, and stable submission ID |
 | IndexedDB tests | Not Started | Not Run | |
 | Offline tests | Not Started | Not Run | |
 | Sync tests | Completed | 20 passed | `backend/tests/test_sync.py`; PostgreSQL integration tests for idempotency, conflicts, pull, tombstones, and devices |
@@ -1425,6 +1543,18 @@ Do not report tests as passed if they were not actually executed.
 | 2026-11-21 | `npm run build` (Phase 7) | Production build | 1 | 0 | Vite 7.3.8 build succeeded; non-blocking chunk-size warning |
 | 2026-11-21 | Vite preview smoke check (Phase 7) | Frontend startup | 1 | 0 | HTTP 200 and Fieldmark application shell served |
 | 2026-11-21 | `npm audit --audit-level=moderate` (Phase 7) | Security check | 1 | 0 | Zero reported vulnerabilities |
+| 2026-11-21 | `npx tsc --noEmit` (initial Phase 8 run) | TypeScript check | 0 | 1 | Unused type import in the execution schema; removed |
+| 2026-11-21 | `npm run lint` (initial Phase 8 run) | Lint | 0 | 1 | Same unused type import; removed |
+| 2026-11-21 | `npx vitest run src/features/inspections/inspectorFlows.test.tsx` (first run) | Inspector workflow | 2 | 3 | Default fixture was `ASSIGNED`; execution tests now use `IN_PROGRESS` |
+| 2026-11-21 | Inspector workflow test run after fixture fix | Inspector workflow | 3 | 2 | Flat resolver error keys hid per-item validation; resolver now builds nested errors |
+| 2026-11-21 | Inspector workflow test run after resolver fix | Inspector workflow | 4 | 1 | Answer controls lacked question-text accessible names; added `aria-label` |
+| 2026-11-21 | Inspector workflow test run after accessibility fix | Inspector workflow | 5 | 0 | Final bug: optional multiple-choice `null` failed validation; schema now accepts it |
+| 2026-11-21 | `npx tsc --noEmit` (final Phase 8 run) | TypeScript check | 1 | 0 | Strict TypeScript configuration passed |
+| 2026-11-21 | `npm run lint` (final Phase 8 run) | Lint | 1 | 0 | ESLint passed with zero warnings |
+| 2026-11-21 | `npm test` (final Phase 8 run) | Frontend tests | 34 | 0 | All 8 frontend test files passed; non-blocking Node localStorage warning remains |
+| 2026-11-21 | `npm run build` (Phase 8) | Production build | 1 | 0 | Vite build succeeded; non-blocking chunk-size and Zod annotation warnings |
+| 2026-11-21 | Vite preview smoke check (Phase 8) | Frontend startup | 1 | 0 | HTTP 200 |
+| 2026-11-21 | `npm audit --audit-level=moderate` (Phase 8) | Security check | 1 | 0 | Zero reported vulnerabilities |
 
 ---
 
@@ -1474,6 +1604,12 @@ Maintain a chronological record of significant implementation decisions.
 | D-038 | 2026-11-21 | Implement a local React Hook Form resolver for Zod schemas | Satisfies the approved validation stack without adding a new npm dependency | `frontend/src/lib/formResolver.ts`, all Phase 7 form dialogs |
 | D-039 | 2026-11-21 | Keep inspector workflow and Sync Center routes as placeholders through Phase 7 | Those features are explicitly assigned to later phases; real guards and admin routes can still be verified | `frontend/src/app/router.tsx`, `frontend/src/pages/PlaceholderPage.tsx` |
 | D-040 | 2026-11-21 | Scope Python `lib/` and `lib64/` ignore rules to the repository root | A global rule silently ignored all frontend library source directories, including `frontend/src/lib/` | `.gitignore`, Phase 6/7 frontend source commits |
+| D-041 | 2026-11-21 | Use an account-scoped in-memory Zustand draft repository in Phase 8 | Keeps inspection interaction local-first and prevents cross-account draft exposure while durable Dexie persistence is deferred to Phase 9 | `frontend/src/features/inspections/store/inspectionDraftStore.ts` |
+| D-042 | 2026-11-21 | Persist inspection values locally before sending answer requests | A network failure must never discard valid field inspection work; server confirmation controls the `synced` state | `frontend/src/features/inspections/pages/ExecuteInspectionPage.tsx` |
+| D-043 | 2026-11-21 | Create one stable `submission_id` with the draft and reuse it on retries | Backend submission idempotency requires the same client-generated UUID across attempts | `inspectionWorkflow.ts`, `ExecuteInspectionPage.tsx` |
+| D-044 | 2026-11-21 | Build nested React Hook Form error objects from Zod issue paths | Dynamic checklist fields need per-item validation messages; flat dotted keys are not recognized by React Hook Form | `frontend/src/lib/formResolver.ts`, `ChecklistAnswerField.tsx` |
+| D-045 | 2026-11-21 | Allow `null` for optional multiple-choice answers and expose question text as each control's accessible name | Unanswered optional multi-selects are valid, and screen readers must identify the question rather than a generic “Answer” label | `inspectionExecutionSchemas.ts`, `ChecklistAnswerField.tsx` |
+| D-046 | 2026-11-21 | Send `base_version=1` for new answers and the stored answer version for existing answers | Matches backend answer validation and prevents stale answer overwrites | `ExecuteInspectionPage.tsx`, `inspectionWorkflow.ts` |
 
 When adding a decision:
 
@@ -1534,6 +1670,8 @@ Add a new entry whenever a development session makes meaningful changes.
 | 2026-11-21 | OpenCode (Big Pickle) | Phase 6 | F-014 | Added React/Vite foundation, patched dependency baseline, Tailwind theme tokens, 14 shared UI components, router, providers, stores, Axios client, linting, placeholder pages, and 13 frontend tests; lint, typecheck, tests, build, preview, and audit all passed | Completed |
 | 2026-11-21 | OpenCode (Big Pickle) | Phase 6 | Commit | Committed verified Phase 6 work as `f2b0932 feat: implement phase 6 frontend foundation` after explicit user request; not pushed | Completed |
 | 2026-11-21 | OpenCode (Big Pickle) | Phase 7 | F-015 | Added login/session lifecycle, CSRF and single-flight refresh handling, protected role-aware routes, admin shell, dashboard, user/site/checklist management, inspection assignment, profile/settings, and 16 new tests; final verification was 29/29 tests, clean lint and typecheck, successful build and preview, and zero audit vulnerabilities | Completed |
+| 2026-11-21 | OpenCode (Big Pickle) | Phase 7 | Commit | Committed verified Phase 7 work as `3c75a6d feat: implement phase 7 frontend authentication and admin features`; not pushed | Completed |
+| 2026-11-21 | OpenCode (Big Pickle) | Phase 8 | F-012/F-016 | Added inspector layout, dashboard, assignment list, details and execution pages, dynamic answer controls, validation, progress, account-scoped drafts, and stable-ID submission; final verification was 34/34 tests, clean lint and typecheck, successful build and preview, and zero audit vulnerabilities | Completed |
 
 For each entry, include a concise summary of:
 
@@ -1556,61 +1694,63 @@ Update it before stopping work.
 
 **Last completed phase:**
 
-Phase 7 — Frontend Authentication and Admin Features.
+Phase 8 — Inspector Workflow. All acceptance criteria were verified. The implementation is complete but remains uncommitted because no Phase 8 commit was requested. Phase 7 was previously committed as `3c75a6d feat: implement phase 7 frontend authentication and admin features` and was not pushed.
 
 **Current phase:**
 
-Phase 7 — Frontend Authentication and Admin Features (Completed). Next phase is Phase 8 — Inspector Workflow.
+Phase 8 — Inspector Workflow (Completed; stopped at phase boundary).
 
 **Current feature:**
 
-F-015 Frontend Authentication and Admin Features.
+F-012 Inspection Execution and F-016 Inspector Dashboard.
 
 **Current feature status:**
 
-Completed and verified.
+Completed.
 
 **Last completed task:**
 
-Implemented and verified browser login, session bootstrap/refresh/logout, CSRF-header handling, single-flight 401 retry, protected role-aware routes, admin layout/navigation, backend-backed dashboard, user/site/checklist management, inspection assignment, profile/settings, and 16 new frontend tests. Final verification was `npx tsc --noEmit`, `npm run lint`, `npm test` (29/29), `npm run build`, a Vite preview HTTP 200 smoke check, and `npm audit --audit-level=moderate` with zero vulnerabilities. A final Git check found that the global `.gitignore` rule `lib/` excluded `frontend/src/lib/`; the rule was scoped to `/lib/` and `/lib64/` so the frontend library source is now trackable.
+Implemented the inspector shell and navigation, dashboard, My Inspections, inspection details, dynamic checklist execution, validation, progress, account-scoped in-memory drafts, and backend start/answer/submit integration. Final verification was 34/34 frontend tests, clean TypeScript and lint checks, a successful production build and preview, and zero audit vulnerabilities.
 
 **Current stopping point:**
 
-Phase 7 boundary reached. All acceptance criteria verified. Do not start Phase 8 without explicit approval. Phase 7 changes remain uncommitted unless the user explicitly requests a commit. The eventual Phase 7 commit must include the newly trackable `frontend/src/lib/` files and `.gitignore`; the Phase 6 commit hash remains unchanged because amending it was not requested.
+Phase 8 is complete. Do not start Phase 9 — Offline Persistence without explicit approval. Phase 8 changes are present in the working tree and should be committed only if the user requests a commit.
 
 ## Files to inspect first
 
 1. `progress-tracker.md`
-2. `.gitignore` — root-scoped Python library rules
-3. `docs/development-phases.md` — Phase 8 requirements
-4. `docs/frontend-design.md` — frontend architecture and Phase 7 baseline
-5. `frontend/src/app/providers.tsx`
-6. `frontend/src/app/router.tsx`
-7. `frontend/src/app/guards.tsx`
-8. `frontend/src/lib/axios.ts`
-9. `frontend/src/services/auth/session.ts`
-10. `frontend/src/services/api/`
-11. `frontend/src/features/`
-12. `frontend/src/layouts/`
-13. `frontend/src/features/admin/adminFlows.test.tsx`
-14. `frontend/src/app/router.test.tsx`
+2. `docs/development-phases.md` — Phase 8 acceptance criteria and Phase 9 boundary
+3. `docs/frontend-design.md` — frontend architecture
+4. `frontend/src/app/router.tsx` — wired inspector routes
+5. `frontend/src/layouts/InspectorLayout.tsx` and `frontend/src/layouts/components/InspectorNav.tsx`
+6. `frontend/src/features/inspections/pages/` — dashboard, list, details, and execution pages
+7. `frontend/src/features/inspections/components/ChecklistAnswerField.tsx`
+8. `frontend/src/features/inspections/schemas/inspectionExecutionSchemas.ts`
+9. `frontend/src/features/inspections/store/inspectionDraftStore.ts`
+10. `frontend/src/services/api/inspectionsApi.ts`
+11. `frontend/src/lib/formResolver.ts`
+12. `frontend/src/features/inspections/inspectorFlows.test.tsx`
+13. `frontend/src/app/router.test.tsx`
+14. `frontend/src/test/fixtures.ts`
 
 ## Work remaining
 
-- [ ] No Phase 7 work remains.
-- [ ] Wait for approval before starting Phase 8 — Inspector Workflow.
-- [ ] Do not commit Phase 7 changes unless the user explicitly requests it.
-- [ ] If Phase 7 is committed, include `.gitignore` and all newly trackable `frontend/src/lib/` files.
-- [ ] Phase 8 must replace the inspector placeholders with real assigned-inspection, details, and execution pages.
+- [x] Complete Phase 7 and commit its verified work.
+- [x] Replace inspector placeholders with real role-aware pages.
+- [x] Implement and verify all Phase 8 acceptance criteria.
+- [ ] Wait for explicit approval before starting Phase 9 — Offline Persistence.
+- [ ] Commit Phase 8 only if the user requests it.
+- [ ] In Phase 9, replace account-scoped in-memory drafts with durable Dexie/IndexedDB storage while preserving the page-level draft contract.
+- [ ] In later phases, add the offline operation queue, synchronization engine, conflict UI, and PWA shell.
 
 ## Known problems
 
 - Non-blocking: Node emits a `--localstorage-file` warning during Vitest runs in this environment. Tests pass with the injected test Storage shim.
-- Non-blocking: Vite reports a chunk-size warning because the single application bundle is larger than 500 kB.
+- Non-blocking: Vite reports chunk-size and Zod comment-annotation warnings. The production build succeeds.
 - Non-blocking: installed Starlette/TestClient and passlib/argon2 backend versions emit deprecation warnings. No backend tests fail.
 - Non-blocking: optional PATCH fields are displayed as nullable in OpenAPI even though runtime validators reject `null` for non-clearable fields; runtime behavior is correct.
-- Important: the original global `lib/` ignore rule excluded `frontend/src/lib/` from the Phase 6 commit. The rule is fixed in the working tree; Phase 7 must include those source files and `.gitignore`. The existing Phase 6 commit hash was not changed because amending it was not requested.
-- Inspector workflow, IndexedDB persistence, synchronization engine, conflict management, Sync Center behavior, and PWA shell are intentionally unimplemented until Phases 8–12.
+- Resolved: the original global `lib/` ignore rule was fixed and Phase 7 included `.gitignore` plus the newly trackable `frontend/src/lib/` sources.
+- Intentional Phase 8 limitation: drafts are not durable across a full browser restart; Phase 9 supplies Dexie/IndexedDB persistence.
 - Dashboard synchronization statistics reflect server-side operation records only; the frontend must combine them with its IndexedDB queue in a later phase, as required by `docs/api-contracts.md`.
 - The login rate limiter remains process-local; a multi-instance deployment needs a shared limiter.
 
@@ -1618,19 +1758,19 @@ Phase 7 boundary reached. All acceptance criteria verified. Do not start Phase 8
 
 The next agent must:
 
-1. Read `AGENTS.md` and this progress tracker.
-2. Confirm Phase 7 is marked Completed and verified.
-3. Stop at the phase boundary and wait for explicit approval.
-4. Begin Phase 8 only after approval.
-5. Reuse the Phase 7 auth services, guards, router, typed API clients, shared UI components, and test helpers.
-6. Keep API and future IndexedDB access outside presentation components.
+1. Read `AGENTS.md`, the approved documentation, and this progress tracker.
+2. Inspect the actual Phase 8 source files listed above before changing behavior.
+3. Confirm Phase 8 is marked Completed and verified.
+4. Stop at the phase boundary and wait for explicit approval before Phase 9.
+5. Preserve the Phase 8 local-first save order and stable `submission_id` behavior.
+6. Keep API and IndexedDB access outside presentation components.
 7. Preserve the in-memory access-token policy and HTTP-only refresh-cookie strategy.
-8. Verify `frontend/src/lib/` is no longer ignored before creating any commit.
-9. Do not use last-write-wins for inspection answers.
+8. Do not use last-write-wins for inspection answers.
+9. Commit Phase 8 only when explicitly requested.
 
 **Exact next action:**
 
-Report Phase 7 completion and wait for approval to start Phase 8 — Inspector Workflow.
+Report Phase 8 completion and wait for approval to start Phase 9 — Offline Persistence.
 
 ---
 

@@ -1,5 +1,5 @@
 import type { FieldErrors, FieldValues, Resolver } from 'react-hook-form';
-import type { ZodType } from 'zod';
+import type { ZodTypeAny } from 'zod';
 
 /**
  * Minimal React Hook Form resolver for Zod object schemas.
@@ -7,20 +7,31 @@ import type { ZodType } from 'zod';
  * React Hook Form + Zod validation approach.
  */
 export function zodResolver<TFieldValues extends FieldValues>(
-  schema: ZodType<TFieldValues, TFieldValues>,
+  schema: ZodTypeAny,
 ): Resolver<TFieldValues> {
   return async (values) => {
     const result = schema.safeParse(values);
 
     if (result.success) {
-      return { values: result.data, errors: {} };
+      return { values: result.data as TFieldValues, errors: {} };
     }
 
-    const errors: Record<string, { type: string; message: string }> = {};
+    const errors: Record<string, unknown> = {};
     for (const issue of result.error.issues) {
-      const key = issue.path.join('.') || 'root';
-      if (!errors[key]) {
-        errors[key] = { type: issue.code, message: issue.message };
+      const path = issue.path.map(String);
+      const leaf = path.length > 0 ? path[path.length - 1] : 'root';
+      let cursor = errors;
+
+      for (const segment of path.slice(0, -1)) {
+        const existing = cursor[segment];
+        if (!existing || typeof existing !== 'object') {
+          cursor[segment] = {};
+        }
+        cursor = cursor[segment] as Record<string, unknown>;
+      }
+
+      if (!cursor[leaf]) {
+        cursor[leaf] = { type: issue.code, message: issue.message };
       }
     }
 

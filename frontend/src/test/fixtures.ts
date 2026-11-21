@@ -1,8 +1,10 @@
 import type { CurrentUser } from '@/types/auth';
 import type {
+  ChecklistItem,
   ChecklistTemplate,
   DashboardSummary,
   Inspection,
+  InspectionDetail,
   Site,
   User,
 } from '@/types/entities';
@@ -77,6 +79,66 @@ export const inspectionFixture: Inspection = {
   due_at: '2026-12-01T17:00:00Z',
   status: 'ASSIGNED',
   version: 1,
+};
+
+export const workflowItemsFixture: ChecklistItem[] = [
+  {
+    id: 'item-yes-no',
+    question: 'Are exits clear?',
+    description: null,
+    response_type: 'YES_NO',
+    is_required: true,
+    display_order: 1,
+    options: null,
+  },
+  {
+    id: 'item-text',
+    question: 'Describe any concerns',
+    description: null,
+    response_type: 'TEXT',
+    is_required: false,
+    display_order: 2,
+    options: null,
+  },
+  {
+    id: 'item-number',
+    question: 'How many extinguishers were checked?',
+    description: null,
+    response_type: 'NUMBER',
+    is_required: true,
+    display_order: 3,
+    options: null,
+  },
+  {
+    id: 'item-single',
+    question: 'Was the alarm panel operational?',
+    description: null,
+    response_type: 'SINGLE_CHOICE',
+    is_required: true,
+    display_order: 4,
+    options: { choices: ['Operational', 'Faulty'] },
+  },
+  {
+    id: 'item-multiple',
+    question: 'Which areas were inspected?',
+    description: null,
+    response_type: 'MULTIPLE_CHOICE',
+    is_required: false,
+    display_order: 5,
+    options: { choices: ['Warehouse', 'Office', 'Yard'] },
+  },
+];
+
+export const inspectionDetailFixture: InspectionDetail = {
+  ...inspectionFixture,
+  site: siteFixture,
+  template: {
+    ...templateFixture,
+    name: 'Safety checklist',
+    items: workflowItemsFixture,
+  },
+  checklist_items: workflowItemsFixture,
+  answers: [],
 };
 
 export const summaryFixture: DashboardSummary = {

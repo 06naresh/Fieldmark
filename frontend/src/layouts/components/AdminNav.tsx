@@ -5,20 +5,12 @@ import {
   MapPin,
   RefreshCw,
   UserCog,
-  type LucideIcon,
 } from 'lucide-react';
 import { ROUTES } from '@/lib/constants';
+import type { NavigationGroup, NavigationItem } from '@/layouts/components/navigationTypes';
 
-export interface AdminNavItem {
-  label: string;
-  to: string;
-  icon: LucideIcon;
-}
-
-export interface AdminNavGroup {
-  label: string;
-  items: AdminNavItem[];
-}
+export type AdminNavItem = NavigationItem;
+export type AdminNavGroup = NavigationGroup;
 
 export const adminNavGroups: AdminNavGroup[] = [
   {
