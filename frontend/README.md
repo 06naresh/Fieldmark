@@ -29,19 +29,23 @@ The development server runs at `http://localhost:5173`. Set `VITE_API_BASE_URL` 
 
 ## Architecture
 
-The application uses feature-oriented organization. Phase 6 provides the shared foundation:
+The application uses feature-oriented organization:
 
-- `src/app/` — application entry, providers, and router.
+- `src/app/` — application entry, providers, router, and route guards.
 - `src/components/ui/` — shadcn-style reusable UI components.
+- `src/features/` — authentication, dashboard, and administrator feature pages and forms.
 - `src/hooks/` — reusable React hooks.
+- `src/layouts/` — authenticated shell, admin sidebar, header, and mobile navigation.
 - `src/lib/` — API client, query client, constants, utilities, and error normalization.
-- `src/pages/` — placeholder pages for routes implemented in later phases.
-- `src/store/` — Zustand theme and application stores.
+- `src/pages/` — shared not-found and remaining placeholder pages.
+- `src/services/` — typed API clients and session lifecycle services.
+- `src/store/` — Zustand auth, theme, and application stores.
 - `src/styles/` — Tailwind global styles and light/dark theme tokens.
-- `src/test/` — Vitest setup.
+- `src/test/` — Vitest setup, fixtures, and render helpers.
+- `src/types/` — API, authentication, and entity contracts.
 
-Access tokens are stored only in memory by the API client. Refresh tokens remain in the backend's HTTP-only cookie and are never persisted in browser storage.
+Access tokens are stored only in memory by the API client. Refresh tokens remain in the backend's HTTP-only cookie and are never persisted in browser storage. Cookie-authenticated refresh and logout requests read the non-HttpOnly CSRF cookie and send it as `X-CSRF-Token`.
 
 ## Current scope
 
-Phase 6 implements the foundation only. Authentication, admin workflows, inspector execution, IndexedDB persistence, synchronization UI, and the PWA shell are implemented in later phases. The routed pages currently render labeled placeholders so navigation can be verified independently.
+Phase 7 implements login, session restoration and refresh, protected role-aware routes, the admin shell, dashboard, user/site/checklist management, and inspection assignment. Inspector execution, IndexedDB persistence, synchronization UI, conflict management, and the PWA shell remain later-phase work.

@@ -1395,4 +1395,10 @@ Phase 6 established the initial React application with the following verified de
 
 Access tokens are held in application memory by the Axios client. Refresh tokens are carried by HTTP-only cookies and are never read or persisted by frontend JavaScript. Theme preference is the only persisted client setting at this stage, and it is stored through Zustand's persistence middleware rather than used as an offline data store.
 
-Phase 6 routes render labeled placeholder pages. Authentication guards, administrative workflows, inspector execution, IndexedDB repositories, synchronization UI, and the PWA application shell remain subsequent-phase work.
+Phase 6 routes initially rendered labeled placeholder pages. Phase 7 replaces the authentication and administrator placeholders with working screens while retaining placeholders for inspector execution and later synchronization features.
+
+## 26. Phase 7 Implementation Baseline
+
+Phase 7 adds in-memory login state, refresh-cookie bootstrap, single-flight 401 refresh handling, CSRF header forwarding, protected role-aware routes, the admin shell, dashboard, user/site/checklist management, and inspection assignment. Access tokens remain in memory; the refresh token remains in an HTTP-only cookie. The readable `fieldmark_csrf` cookie is used only for the `X-CSRF-Token` header on cookie-authenticated requests.
+
+Inspector workflow execution, IndexedDB repositories, synchronization behavior, conflict resolution, and the PWA application shell remain subsequent-phase work.

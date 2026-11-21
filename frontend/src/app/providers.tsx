@@ -1,7 +1,8 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ToastProvider } from '@/components/ui/Toast';
 import { queryClient } from '@/lib/queryClient';
+import { bootstrapSession, registerSessionRefresh } from '@/services/auth/session';
 import { useThemeStore } from '@/store/themeStore';
 
 interface AppProvidersProps {
@@ -11,6 +12,7 @@ interface AppProvidersProps {
 export function AppProviders({ children }: AppProvidersProps): React.JSX.Element {
   const theme = useThemeStore((state) => state.theme);
   const initializeTheme = useThemeStore((state) => state.initializeTheme);
+  const bootstrapStarted = useRef(false);
 
   useEffect(() => {
     initializeTheme();
@@ -25,6 +27,18 @@ export function AppProviders({ children }: AppProvidersProps): React.JSX.Element
 
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, [initializeTheme, theme]);
+
+  useEffect(() => {
+    registerSessionRefresh();
+
+    // Strict Mode invokes effects twice in development; session bootstrap must
+    // not rotate the refresh token twice before the first request completes.
+    if (bootstrapStarted.current) {
+      return;
+    }
+    bootstrapStarted.current = true;
+    void bootstrapSession();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

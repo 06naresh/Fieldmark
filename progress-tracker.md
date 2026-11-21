@@ -92,8 +92,8 @@ The next agent must be able to continue without repeating completed work.
 | Authentication | JWT |
 | State management | Zustand + TanStack Query |
 | Testing | pytest, Vitest, React Testing Library, Playwright |
-| Current development phase | Phase 6 — Frontend Foundation (Completed) |
-| Current feature | None — Phase 6 complete; Phase 7 pending approval |
+| Current development phase | Phase 7 — Frontend Authentication and Admin Features (Completed) |
+| Current feature | F-015 Frontend Authentication and Admin Features |
 | Overall status | In Progress |
 
 ---
@@ -111,7 +111,7 @@ Update this table whenever a development phase changes.
 | 4 | Core Backend Features | Completed | 100% |
 | 5 | Backend Synchronization Foundation | Completed | 100% |
 | 6 | Frontend Foundation | Completed | 100% |
-| 7 | Frontend Authentication and Admin Features | Not Started | 0% |
+| 7 | Frontend Authentication and Admin Features | Completed | 100% |
 | 8 | Inspector Workflow | Not Started | 0% |
 | 9 | Offline Persistence | Not Started | 0% |
 | 10 | Synchronization Engine | Not Started | 0% |
@@ -144,8 +144,8 @@ Update this section whenever a new feature implementation session begins.
 |---|---|
 | Session date | 2026-11-21 |
 | Agent/session identifier | OpenCode (Big Pickle) |
-| Current phase | Phase 6 — Frontend Foundation |
-| Current feature | None — Phase 6 complete; Phase 7 pending approval |
+| Current phase | Phase 7 — Frontend Authentication and Admin Features |
+| Current feature | F-015 Frontend Authentication and Admin Features |
 | Feature status | Completed |
 | Last updated | 2026-11-21 |
 
@@ -153,48 +153,47 @@ Update this section whenever a new feature implementation session begins.
 
 **Objective:**
 
-Implement Phase 6 Frontend Foundation: initialize the React/TypeScript/Vite application, configure Tailwind CSS, shadcn-style UI components, React Router, TanStack Query, Zustand, Axios, theme management, linting, and the initial test setup.
+Implement Phase 7 Frontend Authentication and Admin Features: browser login, access-token lifecycle, refresh handling, protected role-aware routes, the admin shell, dashboard, user/site/checklist management, and inspection assignment against the approved backend contracts.
 
 ## 5.2 Current implementation scope
 
 **Included:**
 
-- React 18 and TypeScript application bootstrapped with Vite 7.
-- Tailwind CSS 3 with light/dark semantic tokens and shadcn/ui-compatible configuration.
-- Fourteen reusable shared UI components built on approved UI dependencies.
-- React Router application shell with all approved route paths represented by placeholder pages.
-- TanStack Query provider and conservative retry policy.
-- Zustand theme and application stores with persisted theme preference.
-- Axios client with a versioned base URL, credentialed requests, and an in-memory access token.
-- ESLint 9 flat configuration, Vitest 4, React Testing Library, and jsdom test setup.
-- Patched dependency baseline with zero reported npm audit vulnerabilities.
+- Login form and session bootstrap through `/auth/login`, `/auth/me`, `/auth/refresh`, and `/auth/logout`.
+- In-memory access token, HTTP-only refresh cookie, readable CSRF cookie header, and single-flight 401 refresh retry.
+- Public-only, authenticated, role-specific, and home-redirect route guards.
+- Admin layout with sidebar, header, mobile navigation, user menu, and theme toggle.
+- Admin dashboard backed by `/dashboard/summary`.
+- User, site, checklist template, and inspection assignment management pages with create, read, update, and status/revision actions.
+- Profile and settings pages for authenticated users.
+- Vitest and React Testing Library coverage for token handling, session lifecycle, route guards, and admin workflows.
 
 **Not included:**
 
-- Login, protected routes, admin layouts, and admin workflows.
-- Inspector workflow screens and dynamic checklist execution.
-- IndexedDB/Dexie repositories, durable sync queue, and Sync Center.
+- Inspector workflow execution and dynamic checklist answering.
+- IndexedDB/Dexie persistence, durable sync queue, and synchronization engine.
+- Conflict management UI and Sync Center behavior.
 - PWA manifest, service worker, and offline application shell.
 
 **Dependencies:**
 
-- Phases 0–5 are completed and verified.
-- User explicitly approved Phase 6 after committing Phase 5 as `7414ece`.
-- Backend API contracts from Phases 3–5 are available for later integration.
+- Phases 0–6 are completed and verified.
+- Phase 6 was committed as `f2b0932 feat: implement phase 6 frontend foundation`; it was not pushed.
+- Backend auth, admin, and dashboard contracts were inspected in `docs/api-contracts.md`, `docs/security-design.md`, and the FastAPI endpoints.
 
 ## 5.3 Current progress
 
 | Task | Status | Notes |
 |---|---|---|
-| Review requirements | Completed | Phase 6 tasks, frontend design, architecture, security design, and testing strategy verified |
-| Inspect existing implementation | Completed | Existing frontend scaffold, package configuration, Tailwind config, and Vite config inspected |
-| Resolve dependency baseline | Completed | Upgraded Vite, Vitest, React Router, Zod, and React plugin to patched compatible versions; npm audit reports zero vulnerabilities |
-| Prepare implementation plan | Completed | Providers, router, stores, API client, UI components, placeholder pages, and tests planned |
-| Implement feature | Completed | Application shell, theme, stores, API client, router, styles, and shared components implemented |
-| Add automated tests | Completed | 13 Vitest tests across UI components, router, theme, API client, and online status |
-| Execute tests | Completed | `npm test` passed 13/13; `npm run build`, `npx tsc --noEmit`, and `npm run lint` passed |
-| Review implementation | Completed | Fixed toast viewport structure, router path references, and incomplete jsdom localStorage behavior |
-| Update documentation | Completed | Tracker, root README, frontend README, and frontend design baseline updated |
+| Review requirements | Completed | Phase 7 tasks, frontend design, API contracts, and security design reviewed |
+| Inspect existing implementation | Completed | Phase 6 frontend source, auth endpoints, CSRF handling, and admin schemas inspected |
+| Implement authentication and token lifecycle | Completed | Login, logout, bootstrap, refresh, CSRF header, and single-flight retry implemented |
+| Implement route guards and admin layout | Completed | Role-aware protected routes, admin sidebar/header, mobile navigation, profile, and settings implemented |
+| Implement admin dashboard and management pages | Completed | Dashboard, users, sites, checklists, and inspection assignment implemented |
+| Add frontend tests | Completed | 16 new Phase 7 tests added; total suite is 29 tests across 7 files |
+| Execute tests | Completed | `npm test` 29/29; `npx tsc --noEmit`, `npm run lint`, `npm run build`, preview HTTP 200, and `npm audit` all passed |
+| Review implementation | Completed | Fixed ES2020 string replacement, Zod resolver generics, hook dependency warning, and refresh retry token persistence |
+| Update documentation | Completed | Tracker, frontend README, and frontend design Phase 7 baseline updated |
 
 Update the task statuses as work progresses.
 
@@ -998,7 +997,177 @@ Create a maintainable React application foundation with shared routing, state, t
 
 ### Phase6.8 Handoff instructions
 
-Phase 6 is complete and verified. Stop at the phase boundary. Begin Phase 7 — Frontend Authentication and Admin Features only after explicit approval. Phase 6 changes remain uncommitted unless the user explicitly requests a commit.
+Phase 6 was complete and verified. Phase 6 changes were committed by explicit user request as `f2b0932 feat: implement phase 6 frontend foundation`. The user then explicitly approved Phase 7, so work continued into Frontend Authentication and Admin Features.
+
+---
+
+## Feature: F-015 Frontend Authentication and Admin Features
+
+| Property | Value |
+|---|---|
+| Feature ID | F-015 |
+| Development phase | Phase 7 |
+| Status | Completed |
+| Priority | High |
+| Started date | 2026-11-21 |
+| Last updated | 2026-11-21 |
+| Completed date | 2026-11-21 |
+| Implemented by | OpenCode (Big Pickle) |
+
+### Phase7.1 Feature objective
+
+Implement browser authentication, token refresh, route protection, the admin application shell, and administrator management pages backed by the approved API contracts.
+
+### Phase7.2 Implementation scope
+
+**Included:** Login and session lifecycle, protected role-aware routes, admin layout/navigation, dashboard, user/site/checklist management, inspection assignment, profile/settings, and 16 new frontend tests.
+
+**Not included:** Inspector workflow execution, IndexedDB persistence, synchronization engine, Sync Center behavior, conflict resolution, and PWA shell; these remain later phases.
+
+**Dependencies:** Phases 0–6 are completed and verified. Backend contracts were inspected in `docs/api-contracts.md`, `docs/security-design.md`, and the FastAPI endpoints. No backend files were changed in Phase 7.
+
+### Phase7.3 Progress
+
+| Task | Status | Notes |
+|---|---|---|
+| Review Phase 7 documentation | Completed | Phase tasks, acceptance criteria, frontend design, API contracts, and security design reviewed |
+| Inspect existing frontend and backend contracts | Completed | Phase 6 source tree, auth endpoints, CSRF handling, and admin endpoint schemas inspected |
+| Implement authentication and token lifecycle | Completed | `authApi`, `session.ts`, access-token store, CSRF helper, Axios interceptors, and bootstrap wiring |
+| Implement route guards and admin layout | Completed | `RequireAuth`, `PublicOnly`, `HomeRedirect`, admin shell, sidebar, header, mobile navigation, profile, and settings |
+| Implement admin dashboard and management pages | Completed | Dashboard plus user, site, checklist, and inspection assignment pages/forms/schemas |
+| Add frontend tests | Completed | 16 new tests: 4 session, 4 interceptor, 2 router, and 6 admin workflow tests; supporting fixtures/render helpers added |
+| Run verification | Completed | 29/29 tests passed; TypeScript, lint, build, preview, and audit checks passed |
+
+### Phase7.4 Files created
+
+| File path | Purpose | Status |
+|---|---|---|
+| `frontend/src/app/guards.tsx` | Public-only, authenticated, role-aware, and home redirect guards | Created |
+| `frontend/src/components/ui/Label.tsx` | Accessible form label component | Created |
+| `frontend/src/components/ui/Textarea.tsx` | Shared textarea component | Created |
+| `frontend/src/lib/accessToken.ts` | In-memory access-token store | Created |
+| `frontend/src/lib/csrf.ts` | Readable CSRF cookie helper | Created |
+| `frontend/src/lib/formResolver.ts` | Local React Hook Form/Zod resolver | Created |
+| `frontend/src/lib/**` | Phase 6 API client, constants, query client, utilities, error normalization, and Phase 7 auth helpers | Previously created but ignored by the global `lib/` rule; now trackable after the `.gitignore` fix |
+| `frontend/src/types/auth.ts` | Authentication and role contracts | Created |
+| `frontend/src/types/entities.ts` | API entity and payload contracts | Created |
+| `frontend/src/services/auth/session.ts` | Sign-in, sign-out, refresh, and bootstrap lifecycle | Created |
+| `frontend/src/services/api/authApi.ts` | Typed authentication API client | Created |
+| `frontend/src/services/api/usersApi.ts` | Typed user API client | Created |
+| `frontend/src/services/api/sitesApi.ts` | Typed site API client | Created |
+| `frontend/src/services/api/checklistsApi.ts` | Typed checklist API client | Created |
+| `frontend/src/services/api/inspectionsApi.ts` | Typed inspection API client | Created |
+| `frontend/src/services/api/dashboardApi.ts` | Typed dashboard API client | Created |
+| `frontend/src/store/authStore.ts` | Zustand authentication state | Created |
+| `frontend/src/features/auth/components/LoginForm.tsx` | Login form and redirect handling | Created |
+| `frontend/src/features/auth/pages/LoginPage.tsx` | Login page | Created |
+| `frontend/src/features/auth/pages/ProfilePage.tsx` | Authenticated profile page | Created |
+| `frontend/src/features/auth/pages/SettingsPage.tsx` | Theme and session settings page | Created |
+| `frontend/src/features/auth/schemas/loginSchema.ts` | Login validation schema | Created |
+| `frontend/src/features/dashboard/pages/AdminDashboardPage.tsx` | Backend-backed admin dashboard | Created |
+| `frontend/src/features/users/schemas/userSchemas.ts` | User form schemas | Created |
+| `frontend/src/features/users/components/UserFormDialog.tsx` | Create/edit user dialog | Created |
+| `frontend/src/features/users/pages/UsersPage.tsx` | User management page | Created |
+| `frontend/src/features/sites/schemas/siteSchemas.ts` | Site form schema | Created |
+| `frontend/src/features/sites/components/SiteFormDialog.tsx` | Create/edit site dialog | Created |
+| `frontend/src/features/sites/pages/SitesPage.tsx` | Site management page | Created |
+| `frontend/src/features/checklists/schemas/checklistSchemas.ts` | Checklist form schemas and payload builder | Created |
+| `frontend/src/features/checklists/components/ChecklistFormDialog.tsx` | Template/revision dialog | Created |
+| `frontend/src/features/checklists/pages/ChecklistsPage.tsx` | Checklist management page | Created |
+| `frontend/src/features/inspections/schemas/inspectionSchemas.ts` | Inspection assignment form schema | Created |
+| `frontend/src/features/inspections/components/InspectionFormDialog.tsx` | Inspection assignment/edit dialog | Created |
+| `frontend/src/features/inspections/pages/InspectionsPage.tsx` | Inspection assignment list page | Created |
+| `frontend/src/layouts/AuthLayout.tsx` | Login page shell | Created |
+| `frontend/src/layouts/AuthenticatedLayout.tsx` | Shared authenticated shell | Created |
+| `frontend/src/layouts/AdminLayout.tsx` | Admin shell with outlet | Created |
+| `frontend/src/layouts/components/AdminNav.tsx` | Admin navigation model | Created |
+| `frontend/src/layouts/components/Header.tsx` | Authenticated header | Created |
+| `frontend/src/layouts/components/MobileNavigation.tsx` | Responsive admin navigation | Created |
+| `frontend/src/layouts/components/Sidebar.tsx` | Desktop admin navigation | Created |
+| `frontend/src/layouts/components/ThemeToggle.tsx` | Light/dark/system theme control | Created |
+| `frontend/src/layouts/components/UserMenu.tsx` | Profile, settings, and sign-out menu | Created |
+| `frontend/src/services/auth/session.test.ts` | Session lifecycle tests | Created |
+| `frontend/src/features/admin/adminFlows.test.tsx` | Admin CRUD and assignment tests | Created |
+| `frontend/src/test/fixtures.ts` | Shared typed test fixtures | Created |
+| `frontend/src/test/renderWithProviders.tsx` | Query/router/toast test renderer | Created |
+
+### Phase7.5 Files modified
+
+| File path | Modification | Reason |
+|---|---|---|
+| `.gitignore` | Scoped Python `lib/` and `lib64/` ignore rules to the repository root | The global rules silently ignored `frontend/src/lib/`, excluding source files from Phase 6 and Phase 7 commits |
+| `frontend/src/app/providers.tsx` | Added theme initialization, single session bootstrap, and refresh-handler registration | Wire auth lifecycle without double-rotating the refresh token in React Strict Mode |
+| `frontend/src/app/router.tsx` | Replaced Phase 6 placeholders with real admin routes and guards | Implement Phase 7 navigation and authorization boundary |
+| `frontend/src/app/router.test.tsx` | Replaced foundation navigation tests with guard and admin navigation tests | Verify Phase 7 routes |
+| `frontend/src/components/ui/index.ts` | Exported `Label` and `Textarea` | Reuse shared form primitives |
+| `frontend/src/lib/axios.ts` | Added CSRF header, 401 refresh retry, single-flight refresh, and token persistence on retry | Implement approved refresh and CSRF behavior |
+| `frontend/src/lib/axios.test.ts` | Added CSRF and refresh retry tests | Verify interceptor behavior |
+| `frontend/src/features/users/pages/UsersPage.tsx` | Corrected `UserRole` type import | Strict TypeScript compatibility |
+| `frontend/src/features/checklists/pages/ChecklistsPage.tsx` | Replaced `replaceAll` with a regex replacement | ES2020 target compatibility |
+| `frontend/src/features/inspections/pages/InspectionsPage.tsx` | Replaced `replaceAll` with a regex replacement | ES2020 target compatibility |
+| `frontend/src/features/inspections/components/InspectionFormDialog.tsx` | Memoized query-derived option arrays | Remove React Hook dependency warning |
+| `frontend/README.md` | Updated architecture and current scope | Keep frontend developer documentation aligned |
+| `docs/frontend-design.md` | Added Phase 7 implementation baseline | Keep implementation status aligned without changing approved requirements |
+| `progress-tracker.md` | Recorded Phase 7 status, files, decisions, verification, and handoff | Mandatory progress tracking |
+
+### Phase7.6 Important decisions
+
+| Decision | Reason | Impact |
+|---|---|---|
+| Keep access tokens in memory and refresh tokens in HTTP-only cookies | Required by `docs/security-design.md` | No access or refresh token is persisted in browser storage |
+| Read only the non-HttpOnly `fieldmark_csrf` cookie and send `X-CSRF-Token` | The refresh token must remain unreadable to JavaScript while the backend uses double-submit CSRF | Cookie-authenticated refresh/logout requests satisfy the backend contract |
+| Use one single-flight refresh promise and preserve the original request | Concurrent 401 responses must not rotate the refresh token multiple times | Retries reuse the same operation and receive the refreshed in-memory token |
+| Register the refresh handler centrally and bootstrap once in providers | Decouples Axios from auth services and avoids Strict Mode double refresh | Session restoration is deterministic across remounts |
+| Implement a small local Zod resolver | Approved validation stack requires React Hook Form + Zod without adding another dependency | No new npm dependency was introduced |
+| Keep API access in typed services and IndexedDB access out of components | Frontend design requires feature-oriented separation | Pages contain presentation and query wiring, not raw Axios/Dexie calls |
+| Leave inspector and Sync Center routes as labeled placeholders | Phase 8+ owns those workflows | Phase 7 remains within its approved boundary |
+| Scope Python library ignore rules to the repository root | The original global `lib/` rule silently excluded `frontend/src/lib/` from Git | All frontend library source files are now visible to Git and must be included in the Phase 7 commit |
+
+### Phase7.7 Verification
+
+- `npx tsc --noEmit`: passed with no output.
+- `npm run lint`: passed with zero errors and zero warnings.
+- `npm test`: 29 passed across 7 test files; 0 failed.
+- `npm run build`: Vite 7.3.8 production build succeeded.
+- Vite preview smoke check: HTTP 200 and the Fieldmark application shell were served.
+- `npm audit --audit-level=moderate`: zero vulnerabilities.
+- All Phase 7 acceptance criteria in `docs/development-phases.md` are verified.
+
+### Phase7.8 Known issues
+
+- Non-blocking: Node emits a `--localstorage-file` warning during Vitest runs in this environment; the test Storage shim is injected and all tests pass.
+- Non-blocking: Vite reports a chunk-size warning because the single application bundle is larger than 500 kB; code splitting is not required by Phase 7 acceptance criteria.
+- Inspector workflow pages and Sync Center are intentional placeholders until Phases 8–11.
+- The in-memory access token is lost on a full page reload; a valid refresh cookie is required to restore the session, subject to the later offline-session policy.
+- Important commit issue found and fixed in the working tree: the global `lib/` rule in `.gitignore` excluded `frontend/src/lib/` from the Phase 6 commit. The ignore rule is now root-scoped, and those source files must be included when Phase 7 is committed. The existing Phase 6 commit hash remains unchanged because amending it was not requested.
+- Phase 7 changes remain uncommitted because the user did not request a commit.
+
+### Phase7.9 Acceptance criteria
+
+- [x] Administrator can log in.
+- [x] Administrator sees admin navigation.
+- [x] User CRUD works through the backend.
+- [x] Site CRUD works through the backend.
+- [x] Checklist management works through the backend.
+- [x] Inspection assignment works.
+- [x] Unauthorized navigation is blocked.
+- [x] Admin feature tests pass.
+
+### Phase7.10 Handoff instructions
+
+**Current stopping point:**
+
+Phase 7 is complete and verified. Do not start Phase 8 without explicit approval. Phase 7 changes remain uncommitted unless the user explicitly requests a commit.
+
+**Next agent must:**
+
+1. Read `AGENTS.md` and this progress tracker.
+2. Inspect `frontend/src/app/router.tsx`, `frontend/src/app/providers.tsx`, `frontend/src/lib/axios.ts`, `frontend/src/services/`, and `frontend/src/features/`.
+3. Begin **Phase 8: Inspector Workflow** only after approval.
+4. Replace the inspector placeholders with authenticated role-aware pages and keep all API/service access outside presentation components.
+5. Preserve the in-memory access-token and HTTP-only refresh-cookie strategy.
+6. Run frontend verification again after Phase 8 changes.
+7. Update this tracker before stopping.
 
 ---
 
@@ -1025,7 +1194,8 @@ Add a new row when a feature is identified.
 | F-012 | Inspection execution | 8 | Not Started | PRD.md, frontend-design.md |
 | F-013 | Backend sync operations | 5 | Completed | offline-sync-design.md, api-contracts.md |
 | F-014 | Frontend foundation | 6 | Completed | frontend-design.md, development-phases.md |
-| F-015 | Admin dashboard | 7 | Not Started | frontend-design.md |
+| F-015 | Frontend authentication and admin features | 7 | Completed | frontend-design.md, development-phases.md, api-contracts.md, security-design.md |
+| F-015 | Admin dashboard | 7 | Completed | frontend-design.md |
 | F-016 | Inspector dashboard | 8 | Not Started | frontend-design.md |
 | F-017 | IndexedDB persistence | 9 | Not Started | offline-sync-design.md |
 | F-018 | Durable sync queue | 9 | Not Started | offline-sync-design.md |
@@ -1244,6 +1414,17 @@ Do not report tests as passed if they were not actually executed.
 | 2026-11-21 | `npm test` (final Phase 6 run) | Frontend tests | 13 | 0 | All UI, router, theme, API client, and online-status tests passed; non-blocking Node localStorage warning remains |
 | 2026-11-21 | `npm run build` | Production build | 1 | 0 | Vite 7.3.8 production build succeeded |
 | 2026-11-21 | Vite preview smoke check | Frontend startup | 1 | 0 | HTTP 200 and Fieldmark title served from the production build |
+| 2026-11-21 | `npx tsc --noEmit` (initial Phase 7 run) | TypeScript check | 0 | 5 | ES2020 `replaceAll`, unused Axios import, and Zod resolver generic errors; all fixed |
+| 2026-11-21 | `npm run lint` (initial Phase 7 run) | Lint | 0 | 2 | Unused Axios import error and one hook dependency warning; both fixed |
+| 2026-11-21 | `npm test` (first Phase 7 run) | Frontend tests | 12 | 1 | Stale Phase 6 router test expected foundation placeholders; replaced with Phase 7 guard tests |
+| 2026-11-21 | `npm test` (first new-test run) | Frontend tests | 27 | 2 | Simulated Axios 401 adapters resolved instead of rejecting; test harness corrected |
+| 2026-11-21 | `npm test` (second new-test run) | Frontend tests | 28 | 1 | Refresh retry test exposed stale in-memory token; Axios interceptor now persists the refreshed token before retry |
+| 2026-11-21 | `npm test` (final Phase 7 run) | Frontend tests | 29 | 0 | All auth, guard, admin, UI, theme, and online-status tests passed; non-blocking Node localStorage warning remains |
+| 2026-11-21 | `npx tsc --noEmit` (final Phase 7 run) | TypeScript check | 1 | 0 | Strict TypeScript configuration passed |
+| 2026-11-21 | `npm run lint` (final Phase 7 run) | Lint | 1 | 0 | ESLint passed with zero warnings |
+| 2026-11-21 | `npm run build` (Phase 7) | Production build | 1 | 0 | Vite 7.3.8 build succeeded; non-blocking chunk-size warning |
+| 2026-11-21 | Vite preview smoke check (Phase 7) | Frontend startup | 1 | 0 | HTTP 200 and Fieldmark application shell served |
+| 2026-11-21 | `npm audit --audit-level=moderate` (Phase 7) | Security check | 1 | 0 | Zero reported vulnerabilities |
 
 ---
 
@@ -1287,6 +1468,12 @@ Maintain a chronological record of significant implementation decisions.
 | D-032 | 2026-11-21 | Persist only the theme preference through Zustand | Theme is a client preference, not an offline database or business record | `frontend/src/store/themeStore.ts` |
 | D-033 | 2026-11-21 | Represent every planned frontend route with a labeled placeholder page | Verifies router navigation without starting Phase 7+ feature work | `frontend/src/app/router.tsx`, `frontend/src/pages/` |
 | D-034 | 2026-11-21 | Inject an in-memory Storage shim in Vitest setup | The Node/jsdom combination exposed an incomplete global `localStorage` | `frontend/src/test/setup.ts`; test-only behavior |
+| D-035 | 2026-11-21 | Keep access tokens in an in-memory module store and expose token setters only through Axios/session services | The security design prohibits persisting access or refresh tokens in browser storage | `frontend/src/lib/accessToken.ts`, `frontend/src/lib/axios.ts`, `frontend/src/services/auth/session.ts` |
+| D-036 | 2026-11-21 | Read only the non-HttpOnly CSRF cookie and send it as `X-CSRF-Token` on cookie-authenticated mutations | The HTTP-only refresh cookie cannot be read by JavaScript, while the backend requires double-submit CSRF | `frontend/src/lib/csrf.ts`, `frontend/src/lib/axios.ts` |
+| D-037 | 2026-11-21 | Share one refresh promise across concurrent 401 responses and persist the refreshed token before retry | Prevents repeated refresh-token rotation and ensures the retried request sees the new token | `frontend/src/lib/axios.ts`, `frontend/src/services/auth/session.ts` |
+| D-038 | 2026-11-21 | Implement a local React Hook Form resolver for Zod schemas | Satisfies the approved validation stack without adding a new npm dependency | `frontend/src/lib/formResolver.ts`, all Phase 7 form dialogs |
+| D-039 | 2026-11-21 | Keep inspector workflow and Sync Center routes as placeholders through Phase 7 | Those features are explicitly assigned to later phases; real guards and admin routes can still be verified | `frontend/src/app/router.tsx`, `frontend/src/pages/PlaceholderPage.tsx` |
+| D-040 | 2026-11-21 | Scope Python `lib/` and `lib64/` ignore rules to the repository root | A global rule silently ignored all frontend library source directories, including `frontend/src/lib/` | `.gitignore`, Phase 6/7 frontend source commits |
 
 When adding a decision:
 
@@ -1345,6 +1532,8 @@ Add a new entry whenever a development session makes meaningful changes.
 | 2026-11-21 | OpenCode (Big Pickle) | Phase 5 | F-013 | Added device management, canonical hashing and idempotent push, savepoint-isolated operations, conflicts, scoped pull with tombstones, sync status, and transactional change logging; added migration `0005_sync_scope_and_retry` and 20 PostgreSQL sync tests; final suite passed 73 tests | Completed |
 | 2026-11-21 | OpenCode (Big Pickle) | Phase 5 | Commit | Committed verified Phase 5 work as `7414ece feat: implement phase 5 backend synchronization foundation` after explicit user request | Completed |
 | 2026-11-21 | OpenCode (Big Pickle) | Phase 6 | F-014 | Added React/Vite foundation, patched dependency baseline, Tailwind theme tokens, 14 shared UI components, router, providers, stores, Axios client, linting, placeholder pages, and 13 frontend tests; lint, typecheck, tests, build, preview, and audit all passed | Completed |
+| 2026-11-21 | OpenCode (Big Pickle) | Phase 6 | Commit | Committed verified Phase 6 work as `f2b0932 feat: implement phase 6 frontend foundation` after explicit user request; not pushed | Completed |
+| 2026-11-21 | OpenCode (Big Pickle) | Phase 7 | F-015 | Added login/session lifecycle, CSRF and single-flight refresh handling, protected role-aware routes, admin shell, dashboard, user/site/checklist management, inspection assignment, profile/settings, and 16 new tests; final verification was 29/29 tests, clean lint and typecheck, successful build and preview, and zero audit vulnerabilities | Completed |
 
 For each entry, include a concise summary of:
 
@@ -1367,54 +1556,62 @@ Update it before stopping work.
 
 **Last completed phase:**
 
-Phase 6 — Frontend Foundation.
+Phase 7 — Frontend Authentication and Admin Features.
 
 **Current phase:**
 
-Phase 6 — Frontend Foundation (Completed). Next phase is Phase 7 — Frontend Authentication and Admin Features.
+Phase 7 — Frontend Authentication and Admin Features (Completed). Next phase is Phase 8 — Inspector Workflow.
 
 **Current feature:**
 
-None — F-014 is completed.
+F-015 Frontend Authentication and Admin Features.
 
 **Current feature status:**
 
-Completed.
+Completed and verified.
 
 **Last completed task:**
 
-Implemented and verified the React application foundation: Vite 7 with strict TypeScript, Tailwind theme tokens, shadcn-style shared components, React Router routes, TanStack Query provider, Zustand theme/application stores, Axios client with in-memory access tokens, ESLint, Vitest/React Testing Library, and placeholder pages for all planned routes. The dependency baseline was upgraded to patched releases and `npm audit` reports zero vulnerabilities. Final verification was 13 passing frontend tests, clean TypeScript and lint checks, a successful production build, and a live preview HTTP 200 response.
+Implemented and verified browser login, session bootstrap/refresh/logout, CSRF-header handling, single-flight 401 retry, protected role-aware routes, admin layout/navigation, backend-backed dashboard, user/site/checklist management, inspection assignment, profile/settings, and 16 new frontend tests. Final verification was `npx tsc --noEmit`, `npm run lint`, `npm test` (29/29), `npm run build`, a Vite preview HTTP 200 smoke check, and `npm audit --audit-level=moderate` with zero vulnerabilities. A final Git check found that the global `.gitignore` rule `lib/` excluded `frontend/src/lib/`; the rule was scoped to `/lib/` and `/lib64/` so the frontend library source is now trackable.
 
 **Current stopping point:**
 
-Phase 6 boundary reached. All acceptance criteria verified. Do not start Phase 7 without approval. Phase 6 changes remain uncommitted unless the user explicitly requests a commit.
+Phase 7 boundary reached. All acceptance criteria verified. Do not start Phase 8 without explicit approval. Phase 7 changes remain uncommitted unless the user explicitly requests a commit. The eventual Phase 7 commit must include the newly trackable `frontend/src/lib/` files and `.gitignore`; the Phase 6 commit hash remains unchanged because amending it was not requested.
 
 ## Files to inspect first
 
 1. `progress-tracker.md`
-2. `docs/development-phases.md` — Phase 7 requirements
-3. `docs/frontend-design.md` — frontend architecture and Phase 6 baseline
-4. `frontend/src/app/providers.tsx`
-5. `frontend/src/app/router.tsx`
-6. `frontend/src/lib/axios.ts`
-7. `frontend/src/store/themeStore.ts`
-8. `frontend/src/components/ui/`
-9. `frontend/package.json`
-10. `frontend/src/components/ui/ui.test.tsx`
+2. `.gitignore` — root-scoped Python library rules
+3. `docs/development-phases.md` — Phase 8 requirements
+4. `docs/frontend-design.md` — frontend architecture and Phase 7 baseline
+5. `frontend/src/app/providers.tsx`
+6. `frontend/src/app/router.tsx`
+7. `frontend/src/app/guards.tsx`
+8. `frontend/src/lib/axios.ts`
+9. `frontend/src/services/auth/session.ts`
+10. `frontend/src/services/api/`
+11. `frontend/src/features/`
+12. `frontend/src/layouts/`
+13. `frontend/src/features/admin/adminFlows.test.tsx`
+14. `frontend/src/app/router.test.tsx`
 
 ## Work remaining
 
-- [ ] No Phase 6 work remains.
-- [ ] Wait for approval before starting Phase 7 — Frontend Authentication and Admin Features.
-- [ ] Do not commit Phase 6 changes unless the user explicitly requests it.
+- [ ] No Phase 7 work remains.
+- [ ] Wait for approval before starting Phase 8 — Inspector Workflow.
+- [ ] Do not commit Phase 7 changes unless the user explicitly requests it.
+- [ ] If Phase 7 is committed, include `.gitignore` and all newly trackable `frontend/src/lib/` files.
+- [ ] Phase 8 must replace the inspector placeholders with real assigned-inspection, details, and execution pages.
 
 ## Known problems
 
 - Non-blocking: Node emits a `--localstorage-file` warning during Vitest runs in this environment. Tests pass with the injected test Storage shim.
+- Non-blocking: Vite reports a chunk-size warning because the single application bundle is larger than 500 kB.
 - Non-blocking: installed Starlette/TestClient and passlib/argon2 backend versions emit deprecation warnings. No backend tests fail.
 - Non-blocking: optional PATCH fields are displayed as nullable in OpenAPI even though runtime validators reject `null` for non-clearable fields; runtime behavior is correct.
-- Frontend authentication, admin pages, inspector workflow, IndexedDB persistence, sync engine, Sync Center, and PWA shell are not implemented yet; they belong to later phases.
-- Dashboard synchronization statistics reflect server-side operation records only; the frontend must combine them with its IndexedDB queue, as required by `docs/api-contracts.md`.
+- Important: the original global `lib/` ignore rule excluded `frontend/src/lib/` from the Phase 6 commit. The rule is fixed in the working tree; Phase 7 must include those source files and `.gitignore`. The existing Phase 6 commit hash was not changed because amending it was not requested.
+- Inspector workflow, IndexedDB persistence, synchronization engine, conflict management, Sync Center behavior, and PWA shell are intentionally unimplemented until Phases 8–12.
+- Dashboard synchronization statistics reflect server-side operation records only; the frontend must combine them with its IndexedDB queue in a later phase, as required by `docs/api-contracts.md`.
 - The login rate limiter remains process-local; a multi-instance deployment needs a shared limiter.
 
 ## Next agent instructions
@@ -1422,16 +1619,18 @@ Phase 6 boundary reached. All acceptance criteria verified. Do not start Phase 7
 The next agent must:
 
 1. Read `AGENTS.md` and this progress tracker.
-2. Confirm Phase 6 is marked Completed and verified.
-3. Stop at the phase boundary.
-4. Begin Phase 7 only after explicit user approval.
-5. Reuse the Phase 6 providers, router, stores, Axios client, shared UI components, and test setup.
-6. Keep authentication logic and IndexedDB access outside presentation components.
+2. Confirm Phase 7 is marked Completed and verified.
+3. Stop at the phase boundary and wait for explicit approval.
+4. Begin Phase 8 only after approval.
+5. Reuse the Phase 7 auth services, guards, router, typed API clients, shared UI components, and test helpers.
+6. Keep API and future IndexedDB access outside presentation components.
 7. Preserve the in-memory access-token policy and HTTP-only refresh-cookie strategy.
+8. Verify `frontend/src/lib/` is no longer ignored before creating any commit.
+9. Do not use last-write-wins for inspection answers.
 
 **Exact next action:**
 
-Report Phase 6 completion and wait for approval to start Phase 7 — Frontend Authentication and Admin Features.
+Report Phase 7 completion and wait for approval to start Phase 8 — Inspector Workflow.
 
 ---
 

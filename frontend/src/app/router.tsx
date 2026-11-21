@@ -1,30 +1,91 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { HomeRedirect, PublicOnly, RequireAuth } from '@/app/guards';
+import { AdminLayout } from '@/layouts/AdminLayout';
+import { AuthenticatedLayout } from '@/layouts/AuthenticatedLayout';
+import { LoginPage } from '@/features/auth/pages/LoginPage';
+import { ProfilePage } from '@/features/auth/pages/ProfilePage';
+import { SettingsPage } from '@/features/auth/pages/SettingsPage';
+import { AdminDashboardPage } from '@/features/dashboard/pages/AdminDashboardPage';
+import { UsersPage } from '@/features/users/pages/UsersPage';
+import { SitesPage } from '@/features/sites/pages/SitesPage';
+import { ChecklistsPage } from '@/features/checklists/pages/ChecklistsPage';
+import { InspectionsPage } from '@/features/inspections/pages/InspectionsPage';
 import { ROUTES } from '@/lib/constants';
-import { FoundationPage } from '@/pages/FoundationPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { PlaceholderPage } from '@/pages/PlaceholderPage';
 
 export function AppRoutes(): React.JSX.Element {
   return (
     <Routes>
-      <Route path={ROUTES.home} element={<FoundationPage />} />
-      <Route path={ROUTES.login} element={<PlaceholderPage title="Sign in" description="Authentication is implemented in Phase 7." />} />
+      <Route path={ROUTES.home} element={<HomeRedirect />} />
 
-      <Route path={ROUTES.admin.dashboard} element={<PlaceholderPage title="Admin dashboard" />} />
-      <Route path={ROUTES.admin.users} element={<PlaceholderPage title="Users" />} />
-      <Route path={ROUTES.admin.sites} element={<PlaceholderPage title="Sites" />} />
-      <Route path={ROUTES.admin.checklists} element={<PlaceholderPage title="Checklists" />} />
-      <Route path={ROUTES.admin.inspections} element={<PlaceholderPage title="Inspections" />} />
-      <Route path={ROUTES.admin.sync} element={<PlaceholderPage title="Sync Center" />} />
+      <Route
+        path={ROUTES.login}
+        element={
+          <PublicOnly>
+            <LoginPage />
+          </PublicOnly>
+        }
+      />
 
-      <Route path={ROUTES.inspector.dashboard} element={<PlaceholderPage title="Inspector dashboard" />} />
-      <Route path={ROUTES.inspector.inspections} element={<PlaceholderPage title="My inspections" />} />
-      <Route path={ROUTES.inspector.executeInspection(':id')} element={<PlaceholderPage title="Execute inspection" />} />
-      <Route path={ROUTES.inspector.inspectionDetails(':id')} element={<PlaceholderPage title="Inspection details" />} />
-      <Route path={ROUTES.inspector.sync} element={<PlaceholderPage title="Sync Center" />} />
+      <Route
+        element={
+          <RequireAuth roles={['ADMIN']}>
+            <AdminLayout />
+          </RequireAuth>
+        }
+      >
+        <Route path={ROUTES.admin.dashboard} element={<AdminDashboardPage />} />
+        <Route path={ROUTES.admin.users} element={<UsersPage />} />
+        <Route path={ROUTES.admin.sites} element={<SitesPage />} />
+        <Route path={ROUTES.admin.checklists} element={<ChecklistsPage />} />
+        <Route path={ROUTES.admin.inspections} element={<InspectionsPage />} />
+        <Route
+          path={ROUTES.admin.sync}
+          element={<PlaceholderPage title="Sync Center" description="Synchronization monitoring is implemented in a later phase." />}
+        />
+      </Route>
 
-      <Route path={ROUTES.profile} element={<PlaceholderPage title="Profile" />} />
-      <Route path={ROUTES.settings} element={<PlaceholderPage title="Settings" />} />
+      <Route
+        element={
+          <RequireAuth roles={['INSPECTOR']}>
+            <AuthenticatedLayout />
+          </RequireAuth>
+        }
+      >
+        <Route
+          path={ROUTES.inspector.dashboard}
+          element={<PlaceholderPage title="Inspector dashboard" description="The inspector workflow is implemented in a later phase." />}
+        />
+        <Route
+          path={ROUTES.inspector.inspections}
+          element={<PlaceholderPage title="My inspections" description="The inspector workflow is implemented in a later phase." />}
+        />
+        <Route
+          path={ROUTES.inspector.inspectionDetails(':id')}
+          element={<PlaceholderPage title="Inspection details" description="The inspector workflow is implemented in a later phase." />}
+        />
+        <Route
+          path={ROUTES.inspector.executeInspection(':id')}
+          element={<PlaceholderPage title="Execute inspection" description="The inspector workflow is implemented in a later phase." />}
+        />
+        <Route
+          path={ROUTES.inspector.sync}
+          element={<PlaceholderPage title="Sync Center" description="Synchronization monitoring is implemented in a later phase." />}
+        />
+      </Route>
+
+      <Route
+        element={
+          <RequireAuth>
+            <AuthenticatedLayout />
+          </RequireAuth>
+        }
+      >
+        <Route path={ROUTES.profile} element={<ProfilePage />} />
+        <Route path={ROUTES.settings} element={<SettingsPage />} />
+      </Route>
+
       <Route path={ROUTES.notFound} element={<NotFoundPage />} />
     </Routes>
   );
