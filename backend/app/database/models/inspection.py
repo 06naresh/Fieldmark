@@ -105,10 +105,16 @@ class InspectionResult(Base):
     __table_args__ = (
         CheckConstraint("submission_number > 0", name="ck_inspection_results_submission_number"),
         CheckConstraint(
+            "submitted_version > 0", name="ck_inspection_results_submitted_version"
+        ),
+        CheckConstraint(
             "overall_status IN ('PASS', 'FAIL', 'NEEDS_REVIEW')",
             name="ck_inspection_results_overall_status",
         ),
         UniqueConstraint("inspection_id", "submission_number", name="uq_inspection_submission"),
+        UniqueConstraint(
+            "submission_id", name="uq_inspection_results_submission_id"
+        ),
         Index("idx_inspection_results_inspection_id", "inspection_id"),
     )
 
@@ -126,6 +132,8 @@ class InspectionResult(Base):
         nullable=False,
     )
     submission_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    submission_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    submitted_version: Mapped[int] = mapped_column(Integer, nullable=False)
     submitted_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

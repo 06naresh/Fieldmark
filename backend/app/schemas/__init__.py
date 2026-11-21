@@ -14,6 +14,7 @@ from app.schemas.common import (
     ListResponse,
     MessageResponse,
     Pagination,
+    PaginationParams,
 )
 
 __all__ = [
@@ -28,6 +29,7 @@ __all__ = [
     "LogoutRequest",
     "MessageResponse",
     "Pagination",
+    "PaginationParams",
     "TokenResponse",
     "TokenUser",
 ]

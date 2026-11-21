@@ -26,12 +26,18 @@ class ChecklistTemplate(Base):
     __tablename__ = "checklist_templates"
     __table_args__ = (
         UniqueConstraint("id", "template_version", name="uq_template_revision"),
+        UniqueConstraint(
+            "template_key", "template_version", name="uq_template_lineage_revision"
+        ),
         CheckConstraint("template_version > 0", name="ck_checklist_templates_template_version"),
         CheckConstraint("version > 0", name="ck_checklist_templates_version"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid()
+    )
+    template_key: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), nullable=False, server_default=func.gen_random_uuid()
     )
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)

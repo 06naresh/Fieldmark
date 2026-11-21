@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "YOUR_DEVELOPMENT_JWT_SECRET_KEY_MIN_32_CHARS_LONG"
     API_PREFIX: str = "/api/v1"
     LOG_LEVEL: str = "INFO"
+    MAX_PAGE_SIZE: int = 100
 
     DATABASE_URL: str = "postgresql+psycopg://postgres:postgres@localhost:5432/field_inspection_db"
     TEST_DATABASE_URL: str = "postgresql+psycopg://postgres:postgres@localhost:5432/field_inspection_test_db"

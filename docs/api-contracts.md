@@ -991,6 +991,7 @@ POST /api/v1/inspections/{inspection_id}/submit
 - The inspection must be in a submittable state.
 - The submitted version must be validated.
 - A duplicate `submission_id` must not create a second submission.
+- A duplicate `submission_id` with a different summary, overall status, or version must be rejected.
 - Submission and corresponding status changes must be committed atomically.
 - The submission result must preserve the submitted snapshot.
 

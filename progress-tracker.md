@@ -92,8 +92,8 @@ The next agent must be able to continue without repeating completed work.
 | Authentication | JWT |
 | State management | Zustand + TanStack Query |
 | Testing | pytest, Vitest, React Testing Library, Playwright |
-| Current development phase | Phase 3 — Authentication and Authorization (Completed) |
-| Current feature | None — Phase 3 complete; Phase 4 pending approval |
+| Current development phase | Phase 4 — Core Backend Features (Completed) |
+| Current feature | None — Phase 4 complete; Phase 5 pending approval |
 | Overall status | In Progress |
 
 ---
@@ -108,7 +108,7 @@ Update this table whenever a development phase changes.
 | 1 | Database Foundation | Completed | 100% |
 | 2 | Backend Foundation | Completed | 100% |
 | 3 | Authentication and Authorization | Completed | 100% |
-| 4 | Core Backend Features | Not Started | 0% |
+| 4 | Core Backend Features | Completed | 100% |
 | 5 | Backend Synchronization Foundation | Not Started | 0% |
 | 6 | Frontend Foundation | Not Started | 0% |
 | 7 | Frontend Authentication and Admin Features | Not Started | 0% |
@@ -144,8 +144,8 @@ Update this section whenever a new feature implementation session begins.
 |---|---|
 | Session date | 2026-11-21 |
 | Agent/session identifier | OpenCode (Big Pickle) |
-| Current phase | Phase 3 — Authentication and Authorization |
-| Current feature | F-006 Authentication / F-007 RBAC |
+| Current phase | Phase 4 — Core Backend Features |
+| Current feature | None — Phase 4 complete; Phase 5 pending approval |
 | Feature status | Completed |
 | Last updated | 2026-11-21 |
 
@@ -153,46 +153,47 @@ Update this section whenever a new feature implementation session begins.
 
 **Objective:**
 
-Implement Phase 3 Authentication and Authorization: Argon2id password hashing, JWT access tokens, rotating refresh tokens in secure cookies, logout/revocation, authentication dependencies, RBAC, and resource-level authorization helpers.
+Implement Phase 4 Core Backend Features: user, site, checklist template, inspection assignment/execution, answer, submission, and dashboard APIs with business-rule validation and authorization.
 
 ## 5.2 Current implementation scope
 
 **Included:**
 
-- `POST /api/v1/auth/login`, `POST /api/v1/auth/refresh`, `GET /api/v1/auth/me`, and `POST /api/v1/auth/logout`.
-- Argon2id password hashing and generic authentication failures.
-- Signed JWT access tokens with stable user identity, role, type, issuer, audience, expiry, and JTI claims.
-- Refresh-token generation, SHA-256 hashing at rest, rotation, reuse detection, and revocation.
-- HTTP-only refresh cookies with configurable `Secure`/`SameSite` settings.
-- Double-submit CSRF protection for refresh and logout.
-- In-memory bounded login rate limiting keyed by email and client IP.
-- Authentication, role, and resource-ownership dependencies.
-- Backend tests for passwords, tokens, sessions, RBAC, resource access, and error behavior.
+- Admin user management with activation/deactivation and session revocation.
+- Admin site management with optimistic concurrency and inspector-scoped read access.
+- Admin checklist template creation, immutable revisions, item management, and inspector-scoped read access.
+- Admin inspection assignment and lifecycle updates.
+- Inspector assignment access, start, answers, and submission.
+- Idempotent submission via a unique `submission_id` column.
+- Dashboard summaries scoped by role.
+- Pagination, filtering, validation, consistent error envelope, and automated tests.
 
 **Not included:**
 
-- User/admin CRUD endpoints (Phase 4).
-- Device-registration endpoint (sync phase).
-- Frontend authentication screens.
-- Durable distributed rate limiting or Redis.
+- Frontend screens and offline flows.
+- Synchronization endpoints (Phase 5).
+- Conflict resolution UI/API (later phase).
+- Device registration endpoints (Phase 5).
 
 **Dependencies:**
 
-- Phases 0–2 are completed and verified.
-- User approved Phase 3 and selected double-submit CSRF plus an in-memory login rate limiter.
+- Phases 0–3 are completed and verified.
+- User approved Phase 4.
+- User approved separate revision IDs and adding a `submission_id` column with an Alembic migration.
 
 ## 5.3 Current progress
 
 | Task | Status | Notes |
 |---|---|---|
-| Review requirements | Completed | Phase 3 tasks, API contracts, and security requirements verified |
-| Inspect existing implementation | Completed | Current app factory, exceptions, database models, and tests inspected |
-| Prepare implementation plan | Completed | Argon2id, JWT, rotating hashed refresh cookies, CSRF, RBAC, and resource guards planned |
-| Implement feature | Completed | All four auth endpoints, security helpers, service/repository layers, dependencies, and config added |
-| Add automated tests | Completed | Password, authentication, refresh/session, CSRF, rate-limit, RBAC, and resource authorization tests added |
-| Execute tests | Completed | Full backend suite passed: 39 tests, 0 failures |
-| Review implementation | Completed | Fixed cookie test setup, resource dependency signatures, and production cookie enforcement |
-| Update documentation | Completed | Tracker records files, decisions, test results, and handoff |
+| Review requirements | Completed | Phase 4 tasks, API contracts, database design, and test expectations verified |
+| Inspect existing implementation | Completed | Models, dependencies, exceptions, schemas, and test fixtures inspected |
+| Resolve document ambiguities | Completed | User selected separate revision IDs and an explicit `submission_id` column |
+| Prepare implementation plan | Completed | Schemas, repositories, services, routers, migration, and tests planned |
+| Implement feature | Completed | User, site, checklist, inspection, submission, dashboard, migration, and router wiring implemented |
+| Add automated tests | Completed | 11 Phase 4 integration tests plus 8 PostgreSQL schema/migration tests |
+| Execute tests | Completed | Final full backend suite passed: 53 tests, 0 failures |
+| Review implementation | Completed | Five audit findings and two follow-up validation regressions fixed; final re-audit passed |
+| Update documentation | Completed | Tracker, database design, and API contract record verified results and decisions |
 
 Update the task statuses as work progresses.
 
@@ -657,6 +658,144 @@ Phase 3 is complete and verified. Stop at the phase boundary. Begin Phase 4 — 
 
 ---
 
+## Feature: F-008/F-009/F-010/F-011/F-029 Core Backend Features
+
+| Property | Value |
+|---|---|
+| Feature ID | F-008, F-009, F-010, F-011, F-029 |
+| Development phase | Phase 4 |
+| Status | Completed |
+| Priority | High |
+| Started date | 2026-11-21 |
+| Last updated | 2026-11-21 |
+| Completed date | 2026-11-21 |
+| Implemented by | OpenCode (Big Pickle) |
+
+### Phase4.1 Feature objective
+
+Implement the approved backend business APIs required before frontend integration.
+
+### Phase4.2 Requirements
+
+- [x] Verify Phase 4 tasks, API contracts, database design, and test expectations.
+- [x] Obtain decisions for revision identity and submission idempotency storage.
+- [x] Implement user management APIs.
+- [x] Implement site management APIs.
+- [x] Implement checklist template and item APIs with immutable revisions.
+- [x] Implement inspection assignment, start, answer, and submission APIs.
+- [x] Add `submission_id` to `inspection_results` with an Alembic migration.
+- [x] Implement dashboard summary API.
+- [x] Add automated tests and verify all Phase 4 acceptance criteria.
+- [x] Fix five independent audit findings and two follow-up validation regressions.
+
+### Phase4.3 Files created
+
+| File path | Purpose | Status |
+|---|---|---|
+| `backend/alembic/versions/0002_submission_id.py` | Adds unique `inspection_results.submission_id` | Created and applied |
+| `backend/alembic/versions/0003_submitted_version.py` | Adds required `inspection_results.submitted_version` | Created and applied |
+| `backend/alembic/versions/0004_template_key.py` | Adds revision-lineage `checklist_templates.template_key` | Created and applied |
+| `backend/app/api/v1/endpoints/users.py` | User-management endpoints | Created |
+| `backend/app/api/v1/endpoints/sites.py` | Site-management endpoints | Created |
+| `backend/app/api/v1/endpoints/checklist_templates.py` | Checklist template, revision, and item endpoints | Created |
+| `backend/app/api/v1/endpoints/inspections.py` | Inspection assignment, start, answer, and submission endpoints | Created |
+| `backend/app/api/v1/endpoints/dashboard.py` | Role-scoped dashboard summary endpoint | Created |
+| `backend/app/repositories/user_repository.py` | User data access and session revocation | Created |
+| `backend/app/repositories/site_repository.py` | Site data access and inspector authorization scoping | Created |
+| `backend/app/repositories/checklist_repository.py` | Template/item data access and revision checks | Created |
+| `backend/app/repositories/inspection_repository.py` | Inspection, answer, and result data access with row locks | Created |
+| `backend/app/repositories/dashboard_repository.py` | Dashboard count queries | Created |
+| `backend/app/schemas/users.py` | User request/response schemas | Created |
+| `backend/app/schemas/sites.py` | Site request/response schemas | Created |
+| `backend/app/schemas/checklists.py` | Checklist template/item schemas and answer-choice helper | Created |
+| `backend/app/schemas/inspections.py` | Inspection, answer, and submission schemas | Created |
+| `backend/app/schemas/dashboard.py` | Dashboard summary schema | Created |
+| `backend/app/services/user_service.py` | User business rules and activation behavior | Created |
+| `backend/app/services/site_service.py` | Site business rules and version checks | Created |
+| `backend/app/services/checklist_service.py` | Revision immutability and item management | Created |
+| `backend/app/services/inspection_service.py` | Inspection lifecycle, answer validation, and idempotent submission | Created |
+| `backend/app/services/dashboard_service.py` | Role-aware dashboard aggregation | Created |
+| `backend/app/services/concurrency.py` | Optimistic version check helper | Created |
+| `backend/app/core/db_errors.py` | Shared constraint-error and transaction handling | Created |
+| `backend/tests/test_core_features.py` | Phase 4 API, authorization, lifecycle, idempotency, and dashboard tests | Created |
+
+### Phase4.4 Files modified
+
+| File path | Modification |
+|---|---|
+| `backend/app/core/config.py` | Added `MAX_PAGE_SIZE` |
+| `backend/.env.example` | Documented `MAX_PAGE_SIZE` |
+| `backend/app/database/models/inspection.py` | Added `submission_id` and its unique constraint |
+| `backend/app/dependencies/authorization.py` | Added template-revision resource authorization |
+| `backend/app/dependencies/__init__.py` | Exported the new authorization dependency |
+| `backend/app/repositories/__init__.py` | Exported Phase 4 repositories |
+| `backend/app/schemas/__init__.py` | Exported `PaginationParams` |
+| `backend/app/schemas/common.py` | Added reusable pagination query parameters |
+| `backend/app/services/__init__.py` | Exported Phase 4 services |
+| `backend/app/api/v1/router.py` | Mounted all Phase 4 routers |
+| `backend/tests/test_database_schema.py` | Verified latest revision and `submission_id` uniqueness |
+| `docs/database-design.md` | Documented `submission_id`, `submitted_version`, and `template_key` |
+| `docs/api-contracts.md` | Documented duplicate-submission payload identity |
+| `progress-tracker.md` | Recorded implementation, audit remediation, decisions, results, and handoff |
+
+### Phase4.5 Important decisions
+
+- Each published checklist revision is a separate row with its own UUID, as selected by the user; existing inspections keep the originally assigned revision ID and version.
+- `inspection_results.submission_id` is unique, as selected by the user; duplicate submissions return the original result and changed payloads return a conflict.
+- Published revisions referenced by inspections are immutable; items can only be changed before a revision is used.
+- Inspectors receive role-scoped sites, templates, inspections, answers, and dashboard counts.
+- Site, template, inspection, answer, and submission updates use row locks or version checks to avoid overwriting newer state.
+- Database integrity errors are translated to `409 CONFLICT` rather than exposed as internal errors.
+- A retried submission must match the original summary, overall status, and submitted version; the result response always reports `SUBMITTED`.
+- All revisions in one checklist lineage share a durable `template_key`; version allocation locks that lineage and allocates from committed state.
+- PATCH requests distinguish omitted fields from explicit `null`, so nullable fields can be cleared while non-clearable fields and invalid choice options are rejected with `422`.
+
+### Phase4.6 Verification
+
+- Final full backend suite: 53 passed, 0 failed.
+- Python compilation: passed.
+- OpenAPI generation: 25 documented paths.
+- Applied migrations `0002_submission_id`, `0003_submitted_version`, and `0004_template_key` to `field_inspection_db`.
+- Alembic drift check: no new upgrade operations detected.
+- Six new API regression tests and two new schema regression tests cover pagination offsets, revision-lineage version allocation, submitted-version idempotency, explicit-null PATCH clearing, choice-option validation, and operation-owner conflict scoping.
+- Final independent read-only audit found no blocking correctness, authorization, transaction, or error-semantics regressions.
+- All Phase 4 acceptance criteria listed in `docs/development-phases.md` are verified.
+
+### Phase4.7 Known issues
+
+- Non-blocking `httpx`/TestClient and passlib/argon2 deprecation warnings remain from installed dependencies.
+
+### Phase4.8 Handoff instructions
+
+Phase 4 is complete and verified. Stop at the phase boundary. Begin Phase 5 — Backend Synchronization Foundation only after explicit approval.
+
+### Phase4.9 Audit remediation (Completed)
+
+An independent read-only audit found five issues after the initial 45-test verification. Phase 4 was reopened, and all five issues were fixed and regression-tested.
+
+| Finding | Planned fix | Status |
+|---|---|---|
+| Pagination used page number as row offset | Add `PaginationParams.offset` as `(page - 1) * page_size` and use it in all four collection endpoints | Fixed and regression-tested |
+| Checklist revision version allocation could produce duplicate versions | Add user-approved `template_key` lineage, lock all rows in that lineage, and allocate from the maximum committed `template_version` | Fixed and regression-tested |
+| Submission idempotency ignored `version` and returned inconsistent status | Persist `submitted_version` in migration `0003_submitted_version`, compare it on retry, and always report `SUBMITTED` for the result | Fixed and regression-tested |
+| Inspector dashboard conflict counts were scoped by entity ID | Join `sync_conflicts.operation_id` to `sync_operations.id` and filter by `sync_operations.user_id` | Fixed and regression-tested |
+| PATCH schemas could not clear nullable fields | Distinguish omitted fields from explicit `null` with `model_fields_set` and `exclude_unset` | Fixed and regression-tested |
+
+The user approved both additional schema changes: persisted `submitted_version` and the `template_key` revision-lineage identifier.
+
+### Phase4.10 Final audit remediation (Completed)
+
+The final read-only audit confirmed the original five findings are fixed, but found two regressions caused by explicit-null PATCH support. Both were fixed and regression-tested:
+
+| Finding | Fix | Status |
+|---|---|---|
+| Explicit `null` could be applied to non-clearable PATCH fields (`SiteUpdate.name/address`, `InspectionUpdate.title`, `ChecklistItemUpdate.question/is_required/display_order`) and reached the database as a `409` | Field validators reject explicit `null`, producing `422 VALIDATION_ERROR`; omitted fields remain valid for partial PATCH | Fixed and regression-tested |
+| Clearing `options` on a choice question could leave no valid answers | `ChecklistService.update_item` validates final options against the stored `response_type` before mutation and raises `422 VALIDATION_ERROR` | Fixed and regression-tested |
+
+No database schema change was required for these fixes. A second read-only audit confirmed no new blocking regressions.
+
+---
+
 # 7. Feature Register
 
 Maintain a summary of all features.
@@ -672,10 +811,11 @@ Add a new row when a feature is identified.
 | F-005 | FastAPI foundation | 2 | Completed | architecture.md |
 | F-006 | Authentication | 3 | Completed | security-design.md, api-contracts.md |
 | F-007 | Role-based access control | 3 | Completed | security-design.md |
-| F-008 | User management | 4 | Not Started | PRD.md, api-contracts.md |
-| F-009 | Site management | 4 | Not Started | PRD.md, api-contracts.md |
-| F-010 | Checklist templates | 4 | Not Started | PRD.md, database-design.md |
-| F-011 | Inspection assignments | 4 | Not Started | PRD.md, api-contracts.md |
+| F-008 | User management | 4 | Completed | PRD.md, api-contracts.md |
+| F-009 | Site management | 4 | Completed | PRD.md, api-contracts.md |
+| F-010 | Checklist templates | 4 | Completed | PRD.md, database-design.md |
+| F-011 | Inspection assignments | 4 | Completed | PRD.md, api-contracts.md |
+| F-029 | Dashboard summary API | 4 | Completed | PRD.md, api-contracts.md |
 | F-012 | Inspection execution | 8 | Not Started | PRD.md, frontend-design.md |
 | F-013 | Backend sync operations | 5 | Not Started | offline-sync-design.md |
 | F-014 | Frontend foundation | 6 | Not Started | frontend-design.md |
@@ -710,9 +850,25 @@ Track API implementation separately.
 | `/api/v1/auth/refresh` | POST | Yes | Yes | CSRF, rotation, reuse detection, expiry checks |
 | `/api/v1/auth/me` | GET | Yes | Yes | Bearer JWT validation; database user is authoritative |
 | `/api/v1/auth/logout` | POST | Yes | Yes | CSRF, current/all-device revocation, cookie clearing |
-| `/api/v1/users` | GET/POST | No | No | |
-| `/api/v1/sites` | GET/POST | No | No | |
-| `/api/v1/inspections` | GET/POST | No | No | |
+| `/api/v1/users` | GET/POST | Yes | Yes | Admin-only; list supports search and pagination |
+| `/api/v1/users/{user_id}` | GET/PATCH | Yes | Yes | Self-role-change and self-deactivation are rejected |
+| `/api/v1/users/{user_id}/status` | PATCH | Yes | Yes | Deactivation revokes refresh sessions and sync devices |
+| `/api/v1/sites` | GET/POST | Yes | Yes | Inspector list is assignment-scoped |
+| `/api/v1/sites/{site_id}` | GET/PATCH | Yes | Yes | Version-checked updates; inspector read access is scoped |
+| `/api/v1/sites/{site_id}/status` | PATCH | Yes | Yes | Version-checked status change |
+| `/api/v1/checklist-templates` | GET/POST | Yes | Yes | Admin create; inspector list is assignment-scoped |
+| `/api/v1/checklist-templates/{template_id}` | GET | Yes | Yes | Supports `template_version` query |
+| `/api/v1/checklist-templates/{template_id}/revisions` | POST | Yes | Yes | Creates a separate immutable revision row |
+| `/api/v1/checklist-templates/{template_id}/status` | PATCH | Yes | Yes | Deactivation preserves existing assignments |
+| `/api/v1/checklist-templates/{template_id}/items` | POST | Yes | Yes | Rejects edits to published revisions |
+| `/api/v1/checklist-templates/{template_id}/items/{item_id}` | PATCH | Yes | Yes | Rejects edits to published revisions |
+| `/api/v1/inspections` | GET/POST | Yes | Yes | Admin create; inspector list is ownership-scoped |
+| `/api/v1/inspections/{inspection_id}` | GET/PATCH | Yes | Yes | Detail includes site, template, items, answers, status, and version |
+| `/api/v1/inspections/{inspection_id}/start` | POST | Yes | Yes | Version checked and row locked |
+| `/api/v1/inspections/{inspection_id}/answers` | GET | Yes | Yes | Authorized users only |
+| `/api/v1/inspections/{inspection_id}/answers/{checklist_item_id}` | PUT | Yes | Yes | Type, template-revision, state, and base-version checks |
+| `/api/v1/inspections/{inspection_id}/submit` | POST | Yes | Yes | Required-answer validation and unique `submission_id` idempotency |
+| `/api/v1/dashboard/summary` | GET | Yes | Yes | Admin and inspector results are permission-scoped |
 | `/api/v1/sync/push` | POST | No | No | |
 | `/api/v1/sync/pull` | GET | No | No | |
 | `/api/v1/sync/status` | GET | No | No | |
@@ -787,12 +943,12 @@ Track testing at project level.
 
 | Test category | Status | Last result | Notes |
 |---|---|---|---|
-| Backend unit tests | Completed | 39 passed | Full backend pytest suite |
-| Backend integration tests | Completed | 39 passed | 5 database, 9 foundation, 4 password, 15 authentication, 6 authorization tests |
-| API tests | Completed | 30 passed | Health, readiness, versioning/docs, CORS, error formats, logging, auth and authorization endpoints |
-| Database tests | Completed | 5 passed | Schema, constraints, relationships, migration, and cursor ordering |
+| Backend unit tests | Completed | 53 passed | Full backend pytest suite |
+| Backend integration tests | Completed | 53 passed | PostgreSQL temporary schema; includes all Phase 4 API, lifecycle, idempotency, pagination, PATCH validation, and conflict-scoping tests |
+| API tests | Completed | 53 passed | Full suite includes health, readiness, versioning/docs, CORS, error formats, logging, auth, authorization, and Phase 4 endpoints |
+| Database tests | Completed | 8 passed | Schema, constraints, relationships, latest migrations, unique `submission_id`, `submitted_version`, `template_key`, and cursor ordering |
 | Authentication tests | Completed | 19 passed | 4 password-hashing and 15 authentication tests |
-| RBAC tests | Completed | 6 passed | Roles, ownership, inspection and site access |
+| RBAC tests | Completed | 12 passed | Phase 3 authorization tests plus Phase 4 endpoint authorization coverage |
 | Frontend unit tests | Not Started | Not Run | |
 | Component tests | Not Started | Not Run | |
 | IndexedDB tests | Not Started | Not Run | |
@@ -838,6 +994,24 @@ Do not report tests as passed if they were not actually executed.
 | 2026-11-21 | `.venv/Scripts/python.exe -m pytest -q` (first Phase 3 run) | Full backend suite | 31 | 7 | Cookie domain, repeated logout setup, and path-parameter dependency failures found |
 | 2026-11-21 | `.venv/Scripts/python.exe -m pytest -q` (final Phase 3 run) | Full backend suite | 39 | 0 | All Phase 3 tests passed after fixes |
 | 2026-11-21 | `.venv/Scripts/python.exe -m alembic check` | Migration drift | 1 | 0 | No new upgrade operations detected after Phase 3 |
+| 2026-11-21 | `.venv/Scripts/python.exe -m compileall -q app tests` | Static | 1 | 0 | Phase 4 Python compilation succeeded |
+| 2026-11-21 | `.venv/Scripts/python.exe -m pytest -q` (first Phase 4 run) | Full backend suite | 38 | 1 | Existing migration test still expected `0001_initial_schema` |
+| 2026-11-21 | `.venv/Scripts/python.exe -m pytest -q` (second Phase 4 run) | Full backend suite | 42 | 3 | Found list-response assertion errors, unhandled duplicate site-code constraint, and a stale answer-version test assumption |
+| 2026-11-21 | `.venv/Scripts/python.exe -m pytest -q` (third Phase 4 run) | Full backend suite | 44 | 1 | Found incorrect stale answer-version expectation in the new lifecycle test |
+| 2026-11-21 | `.venv/Scripts/python.exe -m pytest -q` (final Phase 4 run) | Full backend suite | 45 | 0 | All Phase 3 and Phase 4 tests passed after fixes |
+| 2026-11-21 | `.venv/Scripts/python.exe -m alembic current` | Migration state | 1 | 0 | Development database was at `0001_initial_schema` |
+| 2026-11-21 | `.venv/Scripts/python.exe -m alembic upgrade head` | Migration | 1 | 0 | Applied `0002_submission_id` to `field_inspection_db` |
+| 2026-11-21 | `.venv/Scripts/python.exe -m alembic check` | Migration drift | 1 | 0 | No new upgrade operations detected after Phase 4 |
+| 2026-11-21 | `.venv/Scripts/python.exe -m compileall -q app tests` | Static | 1 | 0 | Phase 4 audit-remediation compilation succeeded |
+| 2026-11-21 | `.venv/Scripts/python.exe -m pytest -q` (first audit-remediation run) | Full backend suite | 49 | 2 | Found cross-test revision-lineage collision and incorrect conflict-scoping test setup; both fixed |
+| 2026-11-21 | `.venv/Scripts/python.exe -m pytest -q` (final audit-remediation run) | Full backend suite | 52 | 0 | All Phase 3, Phase 4, and seven new regression tests passed |
+| 2026-11-21 | `.venv/Scripts/python.exe -m alembic current` | Migration state | 1 | 0 | Development database was at `0002_submission_id` |
+| 2026-11-21 | `.venv/Scripts/python.exe -m alembic upgrade head` | Migration | 1 | 0 | Applied `0003_submitted_version` and `0004_template_key` to `field_inspection_db` |
+| 2026-11-21 | `.venv/Scripts/python.exe -m alembic check` | Migration drift | 1 | 0 | No new upgrade operations detected after audit remediation |
+| 2026-11-21 | `.venv/Scripts/python.exe -m compileall -q app tests` | Static | 1 | 0 | Final PATCH-validation remediation compiled successfully |
+| 2026-11-21 | `.venv/Scripts/python.exe -m pytest -q` (final validation run) | Full backend suite | 53 | 0 | All Phase 3, Phase 4, and eight audit/validation regression tests passed |
+| 2026-11-21 | `.venv/Scripts/python.exe -m alembic check` | Migration drift | 1 | 0 | No new upgrade operations detected after final validation |
+| 2026-11-21 | `.venv/Scripts/python.exe -c "from app.main import create_app; app=create_app(); print(len(app.openapi()['paths']))"` | OpenAPI generation | 1 | 0 | 25 documented API paths |
 
 ---
 
@@ -859,6 +1033,13 @@ Maintain a chronological record of significant implementation decisions.
 | D-010 | 2026-11-21 | Use double-submit CSRF cookies with Origin allowlisting for refresh and logout | User-selected strategy; protects cookie-based state changes without exposing the refresh token to JavaScript | `backend/app/core/security.py`, `backend/app/api/v1/endpoints/auth.py` |
 | D-011 | 2026-11-21 | Use a bounded process-local in-memory login rate limiter | User-selected strategy for this phase; documented as single-instance only | `backend/app/core/rate_limit.py` |
 | D-012 | 2026-11-21 | Make current database user authoritative for role and active status | Prevents stale or forged JWT role claims from granting access | `backend/app/dependencies/authentication.py`, `backend/app/dependencies/authorization.py` |
+| D-013 | 2026-11-21 | Represent each checklist revision as a separate row with its own UUID | User-selected resolution of the approved-schema ambiguity; existing inspections keep their assigned revision | Phase 4 checklist APIs and `docs/database-design.md` |
+| D-014 | 2026-11-21 | Add a unique `inspection_results.submission_id` column | User-selected resolution; gives durable, client-generated submission idempotency with changed-payload detection | Migration `0002_submission_id`, inspection service, `docs/database-design.md` |
+| D-015 | 2026-11-21 | Use shared flush/commit helpers that translate integrity errors to `409 CONFLICT` | Prevents duplicate site codes and similar database constraints from becoming internal server errors | `backend/app/core/db_errors.py`, Phase 4 repositories and services |
+| D-016 | 2026-11-21 | Use row locks and version checks for mutable business resources | Prevents stale writes from overwriting newer server state | Site, checklist, inspection, answer, and submission services |
+| D-017 | 2026-11-21 | Persist `submitted_version` with each inspection result | User-approved change; makes the submitted version part of idempotency payload identity and prevents a reused `submission_id` with a different version from succeeding | Migration `0003_submitted_version`, `InspectionResult`, inspection submission service, API and database documentation |
+| D-018 | 2026-11-21 | Add a stable `template_key` shared by all rows in a checklist revision lineage | User-approved change; separate revision UUIDs otherwise provide no durable lineage key for safe version allocation | Migration `0004_template_key`, `ChecklistTemplate`, checklist repository/service, database documentation |
+| D-019 | 2026-11-21 | Reject explicit `null` for non-clearable PATCH fields and validate final choice options before mutation | Preserves `422` request-validation semantics and prevents PATCH requests from creating database constraint errors or choice items with no valid answers | `SiteUpdate`, `InspectionUpdate`, `ChecklistItemUpdate`, `ChecklistService.update_item`, `test_core_features.py` |
 
 When adding a decision:
 
@@ -911,6 +1092,9 @@ Add a new entry whenever a development session makes meaningful changes.
 | 2026-11-21 | OpenCode (Big Pickle) | Phase 1 | F-002/F-003/F-004 | Added and verified 12-table SQLAlchemy models, Alembic initial migration, commit-safe change-feed cursor, and PostgreSQL integration tests | Completed |
 | 2026-11-21 | OpenCode (Big Pickle) | Phase 2 | F-005 | Added FastAPI app factory, shared response schemas, centralized errors, structured logging, request IDs, CORS, API v1 router, health endpoints, and nine foundation tests | Completed |
 | 2026-11-21 | OpenCode (Big Pickle) | Phase 3 | F-006/F-007 | Added Argon2id hashing, JWT access tokens, rotating hashed refresh cookies, CSRF, rate limiting, logout/revocation, RBAC/resource dependencies, auth endpoints, and 25 auth/authz tests | Completed |
+| 2026-11-21 | OpenCode (Big Pickle) | Phase 4 | F-008/F-009/F-010/F-011/F-029 | Added user, site, checklist, inspection, answer, submission, and dashboard APIs; added unique `submission_id` migration; enforced RBAC, version checks, immutable revisions, and idempotent submission; added six integration tests | Completed |
+| 2026-11-21 | OpenCode (Big Pickle) | Phase 4 | Audit remediation | Fixed pagination offsets, `template_key` revision lineage, full submission-payload idempotency, operation-owner conflict scoping, and explicit-null PATCH semantics; added migrations `0003_submitted_version` and `0004_template_key` plus seven regression tests | Completed |
+| 2026-11-21 | OpenCode (Big Pickle) | Phase 4 | Final validation remediation | Rejected explicit null for non-clearable PATCH fields, validated final choice options before mutation, added two regression tests, and completed a second independent audit; final suite passed 53 tests | Completed |
 
 For each entry, include a concise summary of:
 
@@ -933,15 +1117,15 @@ Update it before stopping work.
 
 **Last completed phase:**
 
-Phase 3 — Authentication and Authorization.
+Phase 4 — Core Backend Features.
 
 **Current phase:**
 
-Phase 3 — Authentication and Authorization (Completed). Next phase is Phase 4 — Core Backend Features.
+Phase 4 — Core Backend Features (Completed). Next phase is Phase 5 — Backend Synchronization Foundation.
 
 **Current feature:**
 
-F-006/F-007 — Authentication and role-based access control (Completed).
+None — F-008/F-009/F-010/F-011/F-029 are completed.
 
 **Current feature status:**
 
@@ -949,49 +1133,52 @@ Completed.
 
 **Last completed task:**
 
-Implemented Argon2id password hashing, JWT access tokens, rotating SHA-256-hashed refresh tokens in HTTP-only cookies, double-submit CSRF protection, logout/revocation, in-memory login rate limiting, authentication/RBAC/resource dependencies, and all four approved auth endpoints. Verified with 39 passing backend tests, Python compilation, and Alembic drift check.
+Implemented and verified user, site, checklist template/revision/item, inspection assignment, start, answer, submission, and dashboard APIs. Added migrations `0002_submission_id`, `0003_submitted_version`, and `0004_template_key`; enforced role-scoped queries, version checks, row locks, immutable published revisions, full-payload idempotent submissions, durable revision lineage, pagination offsets, operation-owner conflict scoping, explicit-null PATCH semantics, and safe choice-option updates. Final verification was 53 passing backend tests, Python compilation, successful migration upgrades, OpenAPI generation, a clean Alembic drift check, and a second independent read-only audit with no blocking findings.
 
 **Current stopping point:**
 
-Phase 3 boundary reached. All acceptance criteria verified. Do not start Phase 4 without approval.
+Phase 4 boundary reached. All acceptance criteria verified. Do not start Phase 5 without approval.
 
 ## Files to inspect first
 
 1. `progress-tracker.md`
-2. `docs/development-phases.md` — Phase 4 requirements
-3. `docs/api-contracts.md`
-4. `backend/app/core/security.py`
-5. `backend/app/services/auth_service.py`
-6. `backend/app/repositories/auth_repository.py`
-7. `backend/app/dependencies/`
-8. `backend/app/api/v1/endpoints/auth.py`
-9. `backend/tests/test_authentication.py`
-10. `backend/tests/test_authorization.py`
+2. `docs/development-phases.md` — Phase 5 requirements
+3. `docs/api-contracts.md` — synchronization, device, and conflict contracts
+4. `backend/app/api/v1/router.py`
+5. `backend/app/api/v1/endpoints/inspections.py`
+6. `backend/app/services/inspection_service.py`
+7. `backend/app/core/db_errors.py`
+8. `backend/alembic/versions/0003_submitted_version.py`
+9. `backend/alembic/versions/0004_template_key.py`
+10. `backend/tests/test_core_features.py`
 
 ## Work remaining
 
-- [ ] No Phase 3 work remains.
-- [ ] Wait for approval before starting Phase 4 — Core Backend Features.
+- [ ] No Phase 4 work remains.
+- [ ] Wait for approval before starting Phase 5 — Backend Synchronization Foundation.
 
 ## Known problems
 
-- Non-blocking: the installed Starlette/TestClient version emits an `httpx` deprecation warning. No tests fail.
-- The login rate limiter is process-local; a multi-instance deployment needs a shared limiter.
+- Non-blocking: installed Starlette/TestClient and passlib/argon2 versions emit deprecation warnings. No tests fail.
+- Non-blocking: optional PATCH fields are displayed as nullable in OpenAPI even though runtime validators reject `null` for non-clearable fields; runtime behavior is correct.
+- Dashboard synchronization statistics reflect server-side operation records only; the frontend must combine them with its IndexedDB queue, as required by `docs/api-contracts.md`.
+- The login rate limiter remains process-local; a multi-instance deployment needs a shared limiter.
 
 ## Next agent instructions
 
 The next agent must:
 
 1. Read `AGENTS.md` and this progress tracker.
-2. Confirm Phase 3 is marked Completed and verified.
+2. Confirm Phase 4 is marked Completed and verified.
 3. Stop at the phase boundary.
-4. Begin Phase 4 only after explicit user approval.
-5. Reuse the authentication dependencies and shared error envelope rather than duplicating authorization logic.
-6. Preserve the approved error envelope and 12-table schema.
+4. Begin Phase 5 only after explicit user approval.
+5. Reuse the Phase 3 authentication dependencies, Phase 4 services/repositories, shared error envelope, and 12-table schema.
+6. Keep synchronization logic separate from ordinary CRUD logic.
+7. Preserve stable operation IDs, idempotency, and commit-ordered pull cursors.
 
 **Exact next action:**
 
-Report Phase 3 completion and wait for approval to start Phase 4 — Core Backend Features.
+Report Phase 4 completion and wait for approval to start Phase 5 — Backend Synchronization Foundation.
 
 ---
 

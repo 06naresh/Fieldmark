@@ -136,12 +136,53 @@ def seeded(db_session):
     )
 
 
-def test_database_connection_and_initial_migration(migrated_engine):
+def test_database_connection_and_latest_migration(migrated_engine):
     with migrated_engine.connect() as connection:
         assert connection.execute(text("SELECT 1")).scalar() == 1
         assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar() == (
-            "0001_initial_schema"
+            "0004_template_key"
         )
+
+
+def test_submission_id_has_unique_constraint(migrated_engine):
+    inspector = inspect(migrated_engine)
+    columns = {column["name"] for column in inspector.get_columns("inspection_results")}
+    unique_constraints = inspector.get_unique_constraints("inspection_results")
+
+    assert "submission_id" in columns
+    assert any(
+        constraint["column_names"] == ["submission_id"] for constraint in unique_constraints
+    )
+
+
+def test_submitted_version_is_required_and_positive(migrated_engine):
+    inspector = inspect(migrated_engine)
+    columns = {
+        column["name"]: column
+        for column in inspector.get_columns("inspection_results")
+    }
+    checks = inspector.get_check_constraints("inspection_results")
+
+    assert columns["submitted_version"]["nullable"] is False
+    assert any(
+        check["name"] == "ck_inspection_results_submitted_version"
+        for check in checks
+    )
+
+
+def test_template_key_identifies_revision_lineage(migrated_engine):
+    inspector = inspect(migrated_engine)
+    columns = {
+        column["name"]: column
+        for column in inspector.get_columns("checklist_templates")
+    }
+    unique_constraints = inspector.get_unique_constraints("checklist_templates")
+
+    assert columns["template_key"]["nullable"] is False
+    assert any(
+        set(constraint["column_names"]) == {"template_key", "template_version"}
+        for constraint in unique_constraints
+    )
 
 
 def test_initial_schema_has_all_tables_keys_and_indexes(migrated_engine):

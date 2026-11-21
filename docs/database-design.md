@@ -311,7 +311,8 @@ An administrator creates templates containing questions that inspectors must ans
 
 | Column | Type | Constraints | Description |
 |---|---|---|---|
-| `id` | UUID | PK | Template identifier |
+| `id` | UUID | PK | Template revision identifier |
+| `template_key` | UUID | NOT NULL | Stable identifier shared by all revisions of one template lineage |
 | `name` | VARCHAR(200) | NOT NULL | Template name |
 | `description` | TEXT | Nullable | Description |
 | `template_version` | INTEGER | NOT NULL | Template revision |
@@ -326,6 +327,8 @@ An administrator creates templates containing questions that inspectors must ans
 ```sql
 CREATE TABLE checklist_templates (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    template_key UUID NOT NULL DEFAULT gen_random_uuid(),
 
     name VARCHAR(200) NOT NULL,
 
@@ -347,13 +350,17 @@ CREATE TABLE checklist_templates (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     CONSTRAINT uq_template_revision
-        UNIQUE (id, template_version)
+        UNIQUE (id, template_version),
+
+    CONSTRAINT uq_template_lineage_revision
+        UNIQUE (template_key, template_version)
 );
 ```
 
 ### Rules
 
 - Templates contain checklist items.
+- All revisions of one template share the same `template_key`; each revision has its own `id`.
 - Published template revisions should be immutable.
 - Changes to a published template should create a new template revision.
 - Existing inspections must retain the exact template revision with which they were assigned.
@@ -565,6 +572,8 @@ A separate result table preserves submission history and avoids treating every d
 | `inspection_id` | UUID | FK, NOT NULL | Related inspection |
 | `submitted_by` | UUID | FK, NOT NULL | Submitting user |
 | `submission_number` | INTEGER | NOT NULL | Submission sequence |
+| `submission_id` | UUID | UNIQUE, NOT NULL | Client-generated idempotency identifier |
+| `submitted_version` | INTEGER | NOT NULL | Inspection version accepted at submission |
 | `submitted_at` | TIMESTAMPTZ | NOT NULL | Submission time |
 | `summary` | TEXT | Nullable | Inspector summary |
 | `overall_status` | VARCHAR(30) | NOT NULL | Overall outcome |
@@ -584,6 +593,11 @@ CREATE TABLE inspection_results (
 
     submission_number INTEGER NOT NULL
         CHECK (submission_number > 0),
+
+    submission_id UUID NOT NULL UNIQUE,
+
+    submitted_version INTEGER NOT NULL
+        CHECK (submitted_version > 0),
 
     submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
@@ -614,6 +628,8 @@ ON inspection_results(inspection_id);
 - The initial submission number is 1.
 - A new submission must have a higher submission number.
 - Submission history must not be overwritten.
+- The client-generated `submission_id` makes repeated submission requests idempotent.
+- A retried `submission_id` must reuse the same summary, overall status, and submitted version.
 - The business service must determine whether a resubmission is allowed.
 - Submitted answers must be preserved according to the inspection revision policy.
 

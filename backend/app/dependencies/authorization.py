@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.core.exceptions import ForbiddenError, NotFoundError
 from app.core.permissions import Role, can_access_inspection, can_access_user_resource, is_admin
-from app.database.models import Inspection, Site
+from app.database.models import ChecklistTemplate, Inspection, Site
 from app.database.session import get_db
 from app.dependencies.authentication import get_current_user
 from app.schemas.auth import CurrentUserResponse
@@ -79,3 +79,34 @@ def require_site_access(
     if has_assignment is None:
         raise ForbiddenError("You do not have permission to access this site.")
     return site
+
+
+def require_template_access(
+    template_id: UUID,
+    template_version: int | None = None,
+    db: Session = Depends(get_db),
+    current_user: CurrentUserResponse = Depends(get_current_user),
+) -> ChecklistTemplate:
+    """Allow administrators and inspectors assigned to the template revision."""
+
+    query = select(ChecklistTemplate).where(ChecklistTemplate.id == template_id)
+    if template_version is not None:
+        query = query.where(ChecklistTemplate.template_version == template_version)
+    template = db.scalar(query)
+    if template is None:
+        raise NotFoundError("The requested checklist template was not found.")
+
+    if is_admin(current_user):
+        return template
+
+    assignment_query = select(Inspection.id).where(
+        Inspection.template_id == template_id,
+        Inspection.assigned_to == current_user.id,
+    )
+    if template_version is not None:
+        assignment_query = assignment_query.where(
+            Inspection.template_version == template_version
+        )
+    if db.scalar(assignment_query.limit(1)) is None:
+        raise ForbiddenError("You do not have permission to access this template.")
+    return template

@@ -5,6 +5,7 @@ from app.dependencies.authorization import (
     require_roles,
     require_self_or_admin,
     require_site_access,
+    require_template_access,
 )
 
 __all__ = [
@@ -14,5 +15,6 @@ __all__ = [
     "require_roles",
     "require_self_or_admin",
     "require_site_access",
+    "require_template_access",
     "verify_csrf",
 ]
