@@ -564,6 +564,14 @@ Possible approaches include:
 
 The selected implementation must document how it prevents missing changes during concurrent writes and pagination.
 
+#### Selected Phase 1 implementation
+
+The server change feed uses `sync_changes.change_position`, backed by `sync_changes_cursor_seq`. A `BEFORE INSERT` trigger acquires a transaction-scoped PostgreSQL advisory lock before assigning the next sequence value. The lock remains held until the inserting transaction commits or rolls back.
+
+Because every change-feed insert must wait for the preceding writer's transaction to finish, position allocation order is also commit order. A rollback can leave a gap in the position sequence, but it cannot leave a committed change behind an earlier uncommitted position. Pull pagination can therefore use the last successfully applied `change_position` as its boundary.
+
+Business-data updates and their `sync_changes` rows must be inserted in the same database transaction. The pull endpoint must expose the cursor as an opaque value and authorize every change against the authenticated user's accessible records.
+
 The cursor must also be opaque to the frontend and scoped to the authenticated user's authorized data.
 
 ---
