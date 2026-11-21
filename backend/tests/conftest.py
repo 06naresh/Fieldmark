@@ -4,12 +4,18 @@ from pathlib import Path
 import pytest
 from alembic import command
 from alembic.config import Config
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import NullPool
 
 from app.core.config import settings
+from app.core.security import hash_password
+from app.database.models import User
+from app.database.session import get_db
+from app.main import create_app
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 
@@ -67,3 +73,49 @@ def migrated_engine(
 def db_session(migrated_engine):
     with Session(migrated_engine) as session:
         yield session
+
+
+@pytest.fixture
+def api_app(migrated_engine):
+    application = create_app()
+
+    def override_get_db():
+        with Session(migrated_engine) as session:
+            yield session
+
+    application.dependency_overrides[get_db] = override_get_db
+    try:
+        yield application
+    finally:
+        application.dependency_overrides.clear()
+
+
+@pytest.fixture
+def api_client(api_app: FastAPI):
+    with TestClient(api_app) as client:
+        yield client
+
+
+@pytest.fixture
+def create_test_user(migrated_engine):
+    def create(
+        *,
+        role: str = "INSPECTOR",
+        password: str = "TestPassword123!",
+        is_active: bool = True,
+        email: str | None = None,
+    ) -> tuple[User, str]:
+        user = User(
+            full_name=f"Test {role.title}",
+            email=email or f"user-{uuid.uuid4().hex}@example.com",
+            password_hash=hash_password(password),
+            role=role,
+            is_active=is_active,
+        )
+        with Session(migrated_engine) as session:
+            session.add(user)
+            session.commit()
+            session.refresh(user)
+        return user, password
+
+    return create

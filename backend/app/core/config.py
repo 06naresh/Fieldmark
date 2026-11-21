@@ -1,3 +1,4 @@
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -15,7 +16,31 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     OFFLINE_SESSION_EXPIRE_DAYS: int = 7
 
+    JWT_ALGORITHM: str = "HS256"
+    JWT_ISSUER: str = "fieldmark-api"
+    JWT_AUDIENCE: str = "fieldmark-client"
+
+    REFRESH_COOKIE_NAME: str = "fieldmark_refresh"
+    REFRESH_COOKIE_PATH: str = "/api/v1/auth"
+    REFRESH_COOKIE_SECURE: bool = False
+    REFRESH_COOKIE_SAMESITE: str = "lax"
+    CSRF_COOKIE_NAME: str = "fieldmark_csrf"
+    CSRF_COOKIE_PATH: str = "/"
+    CSRF_COOKIE_SECURE: bool = False
+    CSRF_HEADER_NAME: str = "X-CSRF-Token"
+
+    LOGIN_RATE_LIMIT_MAX_ATTEMPTS: int = 5
+    LOGIN_RATE_LIMIT_WINDOW_SECONDS: int = 60
+    LOGIN_RATE_LIMIT_MAX_KEYS: int = 10_000
+
     FRONTEND_ORIGINS: str = "http://localhost:5173"
+
+    @model_validator(mode="after")
+    def enforce_production_cookie_security(self) -> "Settings":
+        if self.APP_ENV.lower() == "production":
+            self.REFRESH_COOKIE_SECURE = True
+            self.CSRF_COOKIE_SECURE = True
+        return self
 
     model_config = SettingsConfigDict(
         env_file=".env",

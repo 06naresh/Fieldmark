@@ -92,8 +92,8 @@ The next agent must be able to continue without repeating completed work.
 | Authentication | JWT |
 | State management | Zustand + TanStack Query |
 | Testing | pytest, Vitest, React Testing Library, Playwright |
-| Current development phase | Phase 2 — Backend Foundation (Completed) |
-| Current feature | None — Phase 3 pending approval |
+| Current development phase | Phase 3 — Authentication and Authorization (Completed) |
+| Current feature | None — Phase 3 complete; Phase 4 pending approval |
 | Overall status | In Progress |
 
 ---
@@ -107,7 +107,7 @@ Update this table whenever a development phase changes.
 | 0 | Project Foundation | Completed | 100% |
 | 1 | Database Foundation | Completed | 100% |
 | 2 | Backend Foundation | Completed | 100% |
-| 3 | Authentication and Authorization | Not Started | 0% |
+| 3 | Authentication and Authorization | Completed | 100% |
 | 4 | Core Backend Features | Not Started | 0% |
 | 5 | Backend Synchronization Foundation | Not Started | 0% |
 | 6 | Frontend Foundation | Not Started | 0% |
@@ -144,8 +144,8 @@ Update this section whenever a new feature implementation session begins.
 |---|---|
 | Session date | 2026-11-21 |
 | Agent/session identifier | OpenCode (Big Pickle) |
-| Current phase | Phase 2 — Backend Foundation |
-| Current feature | F-005 FastAPI foundation |
+| Current phase | Phase 3 — Authentication and Authorization |
+| Current feature | F-006 Authentication / F-007 RBAC |
 | Feature status | Completed |
 | Last updated | 2026-11-21 |
 
@@ -153,44 +153,46 @@ Update this section whenever a new feature implementation session begins.
 
 **Objective:**
 
-Implement Phase 2 Backend Foundation: reusable FastAPI infrastructure for shared responses, errors, structured logging, request correlation, CORS, API versioning, and health checks.
+Implement Phase 3 Authentication and Authorization: Argon2id password hashing, JWT access tokens, rotating refresh tokens in secure cookies, logout/revocation, authentication dependencies, RBAC, and resource-level authorization helpers.
 
 ## 5.2 Current implementation scope
 
 **Included:**
 
-- FastAPI application configuration and API v1 router prefix.
-- Shared Pydantic response schemas matching `docs/api-contracts.md`.
-- Centralized exception handling for application, validation, HTTP, and unexpected errors.
-- Structured JSON logging with UTC timestamps and request correlation IDs.
-- Explicit CORS configuration for the development frontend.
-- PostgreSQL-backed readiness check and public basic health check.
-- Backend API tests using FastAPI TestClient and the existing PostgreSQL test configuration.
+- `POST /api/v1/auth/login`, `POST /api/v1/auth/refresh`, `GET /api/v1/auth/me`, and `POST /api/v1/auth/logout`.
+- Argon2id password hashing and generic authentication failures.
+- Signed JWT access tokens with stable user identity, role, type, issuer, audience, expiry, and JTI claims.
+- Refresh-token generation, SHA-256 hashing at rest, rotation, reuse detection, and revocation.
+- HTTP-only refresh cookies with configurable `Secure`/`SameSite` settings.
+- Double-submit CSRF protection for refresh and logout.
+- In-memory bounded login rate limiting keyed by email and client IP.
+- Authentication, role, and resource-ownership dependencies.
+- Backend tests for passwords, tokens, sessions, RBAC, resource access, and error behavior.
 
 **Not included:**
 
-- Authentication and authorization endpoints (Phase 3).
-- Business CRUD endpoints (Phase 4).
-- Synchronization endpoints (Phase 5).
-- Frontend changes.
+- User/admin CRUD endpoints (Phase 4).
+- Device-registration endpoint (sync phase).
+- Frontend authentication screens.
+- Durable distributed rate limiting or Redis.
 
 **Dependencies:**
 
-- Phase 1 database foundation is completed and verified.
-- User approved beginning Phase 2.
+- Phases 0–2 are completed and verified.
+- User approved Phase 3 and selected double-submit CSRF plus an in-memory login rate limiter.
 
 ## 5.3 Current progress
 
 | Task | Status | Notes |
 |---|---|---|
-| Review requirements | Completed | Phase 2 tasks and acceptance criteria verified |
-| Inspect existing implementation | Completed | Existing FastAPI, config, and database session files inspected |
-| Prepare implementation plan | Completed | Infrastructure-only scope; shared envelopes, exceptions, logging, health tests |
-| Implement feature | Completed | FastAPI factory, shared schemas, exceptions, logging, middleware, CORS, v1 router, and health endpoints added |
-| Add automated tests | Completed | Nine Phase 2 API/infrastructure tests added |
-| Execute tests | Completed | 14 total backend tests passed |
-| Review implementation | Completed | Security review removed raw exception messages from server logs |
-| Update documentation | Completed | Tracker updated with verified results and handoff |
+| Review requirements | Completed | Phase 3 tasks, API contracts, and security requirements verified |
+| Inspect existing implementation | Completed | Current app factory, exceptions, database models, and tests inspected |
+| Prepare implementation plan | Completed | Argon2id, JWT, rotating hashed refresh cookies, CSRF, RBAC, and resource guards planned |
+| Implement feature | Completed | All four auth endpoints, security helpers, service/repository layers, dependencies, and config added |
+| Add automated tests | Completed | Password, authentication, refresh/session, CSRF, rate-limit, RBAC, and resource authorization tests added |
+| Execute tests | Completed | Full backend suite passed: 39 tests, 0 failures |
+| Review implementation | Completed | Fixed cookie test setup, resource dependency signatures, and production cookie enforcement |
+| Update documentation | Completed | Tracker records files, decisions, test results, and handoff |
 
 Update the task statuses as work progresses.
 
@@ -571,6 +573,90 @@ Phase 2 is complete and verified. Stop at the phase boundary. Begin Phase 3 — 
 
 ---
 
+## Feature: F-006/F-007 Authentication and Authorization
+
+| Property | Value |
+|---|---|
+| Feature ID | F-006, F-007 |
+| Development phase | Phase 3 |
+| Status | Completed |
+| Priority | Critical |
+| Started date | 2026-11-21 |
+| Last updated | 2026-11-21 |
+| Completed date | 2026-11-21 |
+| Implemented by | OpenCode (Big Pickle) |
+
+### F-006.1 Feature objective
+
+Implement secure backend authentication and reusable authorization enforcement for all future protected endpoints.
+
+### F-006.2 Requirements
+
+- [x] Verify Phase 3 tasks, API contracts, security requirements, and test expectations.
+- [x] Verify existing FastAPI infrastructure and `users`/`refresh_tokens` models.
+- [x] Obtain decisions for CSRF strategy and login rate limiting.
+- [x] Implement Argon2id password hashing and verification.
+- [x] Implement login, refresh, current-user, and logout endpoints.
+- [x] Implement JWT access-token creation and validation.
+- [x] Implement refresh-token hashing, rotation, reuse detection, and revocation.
+- [x] Implement secure refresh-cookie and double-submit CSRF handling.
+- [x] Implement authentication, role, and resource authorization dependencies.
+- [x] Implement in-memory login rate limiting.
+- [x] Add authentication and authorization tests.
+- [x] Execute tests and verify all Phase 3 acceptance criteria.
+
+### F-006.3 Files created
+
+| File path | Purpose | Status |
+|---|---|---|
+| `backend/app/core/security.py` | Password hashing, JWT, refresh-token hashing, token and cookie helpers | Created |
+| `backend/app/core/rate_limit.py` | Bounded in-memory failed-login rate limiter | Created |
+| `backend/app/core/permissions.py` | Role definitions and resource authorization helpers | Created |
+| `backend/app/dependencies/__init__.py` | Dependency package marker | Created |
+| `backend/app/dependencies/authentication.py` | Current-user and CSRF dependencies | Created |
+| `backend/app/dependencies/authorization.py` | Role and resource authorization dependencies | Created |
+| `backend/app/schemas/auth.py` | Authentication request and response schemas | Created |
+| `backend/app/repositories/__init__.py` | Repository package marker | Created |
+| `backend/app/repositories/auth_repository.py` | User and refresh-token data access | Created |
+| `backend/app/services/__init__.py` | Service package marker | Created |
+| `backend/app/services/auth_service.py` | Authentication and refresh-session business logic | Created |
+| `backend/app/api/v1/endpoints/auth.py` | Authentication endpoints | Created |
+| `backend/tests/test_password_hashing.py` | Argon2id hashing tests | Created |
+| `backend/tests/test_authentication.py` | Login, token, refresh, CSRF, logout, and rate-limit tests | Created |
+| `backend/tests/test_authorization.py` | RBAC and resource-authorization tests | Created |
+
+### F-006.4 Files modified
+
+| File path | Modification |
+|---|---|
+| `backend/app/core/config.py` | Added JWT, cookie, CSRF, and rate-limit settings; production cookie enforcement |
+| `backend/.env.example` | Documented new environment settings with placeholders |
+| `backend/app/api/v1/router.py` | Mounted the authentication router |
+| `backend/app/schemas/__init__.py` | Exported authentication schemas |
+| `backend/tests/conftest.py` | Added API app/client and test-user fixtures |
+| `progress-tracker.md` | Recorded implementation, decisions, results, and handoff |
+
+### F-006.5 Decisions
+
+- Argon2id is used through the existing `passlib[argon2]` dependency; refresh tokens are stored as SHA-256 hashes.
+- Double-submit CSRF cookies plus Origin allowlisting protect refresh and logout, as selected by the user.
+- A bounded in-memory login rate limiter is used, as selected by the user; it is process-local and not suitable for multi-instance deployment without a shared store.
+- JWT role claims are validated but the current database user is authoritative for role and active status.
+- Resource dependencies read path parameters at request time so FastAPI can inject them.
+- Production settings force refresh and CSRF cookies to `Secure` regardless of the supplied value.
+
+### F-006.6 Verification
+
+- Full backend suite: 39 passed, 0 failed.
+- Phase 3 acceptance criteria all verified.
+- Python compilation and Alembic drift check passed.
+
+### F-006.7 Handoff instructions
+
+Phase 3 is complete and verified. Stop at the phase boundary. Begin Phase 4 — Core Backend Features only after explicit approval.
+
+---
+
 # 7. Feature Register
 
 Maintain a summary of all features.
@@ -584,8 +670,8 @@ Add a new row when a feature is identified.
 | F-003 | SQLAlchemy models | 1 | Completed | database-design.md |
 | F-004 | Alembic migrations | 1 | Completed | database-design.md |
 | F-005 | FastAPI foundation | 2 | Completed | architecture.md |
-| F-006 | Authentication | 3 | Not Started | security-design.md, api-contracts.md |
-| F-007 | Role-based access control | 3 | Not Started | security-design.md |
+| F-006 | Authentication | 3 | Completed | security-design.md, api-contracts.md |
+| F-007 | Role-based access control | 3 | Completed | security-design.md |
 | F-008 | User management | 4 | Not Started | PRD.md, api-contracts.md |
 | F-009 | Site management | 4 | Not Started | PRD.md, api-contracts.md |
 | F-010 | Checklist templates | 4 | Not Started | PRD.md, database-design.md |
@@ -620,10 +706,10 @@ Track API implementation separately.
 |---|---|---|---|---|
 | `/health` | GET | Yes | Yes | Public basic health check |
 | `/health/ready` | GET | Yes | Yes | Verifies PostgreSQL with `SELECT 1` |
-| `/api/v1/auth/login` | POST | No | No | |
-| `/api/v1/auth/refresh` | POST | No | No | |
-| `/api/v1/auth/me` | GET | No | No | |
-| `/api/v1/auth/logout` | POST | No | No | |
+| `/api/v1/auth/login` | POST | Yes | Yes | Argon2id verification, generic errors, rate limiting, cookies |
+| `/api/v1/auth/refresh` | POST | Yes | Yes | CSRF, rotation, reuse detection, expiry checks |
+| `/api/v1/auth/me` | GET | Yes | Yes | Bearer JWT validation; database user is authoritative |
+| `/api/v1/auth/logout` | POST | Yes | Yes | CSRF, current/all-device revocation, cookie clearing |
 | `/api/v1/users` | GET/POST | No | No | |
 | `/api/v1/sites` | GET/POST | No | No | |
 | `/api/v1/inspections` | GET/POST | No | No | |
@@ -701,12 +787,12 @@ Track testing at project level.
 
 | Test category | Status | Last result | Notes |
 |---|---|---|---|
-| Backend unit tests | Not Started | Not Run | |
-| Backend integration tests | Completed | 14 passed | 5 PostgreSQL database tests plus 9 API foundation tests |
-| API tests | Completed | 9 passed | Health, readiness, versioning/docs, CORS, error formats, logging |
+| Backend unit tests | Completed | 39 passed | Full backend pytest suite |
+| Backend integration tests | Completed | 39 passed | 5 database, 9 foundation, 4 password, 15 authentication, 6 authorization tests |
+| API tests | Completed | 30 passed | Health, readiness, versioning/docs, CORS, error formats, logging, auth and authorization endpoints |
 | Database tests | Completed | 5 passed | Schema, constraints, relationships, migration, and cursor ordering |
-| Authentication tests | Not Started | Not Run | |
-| RBAC tests | Not Started | Not Run | |
+| Authentication tests | Completed | 19 passed | 4 password-hashing and 15 authentication tests |
+| RBAC tests | Completed | 6 passed | Roles, ownership, inspection and site access |
 | Frontend unit tests | Not Started | Not Run | |
 | Component tests | Not Started | Not Run | |
 | IndexedDB tests | Not Started | Not Run | |
@@ -748,6 +834,10 @@ Do not report tests as passed if they were not actually executed.
 | 2026-11-21 | `.venv/Scripts/python.exe -m compileall -q app alembic tests` | Static | 1 | 0 | Phase 2 compilation succeeded |
 | 2026-11-21 | `.venv/Scripts/python.exe -m pytest -q` | Full backend suite | 14 | 0 | 5 database tests and 9 Phase 2 foundation tests passed |
 | 2026-11-21 | Uvicorn startup with `/health`, `/health/ready`, `/api/v1/docs` HTTP checks | Runtime | 3 | 0 | All returned 200; structured request logs emitted |
+| 2026-11-21 | `.venv/Scripts/python.exe -m compileall -q app tests` | Static | 1 | 0 | Phase 3 Python compilation succeeded |
+| 2026-11-21 | `.venv/Scripts/python.exe -m pytest -q` (first Phase 3 run) | Full backend suite | 31 | 7 | Cookie domain, repeated logout setup, and path-parameter dependency failures found |
+| 2026-11-21 | `.venv/Scripts/python.exe -m pytest -q` (final Phase 3 run) | Full backend suite | 39 | 0 | All Phase 3 tests passed after fixes |
+| 2026-11-21 | `.venv/Scripts/python.exe -m alembic check` | Migration drift | 1 | 0 | No new upgrade operations detected after Phase 3 |
 
 ---
 
@@ -765,6 +855,10 @@ Maintain a chronological record of significant implementation decisions.
 | D-006 | 2026-11-21 | Keep health endpoints at contract paths and mount a separate empty v1 router | API contract defines `/health` and `/health/ready`; future business APIs remain versioned at `/api/v1` | `backend/app/api/v1/`, `backend/app/main.py` |
 | D-007 | 2026-11-21 | Use a FastAPI app factory and standard-library JSON logging | Improves isolated testing and avoids a new dependency | `backend/app/main.py`, `backend/app/core/logging.py`, `backend/tests/test_backend_foundation.py` |
 | D-008 | 2026-11-21 | Log unexpected exceptions by type only | Prevents raw credentials or tokens in exception messages from entering logs | `backend/app/core/exceptions.py` |
+| D-009 | 2026-11-21 | Use Argon2id for passwords and SHA-256 hashes for refresh tokens | Approved security design; raw refresh tokens are never stored | `backend/app/core/security.py`, `backend/app/services/auth_service.py` |
+| D-010 | 2026-11-21 | Use double-submit CSRF cookies with Origin allowlisting for refresh and logout | User-selected strategy; protects cookie-based state changes without exposing the refresh token to JavaScript | `backend/app/core/security.py`, `backend/app/api/v1/endpoints/auth.py` |
+| D-011 | 2026-11-21 | Use a bounded process-local in-memory login rate limiter | User-selected strategy for this phase; documented as single-instance only | `backend/app/core/rate_limit.py` |
+| D-012 | 2026-11-21 | Make current database user authoritative for role and active status | Prevents stale or forged JWT role claims from granting access | `backend/app/dependencies/authentication.py`, `backend/app/dependencies/authorization.py` |
 
 When adding a decision:
 
@@ -816,6 +910,7 @@ Add a new entry whenever a development session makes meaningful changes.
 | 2026-11-21 | Cline (Act Mode) | Phase 0 | F-001 | Initialized Phase 0 root, backend & frontend foundation files | Completed |
 | 2026-11-21 | OpenCode (Big Pickle) | Phase 1 | F-002/F-003/F-004 | Added and verified 12-table SQLAlchemy models, Alembic initial migration, commit-safe change-feed cursor, and PostgreSQL integration tests | Completed |
 | 2026-11-21 | OpenCode (Big Pickle) | Phase 2 | F-005 | Added FastAPI app factory, shared response schemas, centralized errors, structured logging, request IDs, CORS, API v1 router, health endpoints, and nine foundation tests | Completed |
+| 2026-11-21 | OpenCode (Big Pickle) | Phase 3 | F-006/F-007 | Added Argon2id hashing, JWT access tokens, rotating hashed refresh cookies, CSRF, rate limiting, logout/revocation, RBAC/resource dependencies, auth endpoints, and 25 auth/authz tests | Completed |
 
 For each entry, include a concise summary of:
 
@@ -838,15 +933,15 @@ Update it before stopping work.
 
 **Last completed phase:**
 
-Phase 2 — Backend Foundation.
+Phase 3 — Authentication and Authorization.
 
 **Current phase:**
 
-Phase 2 — Backend Foundation (Completed). Next phase is Phase 3 — Authentication and Authorization.
+Phase 3 — Authentication and Authorization (Completed). Next phase is Phase 4 — Core Backend Features.
 
 **Current feature:**
 
-F-005 — FastAPI foundation (Completed).
+F-006/F-007 — Authentication and role-based access control (Completed).
 
 **Current feature status:**
 
@@ -854,47 +949,49 @@ Completed.
 
 **Last completed task:**
 
-Added and verified the FastAPI app factory, shared response/error schemas, structured logging, request correlation, centralized exception handlers, CORS, API v1 router, and health endpoints. The full backend suite passed with 14 tests, and a real Uvicorn startup check passed.
+Implemented Argon2id password hashing, JWT access tokens, rotating SHA-256-hashed refresh tokens in HTTP-only cookies, double-submit CSRF protection, logout/revocation, in-memory login rate limiting, authentication/RBAC/resource dependencies, and all four approved auth endpoints. Verified with 39 passing backend tests, Python compilation, and Alembic drift check.
 
 **Current stopping point:**
 
-Phase 2 boundary reached. All acceptance criteria verified. Do not start Phase 3 without approval.
+Phase 3 boundary reached. All acceptance criteria verified. Do not start Phase 4 without approval.
 
 ## Files to inspect first
 
 1. `progress-tracker.md`
-2. `docs/development-phases.md` — Phase 3 requirements
-3. `docs/security-design.md`
-4. `docs/api-contracts.md`
-5. `backend/app/main.py`
-6. `backend/app/core/exceptions.py`
-7. `backend/app/core/logging.py`
-8. `backend/app/api/v1/`
-9. `backend/tests/test_backend_foundation.py`
+2. `docs/development-phases.md` — Phase 4 requirements
+3. `docs/api-contracts.md`
+4. `backend/app/core/security.py`
+5. `backend/app/services/auth_service.py`
+6. `backend/app/repositories/auth_repository.py`
+7. `backend/app/dependencies/`
+8. `backend/app/api/v1/endpoints/auth.py`
+9. `backend/tests/test_authentication.py`
+10. `backend/tests/test_authorization.py`
 
 ## Work remaining
 
-- [ ] No Phase 2 work remains.
-- [ ] Wait for approval before starting Phase 3 — Authentication and Authorization.
+- [ ] No Phase 3 work remains.
+- [ ] Wait for approval before starting Phase 4 — Core Backend Features.
 
 ## Known problems
 
 - Non-blocking: the installed Starlette/TestClient version emits an `httpx` deprecation warning. No tests fail.
+- The login rate limiter is process-local; a multi-instance deployment needs a shared limiter.
 
 ## Next agent instructions
 
 The next agent must:
 
 1. Read `AGENTS.md` and this progress tracker.
-2. Confirm Phase 2 is marked Completed and verified.
+2. Confirm Phase 3 is marked Completed and verified.
 3. Stop at the phase boundary.
-4. Begin Phase 3 only after explicit user approval.
-5. Reuse the existing app factory, exception handlers, logging, and v1 router rather than duplicating them.
+4. Begin Phase 4 only after explicit user approval.
+5. Reuse the authentication dependencies and shared error envelope rather than duplicating authorization logic.
 6. Preserve the approved error envelope and 12-table schema.
 
 **Exact next action:**
 
-Report Phase 2 completion and wait for approval to start Phase 3 — Authentication and Authorization.
+Report Phase 3 completion and wait for approval to start Phase 4 — Core Backend Features.
 
 ---
 
