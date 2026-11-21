@@ -1386,3 +1386,13 @@ Its core architecture will combine:
 The interface must prioritize the inspector's ability to complete work reliably in the field, even without internet connectivity.
 
 The frontend must clearly communicate what is saved locally, what has reached the server, and what requires user attention.
+
+---
+
+## 25. Phase 6 Implementation Baseline
+
+Phase 6 established the initial React application with the following verified dependency baseline: React 18, Vite 7, TypeScript 5, Tailwind CSS 3, shadcn-style Radix components, React Router 7, TanStack Query 5, Zustand 4, Axios 1, Zod 4, Vitest 4, and React Testing Library 14. The exact resolved versions are recorded in `frontend/package-lock.json`.
+
+Access tokens are held in application memory by the Axios client. Refresh tokens are carried by HTTP-only cookies and are never read or persisted by frontend JavaScript. Theme preference is the only persisted client setting at this stage, and it is stored through Zustand's persistence middleware rather than used as an offline data store.
+
+Phase 6 routes render labeled placeholder pages. Authentication guards, administrative workflows, inspector execution, IndexedDB repositories, synchronization UI, and the PWA application shell remain subsequent-phase work.

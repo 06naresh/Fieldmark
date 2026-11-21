@@ -13,7 +13,7 @@ Fieldmark is an offline-first field inspection management application designed f
 
 ### Prerequisites
 - Python 3.10+
-- Node.js 18+ & npm / pnpm / yarn
+- Node.js 20.19+ or 22.12+ (required by Vite 7) & npm
 - PostgreSQL (Local PostgreSQL or pgAdmin for development)
 
 ### Setup Backend
@@ -39,6 +39,18 @@ npm install
 cp .env.example .env
 npm run dev
 ```
+
+### Frontend commands
+
+```bash
+npm run dev       # Vite development server on http://localhost:5173
+npm run build     # TypeScript check and production build
+npm run lint      # ESLint
+npm test          # Vitest and React Testing Library
+npm run preview   # Serve the production build locally
+```
+
+`VITE_API_BASE_URL` defaults to `http://localhost:8000/api/v1` when it is not set. Access tokens are kept in application memory; refresh tokens are carried by the backend's HTTP-only cookie and are never read by frontend JavaScript.
 
 ## Documentation
 

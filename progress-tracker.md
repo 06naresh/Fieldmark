@@ -92,8 +92,8 @@ The next agent must be able to continue without repeating completed work.
 | Authentication | JWT |
 | State management | Zustand + TanStack Query |
 | Testing | pytest, Vitest, React Testing Library, Playwright |
-| Current development phase | Phase 5 — Backend Synchronization Foundation (Completed) |
-| Current feature | None — Phase 5 complete; Phase 6 pending approval |
+| Current development phase | Phase 6 — Frontend Foundation (Completed) |
+| Current feature | None — Phase 6 complete; Phase 7 pending approval |
 | Overall status | In Progress |
 
 ---
@@ -110,7 +110,7 @@ Update this table whenever a development phase changes.
 | 3 | Authentication and Authorization | Completed | 100% |
 | 4 | Core Backend Features | Completed | 100% |
 | 5 | Backend Synchronization Foundation | Completed | 100% |
-| 6 | Frontend Foundation | Not Started | 0% |
+| 6 | Frontend Foundation | Completed | 100% |
 | 7 | Frontend Authentication and Admin Features | Not Started | 0% |
 | 8 | Inspector Workflow | Not Started | 0% |
 | 9 | Offline Persistence | Not Started | 0% |
@@ -144,8 +144,8 @@ Update this section whenever a new feature implementation session begins.
 |---|---|
 | Session date | 2026-11-21 |
 | Agent/session identifier | OpenCode (Big Pickle) |
-| Current phase | Phase 5 — Backend Synchronization Foundation |
-| Current feature | None — Phase 5 complete; Phase 6 pending approval |
+| Current phase | Phase 6 — Frontend Foundation |
+| Current feature | None — Phase 6 complete; Phase 7 pending approval |
 | Feature status | Completed |
 | Last updated | 2026-11-21 |
 
@@ -153,47 +153,48 @@ Update this section whenever a new feature implementation session begins.
 
 **Objective:**
 
-Implement Phase 5 Backend Synchronization Foundation: device management, idempotent push, authorization-scoped pull, safe change-feed cursor behavior, conflict persistence/resolution APIs, and transactional change logging.
+Implement Phase 6 Frontend Foundation: initialize the React/TypeScript/Vite application, configure Tailwind CSS, shadcn-style UI components, React Router, TanStack Query, Zustand, Axios, theme management, linting, and the initial test setup.
 
 ## 5.2 Current implementation scope
 
 **Included:**
 
-- Device registration, listing, revocation, and active-device ownership checks.
-- Canonical device paths at `/api/v1/devices` with aliases at `/api/v1/sync/devices`.
-- Durable operation ledger with stable operation IDs and server-computed canonical SHA-256 payload hashes.
-- Duplicate result replay, different-payload rejection, and non-terminal retryable failures.
-- Per-operation savepoints with one explicit outcome per operation.
-- Version checks, conflict snapshots, conflict list/detail, and conflict resolution endpoints.
-- Authorization-scoped, paginated pull using opaque commit-ordered cursors and tombstones.
-- Transactional change-feed logging for Phase 4 CRUD writes and synchronization writes.
-- PostgreSQL integration tests for all critical synchronization behavior.
+- React 18 and TypeScript application bootstrapped with Vite 7.
+- Tailwind CSS 3 with light/dark semantic tokens and shadcn/ui-compatible configuration.
+- Fourteen reusable shared UI components built on approved UI dependencies.
+- React Router application shell with all approved route paths represented by placeholder pages.
+- TanStack Query provider and conservative retry policy.
+- Zustand theme and application stores with persisted theme preference.
+- Axios client with a versioned base URL, credentialed requests, and an in-memory access token.
+- ESLint 9 flat configuration, Vitest 4, React Testing Library, and jsdom test setup.
+- Patched dependency baseline with zero reported npm audit vulnerabilities.
 
 **Not included:**
 
-- Frontend screens, IndexedDB persistence, and offline application shell.
-- Frontend sync engine, retry/backoff UI, and Sync Center UI.
-- Full frontend conflict-resolution workflow.
+- Login, protected routes, admin layouts, and admin workflows.
+- Inspector workflow screens and dynamic checklist execution.
+- IndexedDB/Dexie repositories, durable sync queue, and Sync Center.
+- PWA manifest, service worker, and offline application shell.
 
 **Dependencies:**
 
-- Phases 0–4 are completed and verified.
-- User approved Phase 5.
-- Existing commit-ordered cursor trigger from Phase 1 is reused.
+- Phases 0–5 are completed and verified.
+- User explicitly approved Phase 6 after committing Phase 5 as `7414ece`.
+- Backend API contracts from Phases 3–5 are available for later integration.
 
 ## 5.3 Current progress
 
 | Task | Status | Notes |
 |---|---|---|
-| Review requirements | Completed | Phase 5 tasks, API contracts, offline-sync design, and test expectations verified |
-| Inspect existing implementation | Completed | Sync models, repositories, services, migration history, and test fixtures inspected |
-| Resolve document ambiguities | Completed | Device aliases, server-computed hashes, pull scope columns, and batch savepoints resolved and documented |
-| Prepare implementation plan | Completed | Migration, schemas, repositories, services, dependencies, endpoints, and tests planned |
-| Implement feature | Completed | Sync ledger, push/pull/status, devices, conflicts, and change logging implemented |
-| Add automated tests | Completed | 20 PostgreSQL integration tests added in `backend/tests/test_sync.py` |
-| Execute tests | Completed | Final full backend suite passed: 73 tests, 2 non-blocking warnings |
-| Review implementation | Completed | Final review fixed retryable-result replay and removed unused imports |
-| Update documentation | Completed | Tracker, API contracts, database design, offline-sync design, README, and env example updated |
+| Review requirements | Completed | Phase 6 tasks, frontend design, architecture, security design, and testing strategy verified |
+| Inspect existing implementation | Completed | Existing frontend scaffold, package configuration, Tailwind config, and Vite config inspected |
+| Resolve dependency baseline | Completed | Upgraded Vite, Vitest, React Router, Zod, and React plugin to patched compatible versions; npm audit reports zero vulnerabilities |
+| Prepare implementation plan | Completed | Providers, router, stores, API client, UI components, placeholder pages, and tests planned |
+| Implement feature | Completed | Application shell, theme, stores, API client, router, styles, and shared components implemented |
+| Add automated tests | Completed | 13 Vitest tests across UI components, router, theme, API client, and online status |
+| Execute tests | Completed | `npm test` passed 13/13; `npm run build`, `npx tsc --noEmit`, and `npm run lint` passed |
+| Review implementation | Completed | Fixed toast viewport structure, router path references, and incomplete jsdom localStorage behavior |
+| Update documentation | Completed | Tracker, root README, frontend README, and frontend design baseline updated |
 
 Update the task statuses as work progresses.
 
@@ -895,7 +896,109 @@ Implement the backend foundation that allows offline clients to register devices
 
 ### Phase5.8 Handoff instructions
 
-Phase 5 is complete and verified. Stop at the phase boundary. Begin Phase 6 — Frontend Foundation only after explicit approval. Phase 5 changes remain uncommitted and must not be committed unless explicitly requested.
+Phase 5 was complete and verified. Phase 5 changes were committed by explicit user request as `7414ece feat: implement phase 5 backend synchronization foundation`. The user then explicitly approved Phase 6, so work continued into Frontend Foundation.
+
+---
+
+## Feature: F-014 Frontend Foundation
+
+| Property | Value |
+|---|---|
+| Feature ID | F-014 |
+| Development phase | Phase 6 |
+| Status | Completed |
+| Priority | High |
+| Started date | 2026-11-21 |
+| Last updated | 2026-11-21 |
+| Completed date | 2026-11-21 |
+| Implemented by | OpenCode (Big Pickle) |
+
+### Phase6.1 Feature objective
+
+Create a maintainable React application foundation with shared routing, state, theming, API access, component system, linting, and tests before implementing feature workflows.
+
+### Phase6.2 Requirements
+
+- [x] Initialize React with TypeScript and Vite.
+- [x] Configure Tailwind CSS and shadcn/ui-compatible components.
+- [x] Configure React Router, TanStack Query, Zustand, and Axios.
+- [x] Implement light/dark theme management and global styles.
+- [x] Create Button, Input, Select, Dialog, Dropdown menu, Card, Table, Badge, Tabs, Toast, Skeleton, Empty state, Loading indicator, and Error state components.
+- [x] Configure ESLint and Vitest/React Testing Library.
+- [x] Verify frontend startup, TypeScript, styles, shared components, themes, routing, and tests.
+
+### Phase6.3 Files created
+
+| File path | Purpose | Status |
+|---|---|---|
+| `frontend/components.json` | shadcn/ui project configuration | Created and verified |
+| `frontend/eslint.config.js` | ESLint 9 flat configuration | Created and verified |
+| `frontend/postcss.config.js` | Tailwind and Autoprefixer integration | Created and verified |
+| `frontend/package-lock.json` | Pinned dependency resolution | Created and verified |
+| `frontend/README.md` | Frontend setup and script documentation | Created |
+| `frontend/src/app/App.tsx` | Root application component | Created and verified |
+| `frontend/src/app/main.tsx` | Browser entry point and style imports | Created and verified |
+| `frontend/src/app/providers.tsx` | Query, toast, and theme providers | Created and verified |
+| `frontend/src/app/router.tsx` | Approved route definitions and browser router | Created and verified |
+| `frontend/src/components/ui/*.tsx` | Fourteen shared UI components | Created and verified |
+| `frontend/src/components/ui/index.ts` | Shared UI barrel export | Created and verified |
+| `frontend/src/hooks/useOnlineStatus.ts` | Browser connectivity hook | Created and verified |
+| `frontend/src/lib/axios.ts` | Credentialed API client with in-memory access token | Created and verified |
+| `frontend/src/lib/constants.ts` | Application and route constants | Created and verified |
+| `frontend/src/lib/error.ts` | Standard API error normalization | Created and verified |
+| `frontend/src/lib/queryClient.ts` | TanStack Query client and retry policy | Created and verified |
+| `frontend/src/lib/utils.ts` | Tailwind class composition helper | Created and verified |
+| `frontend/src/pages/*.tsx` | Foundation and placeholder routed pages | Created and verified |
+| `frontend/src/store/appStore.ts` | Shared client UI state | Created and verified |
+| `frontend/src/store/themeStore.ts` | Persisted light/dark/system preference | Created and verified |
+| `frontend/src/styles/globals.css` | Tailwind global styles | Created and verified |
+| `frontend/src/styles/theme.css` | Semantic light/dark design tokens | Created and verified |
+| `frontend/src/test/setup.ts` | Vitest and React Testing Library setup | Created and verified |
+| `frontend/src/types/api.ts` | Standard API response and error types | Created and verified |
+| `frontend/src/vite-env.d.ts` | Vite environment typings | Created and verified |
+| `frontend/src/**/*.test.ts(x)` | 13 Phase 6 frontend tests | Created and verified |
+
+### Phase6.4 Files modified
+
+| File path | Modification |
+|---|---|
+| `frontend/package.json` | Added approved UI/test/lint dependencies, upgraded patched Vite/Vitest/Router/Zod versions, and updated lint script |
+| `frontend/tailwind.config.js` | Corrected content paths and added semantic success/warning tokens plus the animation plugin |
+| `frontend/tsconfig.json` | Added Vite client types |
+| `frontend/vite.config.ts` | Added Vitest jsdom configuration and ESM-safe path alias |
+| `README.md` | Updated Node prerequisite and added frontend commands plus token-storage guidance |
+| `docs/frontend-design.md` | Recorded the Phase 6 dependency baseline and implementation boundary |
+
+### Phase6.5 Important decisions
+
+| Decision | Reason | Impact |
+|---|---|---|
+| Upgrade Vite, Vitest, React Router, and Zod to patched compatible versions | The scaffold versions had published advisories | `npm audit` reports zero vulnerabilities; Node 20.19+ or 22.12+ is required |
+| Keep access tokens in application memory | Security design prohibits persisting access tokens in local storage or IndexedDB | Phase 7 session restoration must use the HTTP-only refresh cookie |
+| Implement shadcn-style components directly with Radix primitives | Phase 6 requires the shared component system before feature pages exist | Components are owned by the repository and follow Tailwind semantic tokens |
+| Persist only the theme preference with Zustand | Theme is a client preference, not offline business data | Local storage is not used as an offline database |
+| Represent all planned routes with labeled placeholders | Router navigation can be verified without prematurely implementing Phase 7+ workflows | Real auth guards and feature behavior remain in later phases |
+| Provide an in-memory Storage shim in tests | The Node/jsdom combination exposed an incomplete global localStorage | Theme persistence tests are deterministic; application behavior is unchanged |
+
+### Phase6.6 Verification
+
+- `npx tsc --noEmit`: passed.
+- `npm run lint`: passed with zero warnings.
+- `npm test`: 13 passed across 5 test files.
+- `npm run build`: production build succeeded with Vite 7.3.8.
+- Vite preview smoke check: HTTP 200 and Fieldmark title served successfully.
+- `npm audit --audit-level=moderate`: zero vulnerabilities.
+- All Phase 6 acceptance criteria in `docs/development-phases.md` are verified.
+
+### Phase6.7 Known issues
+
+- Node emits a non-blocking `--localstorage-file` warning during Vitest runs in this environment; tests pass and the application uses the injected test Storage shim.
+- Route pages are intentionally placeholders; they do not implement authentication, data loading, or workflows.
+- No IndexedDB, synchronization engine, or PWA shell exists yet; those belong to later phases.
+
+### Phase6.8 Handoff instructions
+
+Phase 6 is complete and verified. Stop at the phase boundary. Begin Phase 7 — Frontend Authentication and Admin Features only after explicit approval. Phase 6 changes remain uncommitted unless the user explicitly requests a commit.
 
 ---
 
@@ -921,7 +1024,7 @@ Add a new row when a feature is identified.
 | F-029 | Dashboard summary API | 4 | Completed | PRD.md, api-contracts.md |
 | F-012 | Inspection execution | 8 | Not Started | PRD.md, frontend-design.md |
 | F-013 | Backend sync operations | 5 | Completed | offline-sync-design.md, api-contracts.md |
-| F-014 | Frontend foundation | 6 | Not Started | frontend-design.md |
+| F-014 | Frontend foundation | 6 | Completed | frontend-design.md, development-phases.md |
 | F-015 | Admin dashboard | 7 | Not Started | frontend-design.md |
 | F-016 | Inspector dashboard | 8 | Not Started | frontend-design.md |
 | F-017 | IndexedDB persistence | 9 | Not Started | offline-sync-design.md |
@@ -1061,8 +1164,8 @@ Track testing at project level.
 | Database tests | Completed | 8 passed | Schema, constraints, relationships, latest migrations, unique `submission_id`, `submitted_version`, `template_key`, and cursor ordering; expected head now `0005_sync_scope_and_retry` |
 | Authentication tests | Completed | 19 passed | 4 password-hashing and 15 authentication tests |
 | RBAC tests | Completed | 12 passed | Phase 3 authorization tests plus Phase 4 and Phase 5 endpoint authorization coverage |
-| Frontend unit tests | Not Started | Not Run | |
-| Component tests | Not Started | Not Run | |
+| Frontend unit tests | Completed | 13 passed | Vitest tests for API client, theme store, online status, and router |
+| Component tests | Completed | 5 passed | Shared UI component test suite covering rendering, interactions, dialogs, menus, tabs, toast, and error states |
 | IndexedDB tests | Not Started | Not Run | |
 | Offline tests | Not Started | Not Run | |
 | Sync tests | Completed | 20 passed | `backend/tests/test_sync.py`; PostgreSQL integration tests for idempotency, conflicts, pull, tombstones, and devices |
@@ -1133,6 +1236,14 @@ Do not report tests as passed if they were not actually executed.
 | 2026-11-21 | `.venv/Scripts/python.exe -m alembic downgrade 0004_template_key` then `upgrade head` | Migration rollback/upgrade | 1 | 0 | Phase 5 migration downgrade and re-upgrade succeeded |
 | 2026-11-21 | `.venv/Scripts/python.exe -m alembic check` | Migration drift | 1 | 0 | No new upgrade operations detected after Phase 5 |
 | 2026-11-21 | `.venv/Scripts/python.exe -c "from app.main import create_app; a=create_app(); print('OpenAPI paths:', len(a.openapi()['paths']))"` | OpenAPI generation | 1 | 0 | 33 documented API paths after Phase 5 |
+| 2026-11-21 | `npm install` | Dependency setup | 1 | 0 | Added approved UI/test/lint packages; upgraded patched frontend dependency baseline |
+| 2026-11-21 | `npm audit --audit-level=moderate` | Security check | 1 | 0 | Zero reported vulnerabilities |
+| 2026-11-21 | `npx tsc --noEmit` | TypeScript check | 1 | 0 | Strict TypeScript configuration passed |
+| 2026-11-21 | `npm run lint` | Lint | 1 | 0 | ESLint passed with zero warnings |
+| 2026-11-21 | `npm test` (first Phase 6 run) | Frontend tests | 0 | 13 | Incomplete jsdom localStorage and async router assertions; fixed with test Storage shim and `findByRole` waits |
+| 2026-11-21 | `npm test` (final Phase 6 run) | Frontend tests | 13 | 0 | All UI, router, theme, API client, and online-status tests passed; non-blocking Node localStorage warning remains |
+| 2026-11-21 | `npm run build` | Production build | 1 | 0 | Vite 7.3.8 production build succeeded |
+| 2026-11-21 | Vite preview smoke check | Frontend startup | 1 | 0 | HTTP 200 and Fieldmark title served from the production build |
 
 ---
 
@@ -1170,6 +1281,12 @@ Maintain a chronological record of significant implementation decisions.
 | D-026 | 2026-11-21 | Reference the sync ledger row ID from `sync_conflicts.operation_id` | Database foreign key targets `sync_operations.id`, not the client operation UUID | Conflict persistence and `ConflictService` |
 | D-027 | 2026-11-21 | Use opaque signed cursors over commit-ordered `change_position` | Prevents client mutation while relying on the existing advisory-lock cursor trigger | `sync_identity.py`, `SyncService.pull` |
 | D-028 | 2026-11-21 | Do not finalize `RETRYABLE_ERROR` in the idempotency ledger | Temporary failures must be retryable with the same operation ID | `SyncService._process_operation`, retryable regression test |
+| D-029 | 2026-11-21 | Upgrade Vite 7, Vitest 4, React Router 7, and Zod 4 with patched compatible releases | The scaffold versions had published advisories; `npm audit` now reports zero vulnerabilities | `frontend/package.json`, `frontend/package-lock.json`, README prerequisites |
+| D-030 | 2026-11-21 | Keep access tokens in application memory and rely on the HTTP-only refresh cookie | Security design prohibits persisting access tokens in local storage or IndexedDB | `frontend/src/lib/axios.ts`, frontend README |
+| D-031 | 2026-11-21 | Own shadcn-style component source in the repository using Radix primitives | Phase 6 needs reusable components before feature pages exist | `frontend/components.json`, `frontend/src/components/ui/` |
+| D-032 | 2026-11-21 | Persist only the theme preference through Zustand | Theme is a client preference, not an offline database or business record | `frontend/src/store/themeStore.ts` |
+| D-033 | 2026-11-21 | Represent every planned frontend route with a labeled placeholder page | Verifies router navigation without starting Phase 7+ feature work | `frontend/src/app/router.tsx`, `frontend/src/pages/` |
+| D-034 | 2026-11-21 | Inject an in-memory Storage shim in Vitest setup | The Node/jsdom combination exposed an incomplete global `localStorage` | `frontend/src/test/setup.ts`; test-only behavior |
 
 When adding a decision:
 
@@ -1226,6 +1343,8 @@ Add a new entry whenever a development session makes meaningful changes.
 | 2026-11-21 | OpenCode (Big Pickle) | Phase 4 | Audit remediation | Fixed pagination offsets, `template_key` revision lineage, full submission-payload idempotency, operation-owner conflict scoping, and explicit-null PATCH semantics; added migrations `0003_submitted_version` and `0004_template_key` plus seven regression tests | Completed |
 | 2026-11-21 | OpenCode (Big Pickle) | Phase 4 | Final validation remediation | Rejected explicit null for non-clearable PATCH fields, validated final choice options before mutation, added two regression tests, and completed a second independent audit; final suite passed 53 tests | Completed |
 | 2026-11-21 | OpenCode (Big Pickle) | Phase 5 | F-013 | Added device management, canonical hashing and idempotent push, savepoint-isolated operations, conflicts, scoped pull with tombstones, sync status, and transactional change logging; added migration `0005_sync_scope_and_retry` and 20 PostgreSQL sync tests; final suite passed 73 tests | Completed |
+| 2026-11-21 | OpenCode (Big Pickle) | Phase 5 | Commit | Committed verified Phase 5 work as `7414ece feat: implement phase 5 backend synchronization foundation` after explicit user request | Completed |
+| 2026-11-21 | OpenCode (Big Pickle) | Phase 6 | F-014 | Added React/Vite foundation, patched dependency baseline, Tailwind theme tokens, 14 shared UI components, router, providers, stores, Axios client, linting, placeholder pages, and 13 frontend tests; lint, typecheck, tests, build, preview, and audit all passed | Completed |
 
 For each entry, include a concise summary of:
 
@@ -1248,15 +1367,15 @@ Update it before stopping work.
 
 **Last completed phase:**
 
-Phase 5 — Backend Synchronization Foundation.
+Phase 6 — Frontend Foundation.
 
 **Current phase:**
 
-Phase 5 — Backend Synchronization Foundation (Completed). Next phase is Phase 6 — Frontend Foundation.
+Phase 6 — Frontend Foundation (Completed). Next phase is Phase 7 — Frontend Authentication and Admin Features.
 
 **Current feature:**
 
-None — F-013 is completed.
+None — F-014 is completed.
 
 **Current feature status:**
 
@@ -1264,36 +1383,37 @@ Completed.
 
 **Last completed task:**
 
-Implemented and verified backend synchronization: device registration/listing/revocation with aliases, durable operation ledger with canonical server-computed hashes, duplicate replay and changed-payload rejection, per-operation savepoints, version conflicts with preserved snapshots, authorization-scoped paginated pull with tombstones, sync status, conflict list/detail/resolve APIs, and transactional change-feed logging for approved writes. Added migration `0005_sync_scope_and_retry` and 20 PostgreSQL sync tests. A final review fixed retryable-result replay so temporary failures remain retryable with the same operation ID. Final verification was 73 passing backend tests, Python compilation, migration downgrade/upgrade, Alembic drift check, and 33 OpenAPI paths.
+Implemented and verified the React application foundation: Vite 7 with strict TypeScript, Tailwind theme tokens, shadcn-style shared components, React Router routes, TanStack Query provider, Zustand theme/application stores, Axios client with in-memory access tokens, ESLint, Vitest/React Testing Library, and placeholder pages for all planned routes. The dependency baseline was upgraded to patched releases and `npm audit` reports zero vulnerabilities. Final verification was 13 passing frontend tests, clean TypeScript and lint checks, a successful production build, and a live preview HTTP 200 response.
 
 **Current stopping point:**
 
-Phase 5 boundary reached. All acceptance criteria verified. Do not start Phase 6 without approval. Phase 5 changes are uncommitted and must not be committed unless explicitly requested.
+Phase 6 boundary reached. All acceptance criteria verified. Do not start Phase 7 without approval. Phase 6 changes remain uncommitted unless the user explicitly requests a commit.
 
 ## Files to inspect first
 
 1. `progress-tracker.md`
-2. `docs/development-phases.md` — Phase 6 requirements
-3. `docs/api-contracts.md` — synchronization, device, and conflict contracts
-4. `backend/app/api/v1/router.py`
-5. `backend/app/services/sync_service.py`
-6. `backend/app/services/conflict_service.py`
-7. `backend/app/services/device_service.py`
-8. `backend/alembic/versions/0005_sync_scope_and_retry.py`
-9. `backend/tests/test_sync.py`
-10. `backend/tests/test_core_features.py`
+2. `docs/development-phases.md` — Phase 7 requirements
+3. `docs/frontend-design.md` — frontend architecture and Phase 6 baseline
+4. `frontend/src/app/providers.tsx`
+5. `frontend/src/app/router.tsx`
+6. `frontend/src/lib/axios.ts`
+7. `frontend/src/store/themeStore.ts`
+8. `frontend/src/components/ui/`
+9. `frontend/package.json`
+10. `frontend/src/components/ui/ui.test.tsx`
 
 ## Work remaining
 
-- [ ] No Phase 5 work remains.
-- [ ] Wait for approval before starting Phase 6 — Frontend Foundation.
-- [ ] Do not commit Phase 5 changes unless the user explicitly requests it.
+- [ ] No Phase 6 work remains.
+- [ ] Wait for approval before starting Phase 7 — Frontend Authentication and Admin Features.
+- [ ] Do not commit Phase 6 changes unless the user explicitly requests it.
 
 ## Known problems
 
-- Non-blocking: installed Starlette/TestClient and passlib/argon2 versions emit deprecation warnings. No tests fail.
+- Non-blocking: Node emits a `--localstorage-file` warning during Vitest runs in this environment. Tests pass with the injected test Storage shim.
+- Non-blocking: installed Starlette/TestClient and passlib/argon2 backend versions emit deprecation warnings. No backend tests fail.
 - Non-blocking: optional PATCH fields are displayed as nullable in OpenAPI even though runtime validators reject `null` for non-clearable fields; runtime behavior is correct.
-- Frontend IndexedDB persistence, sync engine, Sync Center, and PWA shell are not implemented yet; they belong to later phases.
+- Frontend authentication, admin pages, inspector workflow, IndexedDB persistence, sync engine, Sync Center, and PWA shell are not implemented yet; they belong to later phases.
 - Dashboard synchronization statistics reflect server-side operation records only; the frontend must combine them with its IndexedDB queue, as required by `docs/api-contracts.md`.
 - The login rate limiter remains process-local; a multi-instance deployment needs a shared limiter.
 
@@ -1302,16 +1422,16 @@ Phase 5 boundary reached. All acceptance criteria verified. Do not start Phase 6
 The next agent must:
 
 1. Read `AGENTS.md` and this progress tracker.
-2. Confirm Phase 5 is marked Completed and verified.
+2. Confirm Phase 6 is marked Completed and verified.
 3. Stop at the phase boundary.
-4. Begin Phase 6 only after explicit user approval.
-5. Reuse the Phase 3 authentication dependencies, Phase 4 services/repositories, Phase 5 synchronization contracts, shared error envelope, and 12-table schema.
-6. Keep frontend synchronization logic separate from presentation components.
-7. Preserve stable operation IDs, payload identity, commit-ordered cursors, and conflict snapshots.
+4. Begin Phase 7 only after explicit user approval.
+5. Reuse the Phase 6 providers, router, stores, Axios client, shared UI components, and test setup.
+6. Keep authentication logic and IndexedDB access outside presentation components.
+7. Preserve the in-memory access-token policy and HTTP-only refresh-cookie strategy.
 
 **Exact next action:**
 
-Report Phase 5 completion and wait for approval to start Phase 6 — Frontend Foundation.
+Report Phase 6 completion and wait for approval to start Phase 7 — Frontend Authentication and Admin Features.
 
 ---
 
