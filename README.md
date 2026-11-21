@@ -27,7 +27,9 @@ venv\Scripts\activate
 
 pip install -r requirements.txt
 cp .env.example .env
-# Edit .env with your local PostgreSQL DATABASE_URL
+# Edit .env with your local PostgreSQL DATABASE_URL and TEST_DATABASE_URL.
+# Synchronization batch and pull limits can be tuned with SYNC_MAX_BATCH_SIZE
+# and SYNC_MAX_PULL_LIMIT.
 ```
 
 ### Setup Frontend

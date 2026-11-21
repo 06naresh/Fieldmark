@@ -1049,6 +1049,8 @@ Inspectors must receive summaries limited to their authorized inspection assignm
 
 # 14. Device Registration APIs
 
+The device endpoints are canonical at `/api/v1/devices`. The equivalent `/api/v1/sync/devices` paths are registered as aliases so both this contract and the phase implementation list are satisfied. Both path sets share the same handlers and authorization rules.
+
 ## 14.1 Register Device
 
 ```http
@@ -1164,6 +1166,8 @@ POST /api/v1/sync/push
 | `base_version` | Version on which the change was based |
 | `payload` | Operation data |
 
+The backend computes a canonical SHA-256 payload identity from `operation_id`, `operation_type`, `entity_type`, `entity_id`, `base_version`, and `payload`. Canonical JSON uses sorted keys, compact separators, UTF-8 text, and no non-finite numbers. Clients must not submit a `payload_hash`; unknown operation fields are rejected.
+
 For a new local record, `base_version` may be null if the operation type and resource creation policy permit it.
 
 ### Successful Response
@@ -1231,6 +1235,15 @@ A conflict should be returned as an operation-level result so other independent 
 10. The backend must enforce batch-size limits.
 11. One invalid operation must not accidentally roll back unrelated independent operations unless the batch contract explicitly requires atomic processing.
 12. The response must provide a result for every operation received.
+
+Operation-level `status` values are `ACCEPTED`, `CONFLICT`, `REJECTED`, and
+`RETRYABLE_ERROR`. `RETRYABLE_ERROR` indicates a temporary server-side failure;
+the client must retry with the same `operation_id` and identical payload. The
+backend does not finalize a temporary failure in the idempotency ledger, so the
+retry is processed normally.
+Authorization failures inside a batch use the operation error code
+`PERMISSION_DENIED`. Each operation is committed in its own savepoint, so a
+failed operation does not roll back unrelated operations in the same batch.
 
 ---
 

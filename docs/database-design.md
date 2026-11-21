@@ -819,7 +819,8 @@ CREATE TABLE sync_operations (
             result_status IN (
                 'ACCEPTED',
                 'CONFLICT',
-                'REJECTED'
+                'REJECTED',
+                'RETRYABLE_ERROR'
             )
         ),
 
@@ -968,6 +969,9 @@ When authorized server data changes, the backend creates a change event that con
 | `change_type` | VARCHAR(30) | NOT NULL | CREATE, UPDATE, DELETE |
 | `entity_version` | INTEGER | Nullable | Entity version |
 | `payload` | JSONB | Nullable | Change data |
+| `authorized_user_ids` | JSONB | NOT NULL, default `[]` | User IDs allowed to pull this event |
+| `is_global` | BOOLEAN | NOT NULL, default `false` | Whether every authenticated user may pull this event |
+| `change_position` | BIGINT | NOT NULL, UNIQUE | Commit-ordered cursor position |
 | `created_at` | TIMESTAMPTZ | NOT NULL | Event creation time |
 
 ### SQL
@@ -993,6 +997,12 @@ CREATE TABLE sync_changes (
 
     payload JSONB,
 
+    authorized_user_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
+
+    is_global BOOLEAN NOT NULL DEFAULT FALSE,
+
+    change_position BIGINT NOT NULL UNIQUE,
+
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -1003,26 +1013,29 @@ CREATE INDEX idx_sync_changes_created_at
 ON sync_changes(created_at);
 ```
 
-### Important Cursor Design Requirement
+### Implemented Cursor Design
 
-The table above defines the change event data, but its UUID is not a pull cursor.
+The change event UUID is not a pull cursor. The implemented cursor is
+`change_position`, backed by `sync_changes_cursor_seq` and assigned by a
+`BEFORE INSERT` trigger that first acquires a transaction-scoped PostgreSQL
+advisory lock. Insertion order is therefore also commit order: a later
+transaction cannot be assigned (and commit) a lower position than an earlier
+writer.
 
-Do not use `created_at` or an ordinary PostgreSQL sequence as a cursor without proving that concurrent transactions cannot cause changes to be skipped.
+A rollback may leave a gap in the sequence, but it cannot leave a committed
+change behind an earlier uncommitted position. Pull pagination uses the last
+successfully applied `change_position` as its boundary.
 
-The implementation must add a safe cursor mechanism.
-
-Acceptable approaches include:
-
-- A serialized, commit-ordered change-feed position.
-- A dedicated transactional feed allocator that guarantees commit order.
-- Another formally designed strategy that safely handles concurrent commits and pagination.
+The `change_position` column is filled by the database trigger and must not be
+supplied by application code.
 
 The final implementation must document the chosen approach in `offline-sync-design.md`.
 
 ### Rules
 
 - Change events must be created transactionally with the business-data update.
-- Pull results must be scoped to the authenticated user's authorized data.
+- Pull results must be scoped to the authenticated user's authorized data. The backend filters by `is_global` or membership of the authenticated user ID in `authorized_user_ids` before applying pagination, so unrelated changes never consume a page slot.
+- Scope metadata is stored on the change event itself, so `DELETE` tombstones remain attributable after the target row is gone.
 - Deletion must be represented by a tombstone event.
 - A client cursor must advance only after all corresponding events have been applied locally.
 - Pagination must not skip changes.

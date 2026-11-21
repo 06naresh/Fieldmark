@@ -23,6 +23,7 @@ from app.schemas.checklists import (
     extract_choices,
 )
 from app.core.db_errors import commit_transaction
+from app.services.change_log import log_change
 
 
 class ChecklistService:
@@ -37,6 +38,7 @@ class ChecklistService:
             template_version=1,
             items=payload.items,
         )
+        self._log_template_change(template, "CREATE")
         self._commit()
         return template
 
@@ -84,6 +86,7 @@ class ChecklistService:
             items=payload.items,
             template_key=source.template_key,
         )
+        self._log_template_change(revision, "CREATE")
         self._commit()
         return revision
 
@@ -98,6 +101,16 @@ class ChecklistService:
 
         item = self.repository.add_item(template, payload)
         template.version += 1
+        self._log_template_change(template, "UPDATE")
+        log_change(
+            self.repository.db,
+            entity_type="checklist_item",
+            entity_id=item.id,
+            change_type="CREATE",
+            entity_version=template.version,
+            payload=item_response(item).model_dump(mode="json"),
+            is_global=True,
+        )
         self._commit()
         return item
 
@@ -129,6 +142,16 @@ class ChecklistService:
             if field in updates:
                 setattr(item, field, updates[field])
         template.version += 1
+        self._log_template_change(template, "UPDATE")
+        log_change(
+            self.repository.db,
+            entity_type="checklist_item",
+            entity_id=item.id,
+            change_type="UPDATE",
+            entity_version=template.version,
+            payload=item_response(item).model_dump(mode="json"),
+            is_global=True,
+        )
         self._commit()
         return item
 
@@ -138,6 +161,7 @@ class ChecklistService:
         template = self.get(template_id, for_update=True)
         template.is_active = payload.is_active
         template.version += 1
+        self._log_template_change(template, "UPDATE")
         self._commit()
         return template
 
@@ -147,6 +171,19 @@ class ChecklistService:
 
     def _has_display_order(self, template_id: UUID, display_order: int) -> bool:
         return any(item.display_order == display_order for item in self.get(template_id).items)
+
+    def _log_template_change(
+        self, template: ChecklistTemplate, change_type: str
+    ) -> None:
+        log_change(
+            self.repository.db,
+            entity_type="checklist_template",
+            entity_id=template.id,
+            change_type=change_type,
+            entity_version=template.version,
+            payload=template_response(template).model_dump(mode="json"),
+            is_global=True,
+        )
 
     def _commit(self) -> None:
         commit_transaction(self.repository.db)

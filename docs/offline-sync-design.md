@@ -404,7 +404,6 @@ Endpoint:
       "entity_id": "answer-uuid",
       "operation_type": "UPDATE",
       "base_version": 3,
-      "payload_hash": "sha256-hash",
       "payload": {
         "inspection_id": "inspection-uuid",
         "checklist_item_id": "item-uuid",
@@ -456,6 +455,8 @@ The backend must return an explicit outcome for every submitted operation.
 10. Return an outcome for each operation.
 
 The server must never trust a user ID supplied only inside an operation payload. The authenticated identity and authorization rules determine ownership.
+
+The server computes a canonical SHA-256 payload identity from the operation fields and payload. Clients do not submit `payload_hash`; this prevents a client from choosing a hash that does not match the data actually received by the server.
 
 ---
 
@@ -573,6 +574,38 @@ Because every change-feed insert must wait for the preceding writer's transactio
 Business-data updates and their `sync_changes` rows must be inserted in the same database transaction. The pull endpoint must expose the cursor as an opaque value and authorize every change against the authenticated user's accessible records.
 
 The cursor must also be opaque to the frontend and scoped to the authenticated user's authorized data.
+
+### Approved Phase 5 implementation decisions
+
+The following decisions resolve ambiguities between the design documents and
+the API/phase contracts:
+
+- **Entity type casing:** API requests and change events use lowercase entity
+  types from `api-contracts.md` (`inspection_answer`, `inspection`, `site`,
+  `checklist_template`, `checklist_item`, `inspection_result`, `user`).
+  Operation and change types remain uppercase (`CREATE`, `UPDATE`, `DELETE`,
+  `SUBMIT`).
+- **Batch boundaries:** Each push operation is processed in its own database
+  savepoint. A rejected or conflicting operation rolls back only its own
+  savepoint, so independent operations in the same batch still succeed. The
+  business change, change-feed event and idempotency ledger row commit
+  together.
+- **Pull scope:** `sync_changes` stores `authorized_user_ids` and `is_global`.
+  Administrators receive every change; inspectors receive global changes and
+  changes whose scope includes their user ID. Filtering happens before
+  pagination, so unauthorized changes cannot consume page slots or advance the
+  cursor.
+- **Change coverage:** Phase 4 CRUD services and push operations both write
+  change-feed events in the same transaction as the business change. This
+  makes administrator site/checklist/inspection writes pullable by assigned
+  offline devices.
+- **Retry status:** `RETRYABLE_ERROR` is an operation outcome for temporary
+  server-side failures. It is not finalized in the idempotency ledger, so a
+  retry uses the same operation ID and can succeed. Transport-level retries
+  likewise never change the operation ID.
+- **Device paths:** `/api/v1/devices` is canonical; `/api/v1/sync/devices` is
+  an alias with identical behavior. A device ID is request context and is
+  never accepted as a substitute for a valid access token.
 
 ---
 

@@ -72,6 +72,12 @@ class ConflictError(AppError):
     default_message = "The request conflicts with the current resource state."
 
 
+class VersionConflictError(ConflictError):
+    """Raised when a write is based on a stale entity version."""
+
+    code = "VERSION_CONFLICT"
+
+
 class UnprocessableEntityError(AppError):
     status_code = HTTP_422
     code = "VALIDATION_ERROR"

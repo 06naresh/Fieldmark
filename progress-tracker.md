@@ -92,8 +92,8 @@ The next agent must be able to continue without repeating completed work.
 | Authentication | JWT |
 | State management | Zustand + TanStack Query |
 | Testing | pytest, Vitest, React Testing Library, Playwright |
-| Current development phase | Phase 4 — Core Backend Features (Completed) |
-| Current feature | None — Phase 4 complete; Phase 5 pending approval |
+| Current development phase | Phase 5 — Backend Synchronization Foundation (Completed) |
+| Current feature | None — Phase 5 complete; Phase 6 pending approval |
 | Overall status | In Progress |
 
 ---
@@ -109,7 +109,7 @@ Update this table whenever a development phase changes.
 | 2 | Backend Foundation | Completed | 100% |
 | 3 | Authentication and Authorization | Completed | 100% |
 | 4 | Core Backend Features | Completed | 100% |
-| 5 | Backend Synchronization Foundation | Not Started | 0% |
+| 5 | Backend Synchronization Foundation | Completed | 100% |
 | 6 | Frontend Foundation | Not Started | 0% |
 | 7 | Frontend Authentication and Admin Features | Not Started | 0% |
 | 8 | Inspector Workflow | Not Started | 0% |
@@ -144,8 +144,8 @@ Update this section whenever a new feature implementation session begins.
 |---|---|
 | Session date | 2026-11-21 |
 | Agent/session identifier | OpenCode (Big Pickle) |
-| Current phase | Phase 4 — Core Backend Features |
-| Current feature | None — Phase 4 complete; Phase 5 pending approval |
+| Current phase | Phase 5 — Backend Synchronization Foundation |
+| Current feature | None — Phase 5 complete; Phase 6 pending approval |
 | Feature status | Completed |
 | Last updated | 2026-11-21 |
 
@@ -153,47 +153,47 @@ Update this section whenever a new feature implementation session begins.
 
 **Objective:**
 
-Implement Phase 4 Core Backend Features: user, site, checklist template, inspection assignment/execution, answer, submission, and dashboard APIs with business-rule validation and authorization.
+Implement Phase 5 Backend Synchronization Foundation: device management, idempotent push, authorization-scoped pull, safe change-feed cursor behavior, conflict persistence/resolution APIs, and transactional change logging.
 
 ## 5.2 Current implementation scope
 
 **Included:**
 
-- Admin user management with activation/deactivation and session revocation.
-- Admin site management with optimistic concurrency and inspector-scoped read access.
-- Admin checklist template creation, immutable revisions, item management, and inspector-scoped read access.
-- Admin inspection assignment and lifecycle updates.
-- Inspector assignment access, start, answers, and submission.
-- Idempotent submission via a unique `submission_id` column.
-- Dashboard summaries scoped by role.
-- Pagination, filtering, validation, consistent error envelope, and automated tests.
+- Device registration, listing, revocation, and active-device ownership checks.
+- Canonical device paths at `/api/v1/devices` with aliases at `/api/v1/sync/devices`.
+- Durable operation ledger with stable operation IDs and server-computed canonical SHA-256 payload hashes.
+- Duplicate result replay, different-payload rejection, and non-terminal retryable failures.
+- Per-operation savepoints with one explicit outcome per operation.
+- Version checks, conflict snapshots, conflict list/detail, and conflict resolution endpoints.
+- Authorization-scoped, paginated pull using opaque commit-ordered cursors and tombstones.
+- Transactional change-feed logging for Phase 4 CRUD writes and synchronization writes.
+- PostgreSQL integration tests for all critical synchronization behavior.
 
 **Not included:**
 
-- Frontend screens and offline flows.
-- Synchronization endpoints (Phase 5).
-- Conflict resolution UI/API (later phase).
-- Device registration endpoints (Phase 5).
+- Frontend screens, IndexedDB persistence, and offline application shell.
+- Frontend sync engine, retry/backoff UI, and Sync Center UI.
+- Full frontend conflict-resolution workflow.
 
 **Dependencies:**
 
-- Phases 0–3 are completed and verified.
-- User approved Phase 4.
-- User approved separate revision IDs and adding a `submission_id` column with an Alembic migration.
+- Phases 0–4 are completed and verified.
+- User approved Phase 5.
+- Existing commit-ordered cursor trigger from Phase 1 is reused.
 
 ## 5.3 Current progress
 
 | Task | Status | Notes |
 |---|---|---|
-| Review requirements | Completed | Phase 4 tasks, API contracts, database design, and test expectations verified |
-| Inspect existing implementation | Completed | Models, dependencies, exceptions, schemas, and test fixtures inspected |
-| Resolve document ambiguities | Completed | User selected separate revision IDs and an explicit `submission_id` column |
-| Prepare implementation plan | Completed | Schemas, repositories, services, routers, migration, and tests planned |
-| Implement feature | Completed | User, site, checklist, inspection, submission, dashboard, migration, and router wiring implemented |
-| Add automated tests | Completed | 11 Phase 4 integration tests plus 8 PostgreSQL schema/migration tests |
-| Execute tests | Completed | Final full backend suite passed: 53 tests, 0 failures |
-| Review implementation | Completed | Five audit findings and two follow-up validation regressions fixed; final re-audit passed |
-| Update documentation | Completed | Tracker, database design, and API contract record verified results and decisions |
+| Review requirements | Completed | Phase 5 tasks, API contracts, offline-sync design, and test expectations verified |
+| Inspect existing implementation | Completed | Sync models, repositories, services, migration history, and test fixtures inspected |
+| Resolve document ambiguities | Completed | Device aliases, server-computed hashes, pull scope columns, and batch savepoints resolved and documented |
+| Prepare implementation plan | Completed | Migration, schemas, repositories, services, dependencies, endpoints, and tests planned |
+| Implement feature | Completed | Sync ledger, push/pull/status, devices, conflicts, and change logging implemented |
+| Add automated tests | Completed | 20 PostgreSQL integration tests added in `backend/tests/test_sync.py` |
+| Execute tests | Completed | Final full backend suite passed: 73 tests, 2 non-blocking warnings |
+| Review implementation | Completed | Final review fixed retryable-result replay and removed unused imports |
+| Update documentation | Completed | Tracker, API contracts, database design, offline-sync design, README, and env example updated |
 
 Update the task statuses as work progresses.
 
@@ -796,6 +796,109 @@ No database schema change was required for these fixes. A second read-only audit
 
 ---
 
+## Feature: F-013 Backend Synchronization Foundation
+
+| Property | Value |
+|---|---|
+| Feature ID | F-013 |
+| Development phase | Phase 5 |
+| Status | Completed |
+| Priority | Critical |
+| Started date | 2026-11-21 |
+| Last updated | 2026-11-21 |
+| Completed date | 2026-11-21 |
+| Implemented by | OpenCode (Big Pickle) |
+
+### Phase5.1 Feature objective
+
+Implement the backend foundation that allows offline clients to register devices, synchronize operations safely, pull authorized server changes, and preserve conflicts without silently overwriting inspection data.
+
+### Phase5.2 Requirements
+
+- [x] Implement the synchronization operation ledger.
+- [x] Define operation ID uniqueness and canonical payload-hash rules.
+- [x] Implement duplicate operation detection and original-result replay.
+- [x] Reject an existing operation ID when the payload hash changes.
+- [x] Implement server-side version checks and conflict snapshots.
+- [x] Implement authorization-scoped, paginated pull with safe cursors and tombstones.
+- [x] Implement sync device registration, listing, and revocation.
+- [x] Implement sync status, conflict list/detail, and conflict resolution endpoints.
+- [x] Log approved writes to the change feed transactionally.
+- [x] Add PostgreSQL integration tests and verify every Phase 5 acceptance criterion.
+
+### Phase5.3 Files created
+
+| File path | Purpose | Status |
+|---|---|---|
+| `backend/alembic/versions/0005_sync_scope_and_retry.py` | Adds change-feed scope columns and `RETRYABLE_ERROR` status | Created and verified |
+| `backend/app/core/sync_identity.py` | Canonical request hashing and opaque signed cursors | Created |
+| `backend/app/schemas/sync.py` | Device, push, pull, status, and conflict schemas | Created |
+| `backend/app/services/change_log.py` | Transactional change-feed helper | Created |
+| `backend/app/repositories/device_repository.py` | Device ownership and lifecycle queries | Created |
+| `backend/app/repositories/sync_repository.py` | Ledger, change-feed, conflict, and status queries | Created |
+| `backend/app/services/device_service.py` | Device registration, listing, revocation, and active-device checks | Created |
+| `backend/app/services/conflict_service.py` | Conflict list/detail/resolve with permission and version checks | Created |
+| `backend/app/dependencies/sync.py` | Active-device ownership dependency | Created |
+| `backend/app/services/sync_service.py` | Push dispatcher, idempotency, savepoints, conflicts, pull, and status | Created |
+| `backend/app/api/v1/endpoints/devices.py` | Canonical and alias device endpoints | Created |
+| `backend/app/api/v1/endpoints/sync.py` | Push, pull, and status endpoints | Created |
+| `backend/app/api/v1/endpoints/conflicts.py` | Conflict list, detail, and resolution endpoints | Created |
+| `backend/tests/test_sync.py` | 20 PostgreSQL synchronization integration tests | Created |
+
+### Phase5.4 Files modified
+
+| File path | Modification |
+|---|---|
+| `backend/app/database/models/sync.py` | Added scope columns and retryable status support |
+| `backend/app/core/config.py` | Added `SYNC_MAX_BATCH_SIZE` and `SYNC_MAX_PULL_LIMIT` |
+| `backend/app/core/exceptions.py` | Added `VersionConflictError` |
+| `backend/app/services/concurrency.py` | Added version-conflict error support |
+| `backend/app/services/inspection_service.py` | Added change-feed logging and version-conflict handling |
+| `backend/app/services/site_service.py` | Added change-feed logging for site writes |
+| `backend/app/services/checklist_service.py` | Added change-feed logging for template and item writes |
+| `backend/app/services/user_service.py` | Added change-feed logging without exposing password hashes |
+| `backend/app/repositories/__init__.py` | Exported new repositories |
+| `backend/app/api/v1/router.py` | Mounted device, sync, and conflict routers |
+| `backend/tests/test_database_schema.py` | Updated expected Alembic head to `0005_sync_scope_and_retry` |
+| `backend/.env.example` | Documented sync batch and pull limits |
+| `README.md` | Documented sync environment variables |
+| `docs/api-contracts.md` | Documented idempotency outcomes, savepoints, and authorization errors |
+| `docs/database-design.md` | Documented scope columns, retryable status, and cursor implementation |
+| `docs/offline-sync-design.md` | Recorded implemented Phase 5 decisions |
+
+### Phase5.5 Important decisions
+
+| Decision | Reason | Impact |
+|---|---|---|
+| `/api/v1/devices` is canonical and `/api/v1/sync/devices` is an alias | Both paths appear in approved documents | Shared handlers and authorization avoid divergent behavior |
+| The server computes a canonical SHA-256 payload hash | Clients must not choose their own hash | Retries preserve operation identity and payload integrity |
+| Each push operation uses its own savepoint | One invalid operation must not discard unrelated work | Every operation receives exactly one durable outcome |
+| Pull scope is stored on `sync_changes` with `authorized_user_ids` and `is_global` | Tombstones must remain attributable after target rows are gone | Authorization filtering happens before pagination |
+| `RETRYABLE_ERROR` is not a terminal ledger outcome | A temporary failure must be retryable with the same operation ID | Retryable responses do not block successful retries |
+| Conflicts reference the ledger row ID, not the client operation UUID | Database foreign keys point to `sync_operations.id` | Conflict snapshots remain linked to the exact server operation |
+| Cursors are opaque signed values over `change_position` | Numeric sequence values must not be exposed or modified by clients | Pagination uses the commit-ordered advisory-lock cursor safely |
+
+### Phase5.6 Verification
+
+- Final full backend suite: 73 passed, 2 non-blocking dependency warnings.
+- `backend/tests/test_sync.py`: 20 PostgreSQL integration tests passed.
+- Python compilation: passed.
+- Migration `0005_sync_scope_and_retry` applied, downgraded, and reapplied successfully.
+- Alembic drift check: no new upgrade operations detected.
+- OpenAPI generation: 33 documented API paths.
+- All Phase 5 acceptance criteria listed in `docs/development-phases.md` are verified.
+
+### Phase5.7 Known issues
+
+- Non-blocking `httpx`/TestClient and passlib/argon2 deprecation warnings remain from installed dependencies.
+- No frontend IndexedDB or Sync Center implementation exists yet; those belong to later phases.
+
+### Phase5.8 Handoff instructions
+
+Phase 5 is complete and verified. Stop at the phase boundary. Begin Phase 6 — Frontend Foundation only after explicit approval. Phase 5 changes remain uncommitted and must not be committed unless explicitly requested.
+
+---
+
 # 7. Feature Register
 
 Maintain a summary of all features.
@@ -817,7 +920,7 @@ Add a new row when a feature is identified.
 | F-011 | Inspection assignments | 4 | Completed | PRD.md, api-contracts.md |
 | F-029 | Dashboard summary API | 4 | Completed | PRD.md, api-contracts.md |
 | F-012 | Inspection execution | 8 | Not Started | PRD.md, frontend-design.md |
-| F-013 | Backend sync operations | 5 | Not Started | offline-sync-design.md |
+| F-013 | Backend sync operations | 5 | Completed | offline-sync-design.md, api-contracts.md |
 | F-014 | Frontend foundation | 6 | Not Started | frontend-design.md |
 | F-015 | Admin dashboard | 7 | Not Started | frontend-design.md |
 | F-016 | Inspector dashboard | 8 | Not Started | frontend-design.md |
@@ -869,9 +972,14 @@ Track API implementation separately.
 | `/api/v1/inspections/{inspection_id}/answers/{checklist_item_id}` | PUT | Yes | Yes | Type, template-revision, state, and base-version checks |
 | `/api/v1/inspections/{inspection_id}/submit` | POST | Yes | Yes | Required-answer validation and unique `submission_id` idempotency |
 | `/api/v1/dashboard/summary` | GET | Yes | Yes | Admin and inspector results are permission-scoped |
-| `/api/v1/sync/push` | POST | No | No | |
-| `/api/v1/sync/pull` | GET | No | No | |
-| `/api/v1/sync/status` | GET | No | No | |
+| `/api/v1/devices` | POST/GET | Yes | Yes | Canonical path; `/api/v1/sync/devices` alias shares handlers |
+| `/api/v1/devices/{device_id}/revoke` | POST | Yes | Yes | Owner/admin checks; `/api/v1/sync/devices/{device_id}/revoke` alias tested |
+| `/api/v1/sync/push` | POST | Yes | Yes | Stable IDs, canonical hashes, savepoints, conflicts, and replay tested |
+| `/api/v1/sync/pull` | GET | Yes | Yes | Scoped pagination, opaque cursors, and tombstones tested |
+| `/api/v1/sync/status` | GET | Yes | Yes | Device-scoped status and open-conflict counts tested |
+| `/api/v1/sync/conflicts` | GET | Yes | Yes | Owner/admin scoped list tested |
+| `/api/v1/sync/conflicts/{conflict_id}` | GET | Yes | Yes | Snapshot detail and cross-user denial tested |
+| `/api/v1/sync/conflicts/{conflict_id}/resolve` | POST | Yes | Yes | Permission and stale-version checks tested |
 
 This is a high-level tracking list, not a replacement for `docs/api-contracts.md`.
 
@@ -899,6 +1007,8 @@ Track database implementation and migrations.
 | sync_devices | Yes | Yes | Yes | Verified by schema tests |
 | sync_conflicts | Yes | Yes | Yes | Verified by resolution constraint tests |
 | sync_changes | Yes | Yes | Yes | Includes commit-ordered position trigger; concurrency test passed |
+| sync_changes scope columns | Yes | Yes | Yes | `authorized_user_ids` and `is_global` added by migration `0005_sync_scope_and_retry`; scoped pull tested |
+| sync_operations retry status | Yes | Yes | Yes | `RETRYABLE_ERROR` added by migration `0005_sync_scope_and_retry`; same-ID retry tested |
 
 Add supporting tables only when required by the approved database design.
 
@@ -916,22 +1026,24 @@ Because synchronization is a critical Fieldmark feature, maintain its progress s
 | Local inspection repository | Not Started | No |
 | Local answer persistence | Not Started | No |
 | Durable operation queue | Not Started | No |
-| Stable operation IDs | Not Started | No |
-| Payload hash validation | Not Started | No |
+| Stable operation IDs | Completed | Yes |
+| Payload hash validation | Completed | Yes |
 | Dependency ordering | Not Started | No |
-| Push synchronization | Not Started | No |
-| Per-operation push results | Not Started | No |
-| Pull synchronization | Not Started | No |
-| Commit-safe pull cursor | Not Started | No |
+| Push synchronization | Completed | Yes |
+| Per-operation push results | Completed | Yes |
+| Pull synchronization | Completed | Yes |
+| Commit-safe pull cursor | Completed | Yes |
 | Atomic local pull application | Not Started | No |
 | Retry with backoff and jitter | Not Started | No |
-| Tombstone handling | Not Started | No |
-| Conflict detection | Not Started | No |
-| Conflict resolution | Not Started | No |
+| Tombstone handling | Completed | Yes |
+| Conflict detection | Completed | Yes |
+| Conflict resolution | Completed | Yes |
 | Multi-tab coordination | Not Started | No |
 | Account-scoped local data | Not Started | No |
 | Interrupted-sync recovery | Not Started | No |
 | Sync Center UI | Not Started | No |
+
+**Phase 5 verification note:** The capabilities marked Completed above are backend capabilities verified by `backend/tests/test_sync.py` and the existing commit-order cursor test. Conflict resolution here means the backend conflict list, detail, and resolve APIs with permission and version checks; the frontend conflict UI remains a later phase. IndexedDB queueing, dependency ordering, backoff/jitter, atomic local application, and multi-tab coordination remain Not Started.
 
 Do not mark a capability as verified merely because its code exists. Record the test that proves it works.
 
@@ -943,18 +1055,18 @@ Track testing at project level.
 
 | Test category | Status | Last result | Notes |
 |---|---|---|---|
-| Backend unit tests | Completed | 53 passed | Full backend pytest suite |
-| Backend integration tests | Completed | 53 passed | PostgreSQL temporary schema; includes all Phase 4 API, lifecycle, idempotency, pagination, PATCH validation, and conflict-scoping tests |
-| API tests | Completed | 53 passed | Full suite includes health, readiness, versioning/docs, CORS, error formats, logging, auth, authorization, and Phase 4 endpoints |
-| Database tests | Completed | 8 passed | Schema, constraints, relationships, latest migrations, unique `submission_id`, `submitted_version`, `template_key`, and cursor ordering |
+| Backend unit tests | Completed | 73 passed | Full backend pytest suite |
+| Backend integration tests | Completed | 73 passed | PostgreSQL temporary schema; includes Phase 4 APIs and Phase 5 device, push, pull, status, and conflict tests |
+| API tests | Completed | 73 passed | Full suite includes health, readiness, versioning/docs, CORS, error formats, logging, auth, authorization, Phase 4 endpoints, and Phase 5 sync endpoints |
+| Database tests | Completed | 8 passed | Schema, constraints, relationships, latest migrations, unique `submission_id`, `submitted_version`, `template_key`, and cursor ordering; expected head now `0005_sync_scope_and_retry` |
 | Authentication tests | Completed | 19 passed | 4 password-hashing and 15 authentication tests |
-| RBAC tests | Completed | 12 passed | Phase 3 authorization tests plus Phase 4 endpoint authorization coverage |
+| RBAC tests | Completed | 12 passed | Phase 3 authorization tests plus Phase 4 and Phase 5 endpoint authorization coverage |
 | Frontend unit tests | Not Started | Not Run | |
 | Component tests | Not Started | Not Run | |
 | IndexedDB tests | Not Started | Not Run | |
 | Offline tests | Not Started | Not Run | |
-| Sync tests | Not Started | Not Run | |
-| Conflict tests | Not Started | Not Run | |
+| Sync tests | Completed | 20 passed | `backend/tests/test_sync.py`; PostgreSQL integration tests for idempotency, conflicts, pull, tombstones, and devices |
+| Conflict tests | Completed | 2 passed | Conflict list/detail scoping and conflict-resolution permission/version enforcement in `test_sync.py` |
 | PWA tests | Not Started | Not Run | |
 | E2E tests | Not Started | Not Run | |
 | Security checks | Not Started | Not Run | |
@@ -1012,6 +1124,15 @@ Do not report tests as passed if they were not actually executed.
 | 2026-11-21 | `.venv/Scripts/python.exe -m pytest -q` (final validation run) | Full backend suite | 53 | 0 | All Phase 3, Phase 4, and eight audit/validation regression tests passed |
 | 2026-11-21 | `.venv/Scripts/python.exe -m alembic check` | Migration drift | 1 | 0 | No new upgrade operations detected after final validation |
 | 2026-11-21 | `.venv/Scripts/python.exe -c "from app.main import create_app; app=create_app(); print(len(app.openapi()['paths']))"` | OpenAPI generation | 1 | 0 | 25 documented API paths |
+| 2026-11-21 | `.venv/Scripts/python.exe -m compileall -q app tests alembic` | Static | 1 | 0 | Phase 5 Python compilation succeeded |
+| 2026-11-21 | `.venv/Scripts/python.exe -m pytest -q tests/test_sync.py` | Sync integration | 20 | 0 | 20 PostgreSQL sync tests passed; 2 non-blocking warnings |
+| 2026-11-21 | `.venv/Scripts/python.exe -m pytest -q tests/test_sync.py::test_retryable_error_can_be_retried_with_same_operation_id` | Regression | 1 | 0 | Retryable result no longer blocks same-ID retry |
+| 2026-11-21 | `.venv/Scripts/python.exe -m pytest -q` (final Phase 5 run) | Full backend suite | 73 | 0 | All Phase 3, Phase 4, and Phase 5 tests passed; 2 non-blocking warnings |
+| 2026-11-21 | `.venv/Scripts/python.exe -m alembic current` | Migration state | 1 | 0 | Development database was at `0004_template_key` before Phase 5 upgrade |
+| 2026-11-21 | `.venv/Scripts/python.exe -m alembic upgrade head` | Migration | 1 | 0 | Applied `0005_sync_scope_and_retry` to `field_inspection_db` |
+| 2026-11-21 | `.venv/Scripts/python.exe -m alembic downgrade 0004_template_key` then `upgrade head` | Migration rollback/upgrade | 1 | 0 | Phase 5 migration downgrade and re-upgrade succeeded |
+| 2026-11-21 | `.venv/Scripts/python.exe -m alembic check` | Migration drift | 1 | 0 | No new upgrade operations detected after Phase 5 |
+| 2026-11-21 | `.venv/Scripts/python.exe -c "from app.main import create_app; a=create_app(); print('OpenAPI paths:', len(a.openapi()['paths']))"` | OpenAPI generation | 1 | 0 | 33 documented API paths after Phase 5 |
 
 ---
 
@@ -1040,6 +1161,15 @@ Maintain a chronological record of significant implementation decisions.
 | D-017 | 2026-11-21 | Persist `submitted_version` with each inspection result | User-approved change; makes the submitted version part of idempotency payload identity and prevents a reused `submission_id` with a different version from succeeding | Migration `0003_submitted_version`, `InspectionResult`, inspection submission service, API and database documentation |
 | D-018 | 2026-11-21 | Add a stable `template_key` shared by all rows in a checklist revision lineage | User-approved change; separate revision UUIDs otherwise provide no durable lineage key for safe version allocation | Migration `0004_template_key`, `ChecklistTemplate`, checklist repository/service, database documentation |
 | D-019 | 2026-11-21 | Reject explicit `null` for non-clearable PATCH fields and validate final choice options before mutation | Preserves `422` request-validation semantics and prevents PATCH requests from creating database constraint errors or choice items with no valid answers | `SiteUpdate`, `InspectionUpdate`, `ChecklistItemUpdate`, `ChecklistService.update_item`, `test_core_features.py` |
+| D-020 | 2026-11-21 | Treat `/api/v1/devices` as canonical and `/api/v1/sync/devices` as an alias | Both paths appear in approved documents | Shared device handlers and authorization |
+| D-021 | 2026-11-21 | Compute canonical SHA-256 payload identity on the server and reject client-supplied `payload_hash` | Clients must not choose their own hash; retries must preserve identity | `SyncOperationRequest`, `sync_identity.py`, `SyncService` |
+| D-022 | 2026-11-21 | Store pull scope on `sync_changes` with `authorized_user_ids` and `is_global` | Tombstones must remain attributable after target rows are deleted | Migration `0005_sync_scope_and_retry`, `SyncChange`, scoped pull repository/service |
+| D-023 | 2026-11-21 | Process each push operation in its own database savepoint | One invalid operation must not roll back unrelated work; every operation needs one outcome | `SyncService.push`, idempotency ledger, conflict persistence |
+| D-024 | 2026-11-21 | Use lowercase entity types, uppercase operation/change types, and `RETRYABLE_ERROR` in sync contracts | Aligns API responses with `api-contracts.md` while representing temporary failures | Sync schemas, models, and services |
+| D-025 | 2026-11-21 | Emit change-feed events transactionally from Phase 4 CRUD services and push operations | Offline devices must pull administrator and inspector writes safely | Site, checklist, inspection, user, and sync services |
+| D-026 | 2026-11-21 | Reference the sync ledger row ID from `sync_conflicts.operation_id` | Database foreign key targets `sync_operations.id`, not the client operation UUID | Conflict persistence and `ConflictService` |
+| D-027 | 2026-11-21 | Use opaque signed cursors over commit-ordered `change_position` | Prevents client mutation while relying on the existing advisory-lock cursor trigger | `sync_identity.py`, `SyncService.pull` |
+| D-028 | 2026-11-21 | Do not finalize `RETRYABLE_ERROR` in the idempotency ledger | Temporary failures must be retryable with the same operation ID | `SyncService._process_operation`, retryable regression test |
 
 When adding a decision:
 
@@ -1095,6 +1225,7 @@ Add a new entry whenever a development session makes meaningful changes.
 | 2026-11-21 | OpenCode (Big Pickle) | Phase 4 | F-008/F-009/F-010/F-011/F-029 | Added user, site, checklist, inspection, answer, submission, and dashboard APIs; added unique `submission_id` migration; enforced RBAC, version checks, immutable revisions, and idempotent submission; added six integration tests | Completed |
 | 2026-11-21 | OpenCode (Big Pickle) | Phase 4 | Audit remediation | Fixed pagination offsets, `template_key` revision lineage, full submission-payload idempotency, operation-owner conflict scoping, and explicit-null PATCH semantics; added migrations `0003_submitted_version` and `0004_template_key` plus seven regression tests | Completed |
 | 2026-11-21 | OpenCode (Big Pickle) | Phase 4 | Final validation remediation | Rejected explicit null for non-clearable PATCH fields, validated final choice options before mutation, added two regression tests, and completed a second independent audit; final suite passed 53 tests | Completed |
+| 2026-11-21 | OpenCode (Big Pickle) | Phase 5 | F-013 | Added device management, canonical hashing and idempotent push, savepoint-isolated operations, conflicts, scoped pull with tombstones, sync status, and transactional change logging; added migration `0005_sync_scope_and_retry` and 20 PostgreSQL sync tests; final suite passed 73 tests | Completed |
 
 For each entry, include a concise summary of:
 
@@ -1117,15 +1248,15 @@ Update it before stopping work.
 
 **Last completed phase:**
 
-Phase 4 — Core Backend Features.
+Phase 5 — Backend Synchronization Foundation.
 
 **Current phase:**
 
-Phase 4 — Core Backend Features (Completed). Next phase is Phase 5 — Backend Synchronization Foundation.
+Phase 5 — Backend Synchronization Foundation (Completed). Next phase is Phase 6 — Frontend Foundation.
 
 **Current feature:**
 
-None — F-008/F-009/F-010/F-011/F-029 are completed.
+None — F-013 is completed.
 
 **Current feature status:**
 
@@ -1133,34 +1264,36 @@ Completed.
 
 **Last completed task:**
 
-Implemented and verified user, site, checklist template/revision/item, inspection assignment, start, answer, submission, and dashboard APIs. Added migrations `0002_submission_id`, `0003_submitted_version`, and `0004_template_key`; enforced role-scoped queries, version checks, row locks, immutable published revisions, full-payload idempotent submissions, durable revision lineage, pagination offsets, operation-owner conflict scoping, explicit-null PATCH semantics, and safe choice-option updates. Final verification was 53 passing backend tests, Python compilation, successful migration upgrades, OpenAPI generation, a clean Alembic drift check, and a second independent read-only audit with no blocking findings.
+Implemented and verified backend synchronization: device registration/listing/revocation with aliases, durable operation ledger with canonical server-computed hashes, duplicate replay and changed-payload rejection, per-operation savepoints, version conflicts with preserved snapshots, authorization-scoped paginated pull with tombstones, sync status, conflict list/detail/resolve APIs, and transactional change-feed logging for approved writes. Added migration `0005_sync_scope_and_retry` and 20 PostgreSQL sync tests. A final review fixed retryable-result replay so temporary failures remain retryable with the same operation ID. Final verification was 73 passing backend tests, Python compilation, migration downgrade/upgrade, Alembic drift check, and 33 OpenAPI paths.
 
 **Current stopping point:**
 
-Phase 4 boundary reached. All acceptance criteria verified. Do not start Phase 5 without approval.
+Phase 5 boundary reached. All acceptance criteria verified. Do not start Phase 6 without approval. Phase 5 changes are uncommitted and must not be committed unless explicitly requested.
 
 ## Files to inspect first
 
 1. `progress-tracker.md`
-2. `docs/development-phases.md` — Phase 5 requirements
+2. `docs/development-phases.md` — Phase 6 requirements
 3. `docs/api-contracts.md` — synchronization, device, and conflict contracts
 4. `backend/app/api/v1/router.py`
-5. `backend/app/api/v1/endpoints/inspections.py`
-6. `backend/app/services/inspection_service.py`
-7. `backend/app/core/db_errors.py`
-8. `backend/alembic/versions/0003_submitted_version.py`
-9. `backend/alembic/versions/0004_template_key.py`
+5. `backend/app/services/sync_service.py`
+6. `backend/app/services/conflict_service.py`
+7. `backend/app/services/device_service.py`
+8. `backend/alembic/versions/0005_sync_scope_and_retry.py`
+9. `backend/tests/test_sync.py`
 10. `backend/tests/test_core_features.py`
 
 ## Work remaining
 
-- [ ] No Phase 4 work remains.
-- [ ] Wait for approval before starting Phase 5 — Backend Synchronization Foundation.
+- [ ] No Phase 5 work remains.
+- [ ] Wait for approval before starting Phase 6 — Frontend Foundation.
+- [ ] Do not commit Phase 5 changes unless the user explicitly requests it.
 
 ## Known problems
 
 - Non-blocking: installed Starlette/TestClient and passlib/argon2 versions emit deprecation warnings. No tests fail.
 - Non-blocking: optional PATCH fields are displayed as nullable in OpenAPI even though runtime validators reject `null` for non-clearable fields; runtime behavior is correct.
+- Frontend IndexedDB persistence, sync engine, Sync Center, and PWA shell are not implemented yet; they belong to later phases.
 - Dashboard synchronization statistics reflect server-side operation records only; the frontend must combine them with its IndexedDB queue, as required by `docs/api-contracts.md`.
 - The login rate limiter remains process-local; a multi-instance deployment needs a shared limiter.
 
@@ -1169,16 +1302,16 @@ Phase 4 boundary reached. All acceptance criteria verified. Do not start Phase 5
 The next agent must:
 
 1. Read `AGENTS.md` and this progress tracker.
-2. Confirm Phase 4 is marked Completed and verified.
+2. Confirm Phase 5 is marked Completed and verified.
 3. Stop at the phase boundary.
-4. Begin Phase 5 only after explicit user approval.
-5. Reuse the Phase 3 authentication dependencies, Phase 4 services/repositories, shared error envelope, and 12-table schema.
-6. Keep synchronization logic separate from ordinary CRUD logic.
-7. Preserve stable operation IDs, idempotency, and commit-ordered pull cursors.
+4. Begin Phase 6 only after explicit user approval.
+5. Reuse the Phase 3 authentication dependencies, Phase 4 services/repositories, Phase 5 synchronization contracts, shared error envelope, and 12-table schema.
+6. Keep frontend synchronization logic separate from presentation components.
+7. Preserve stable operation IDs, payload identity, commit-ordered cursors, and conflict snapshots.
 
 **Exact next action:**
 
-Report Phase 4 completion and wait for approval to start Phase 5 — Backend Synchronization Foundation.
+Report Phase 5 completion and wait for approval to start Phase 6 — Frontend Foundation.
 
 ---
 

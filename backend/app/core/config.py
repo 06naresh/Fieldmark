@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     API_PREFIX: str = "/api/v1"
     LOG_LEVEL: str = "INFO"
     MAX_PAGE_SIZE: int = 100
+    SYNC_MAX_BATCH_SIZE: int = 100
+    SYNC_MAX_PULL_LIMIT: int = 100
 
     DATABASE_URL: str = "postgresql+psycopg://postgres:postgres@localhost:5432/field_inspection_db"
     TEST_DATABASE_URL: str = "postgresql+psycopg://postgres:postgres@localhost:5432/field_inspection_test_db"

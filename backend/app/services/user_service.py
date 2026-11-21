@@ -10,6 +10,7 @@ from app.database.models import User
 from app.repositories import UserRepository
 from app.schemas.users import UserCreate, UserResponse, UserStatusUpdate, UserUpdate
 from app.core.db_errors import commit_transaction
+from app.services.change_log import log_change
 
 
 class UserService:
@@ -28,6 +29,7 @@ class UserService:
             is_active=True,
         )
         self.repository.create(user)
+        self._log_user(user, "CREATE")
         self._commit()
         return user
 
@@ -58,6 +60,7 @@ class UserService:
             if not payload.is_active:
                 self.repository.revoke_sessions(user_id, utc_now())
 
+        self._log_user(user, "UPDATE")
         self._commit()
         return user
 
@@ -71,8 +74,21 @@ class UserService:
         user.is_active = payload.is_active
         if not payload.is_active:
             self.repository.revoke_sessions(user_id, utc_now())
+        self._log_user(user, "UPDATE")
         self._commit()
         return user
+
+    def _log_user(self, user: User, change_type: str) -> None:
+        # Never expose the password hash through the change feed.
+        log_change(
+            self.repository.db,
+            entity_type="user",
+            entity_id=user.id,
+            change_type=change_type,
+            entity_version=None,
+            payload=user_response(user).model_dump(mode="json"),
+            authorized_user_ids=[user.id],
+        )
 
     def _commit(self) -> None:
         commit_transaction(self.repository.db)

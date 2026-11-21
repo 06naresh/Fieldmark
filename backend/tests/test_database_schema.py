@@ -140,7 +140,7 @@ def test_database_connection_and_latest_migration(migrated_engine):
     with migrated_engine.connect() as connection:
         assert connection.execute(text("SELECT 1")).scalar() == 1
         assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar() == (
-            "0004_template_key"
+            "0005_sync_scope_and_retry"
         )
 
 

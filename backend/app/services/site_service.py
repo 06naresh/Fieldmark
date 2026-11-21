@@ -9,6 +9,7 @@ from app.database.models import Site
 from app.repositories import SiteRepository
 from app.schemas.sites import SiteCreate, SiteResponse, SiteStatusUpdate, SiteUpdate
 from app.core.db_errors import commit_transaction
+from app.services.change_log import log_change
 from app.services.concurrency import check_version
 
 
@@ -30,6 +31,15 @@ class SiteService:
             version=1,
         )
         self.repository.create(site)
+        log_change(
+            self.repository.db,
+            entity_type="site",
+            entity_id=site.id,
+            change_type="CREATE",
+            entity_version=site.version,
+            payload=site_response(site).model_dump(mode="json"),
+            is_global=True,
+        )
         self._commit()
         return site
 
@@ -75,6 +85,15 @@ class SiteService:
             if field in updates:
                 setattr(site, field, updates[field])
         site.version += 1
+        log_change(
+            self.repository.db,
+            entity_type="site",
+            entity_id=site.id,
+            change_type="UPDATE",
+            entity_version=site.version,
+            payload=site_response(site).model_dump(mode="json"),
+            is_global=True,
+        )
         self._commit()
         return site
 
@@ -85,6 +104,15 @@ class SiteService:
         check_version(site.version, payload.version, "site")
         site.is_active = payload.is_active
         site.version += 1
+        log_change(
+            self.repository.db,
+            entity_type="site",
+            entity_id=site.id,
+            change_type="UPDATE",
+            entity_version=site.version,
+            payload=site_response(site).model_dump(mode="json"),
+            is_global=True,
+        )
         self._commit()
         return site
 

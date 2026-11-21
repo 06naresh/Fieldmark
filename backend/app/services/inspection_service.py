@@ -8,6 +8,7 @@ from app.core.exceptions import (
     ConflictError,
     NotFoundError,
     UnprocessableEntityError,
+    VersionConflictError,
 )
 from app.core.security import utc_now
 from app.database.models import ChecklistItem, Inspection, InspectionAnswer, InspectionResult
@@ -29,6 +30,7 @@ from app.schemas.inspections import (
 )
 from app.services.checklist_service import item_response, template_response
 from app.core.db_errors import commit_transaction
+from app.services.change_log import jsonable, log_change
 from app.services.concurrency import check_version
 from app.services.site_service import site_response
 
@@ -71,6 +73,7 @@ class InspectionService:
             version=1,
         )
         self.repository.create(inspection)
+        self._log_inspection(inspection, "CREATE")
         self._commit()
         return inspection
 
@@ -134,6 +137,7 @@ class InspectionService:
             raise UnprocessableEntityError("due_at must not be earlier than scheduled_at.")
 
         inspection.version += 1
+        self._log_inspection(inspection, "UPDATE")
         self._commit()
         return inspection
 
@@ -144,6 +148,7 @@ class InspectionService:
 
         inspection.status = "IN_PROGRESS"
         inspection.version += 1
+        self._log_inspection(inspection, "UPDATE")
         self._commit()
         return StartResponse(
             id=inspection.id, status=inspection.status, version=inspection.version
@@ -168,9 +173,10 @@ class InspectionService:
         answer = self.repository.get_answer_for_update(inspection.id, checklist_item_id)
         expected_base_version = 1 if answer is None else answer.version
         if payload.base_version != expected_base_version:
-            raise ConflictError("The answer has changed. Reload it before saving again.")
+            raise VersionConflictError("The answer has changed. Reload it before saving again.")
 
-        if answer is None:
+        is_new = answer is None
+        if is_new:
             answer = InspectionAnswer(
                 inspection_id=inspection.id,
                 checklist_item_id=checklist_item_id,
@@ -186,6 +192,15 @@ class InspectionService:
             answer.version += 1
             answer.last_modified_by = actor_id
 
+        log_change(
+            self.repository.db,
+            entity_type="inspection_answer",
+            entity_id=answer.id,
+            change_type="CREATE" if is_new else "UPDATE",
+            entity_version=answer.version,
+            payload=answer_response(answer).model_dump(mode="json"),
+            authorized_user_ids=[inspection.assigned_to],
+        )
         self._commit()
         return answer
 
@@ -235,6 +250,25 @@ class InspectionService:
         self.repository.create_result(result)
         inspection.status = "SUBMITTED"
         inspection.version += 1
+        self._log_inspection(inspection, "UPDATE")
+        log_change(
+            self.repository.db,
+            entity_type="inspection_result",
+            entity_id=result.id,
+            change_type="CREATE",
+            entity_version=1,
+            payload=jsonable(
+                {
+                    "id": result.id,
+                    "inspection_id": result.inspection_id,
+                    "submission_id": result.submission_id,
+                    "overall_status": result.overall_status,
+                    "summary": result.summary,
+                    "submitted_at": result.submitted_at,
+                }
+            ),
+            authorized_user_ids=[inspection.assigned_to],
+        )
         try:
             self._commit()
         except ConflictError:
@@ -255,6 +289,17 @@ class InspectionService:
     def _require_editable(self, inspection: Inspection) -> None:
         if inspection.status not in _EDITABLE_STATUSES:
             raise ConflictError("The inspection is not in an editable state.")
+
+    def _log_inspection(self, inspection: Inspection, change_type: str) -> None:
+        log_change(
+            self.repository.db,
+            entity_type="inspection",
+            entity_id=inspection.id,
+            change_type=change_type,
+            entity_version=inspection.version,
+            payload=jsonable(_base_fields(inspection)),
+            authorized_user_ids=[inspection.assigned_to],
+        )
 
     def _commit(self) -> None:
         commit_transaction(self.repository.db)

@@ -59,7 +59,7 @@ class SyncOperation(Base):
             name="ck_sync_operations_operation_type",
         ),
         CheckConstraint(
-            "result_status IN ('ACCEPTED', 'CONFLICT', 'REJECTED')",
+            "result_status IN ('ACCEPTED', 'CONFLICT', 'REJECTED', 'RETRYABLE_ERROR')",
             name="ck_sync_operations_result_status",
         ),
         Index("idx_sync_operations_user_id", "user_id"),
@@ -172,6 +172,12 @@ class SyncChange(Base):
     change_type: Mapped[str] = mapped_column(String(30), nullable=False)
     entity_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
     payload: Mapped[dict[str, object] | None] = mapped_column(JSONB, nullable=True)
+    authorized_user_ids: Mapped[list[str]] = mapped_column(
+        JSONB, nullable=False, server_default=text("'[]'::jsonb")
+    )
+    is_global: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("false")
+    )
     change_position: Mapped[int] = mapped_column(BigInteger, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
