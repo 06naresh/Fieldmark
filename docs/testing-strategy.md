@@ -1028,6 +1028,8 @@ Verify:
 - Old caches are cleaned up safely.
 - Failed asset updates do not leave the application unusable.
 
+Phase 12 automated coverage verifies the manifest and icon set, service-worker registration and update banner behavior, shell precache inputs, offline navigation fallback, stale-while-revalidate behavior, API/authenticated request exclusion, optional asset failures, and obsolete cache cleanup. Browser-driven installation and reload scenarios remain part of the Phase 13 end-to-end suite.
+
 ## 13.2 Cache testing
 
 Test:

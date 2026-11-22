@@ -37,6 +37,7 @@ The application uses feature-oriented organization:
 - `src/hooks/` — reusable React hooks.
 - `src/layouts/` — authenticated shell, admin sidebar, header, and mobile navigation.
 - `src/lib/` — API client, query client, constants, utilities, and error normalization.
+- `src/pwa/` — service-worker policy, registration, update handling, and installability UI.
 - `src/pages/` — shared not-found and remaining placeholder pages.
 - `src/services/` — typed API clients and session lifecycle services.
 - `src/store/` — Zustand auth, theme, and application stores.
@@ -46,6 +47,12 @@ The application uses feature-oriented organization:
 
 Access tokens are stored only in memory by the API client. Refresh tokens remain in the backend's HTTP-only cookie and are never persisted in browser storage. Cookie-authenticated refresh and logout requests read the non-HttpOnly CSRF cookie and send it as `X-CSRF-Token`.
 
+## Progressive Web App
+
+Production builds generate `dist/sw.js`, `dist/manifest.webmanifest`, `dist/asset-manifest.json`, and install icons. The service worker caches only the application shell and generated static assets. API, authenticated, health, documentation, and cross-origin requests are never cached. Service-worker registration is production-only; the development server does not intercept requests. When a new deployment is detected, an in-app banner offers a safe reload while inspection data remains in IndexedDB.
+
+Run `python scripts/generate-pwa-icons.py` to regenerate the deterministic PNG icon set.
+
 ## Current scope
 
-Phase 7 implements login, session restoration and refresh, protected role-aware routes, the admin shell, dashboard, user/site/checklist management, and inspection assignment. Inspector execution, IndexedDB persistence, synchronization UI, conflict management, and the PWA shell remain later-phase work.
+Phases 7–12 implement authentication, administrator workflows, inspector execution, IndexedDB persistence, synchronization, conflict management, and the installable offline application shell. Integration E2E verification and deployment remain later phases.

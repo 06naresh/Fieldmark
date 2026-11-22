@@ -56,6 +56,10 @@ npm run preview   # Serve the production build locally
 
 Open `http://localhost:5173/signup` to create an `INSPECTOR` account, then sign in. Public self-registration intentionally cannot create `ADMIN` accounts; administrator accounts remain provisioned through authenticated administrative user management. A self-registered inspector can log in immediately, but inspections must still be created and assigned by an administrator before they appear in the inspector workspace.
 
+### Production PWA shell
+
+`npm run build` produces an installable offline shell with a web manifest, generated icons, a versioned service worker, and a static-asset manifest. The service worker caches application resources only; inspection records, sync operations, and authenticated API responses are never placed in the service-worker cache. Serve the `dist/` directory over HTTPS (or localhost) for installation and offline startup support.
+
 ## Documentation
 
 Full architectural specifications are located in `docs/`:

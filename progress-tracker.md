@@ -92,9 +92,9 @@ The next agent must be able to continue without repeating completed work.
 | Authentication | JWT |
 | State management | Zustand + TanStack Query |
 | Testing | pytest, Vitest, React Testing Library, Playwright |
-| Current development phase | Phase 11 — Conflict Management (Completed, awaiting commit) |
-| Current feature | F-022 Conflict Detection, F-023 Conflict Resolution, and F-024 Sync Center |
-| Overall status | Phases 9–11 and F-030 verified; Phase 11 implementation complete and not yet committed |
+| Current development phase | Phase 12 — PWA and Offline Application Shell (Completed, awaiting commit) |
+| Current feature | F-025 PWA Support |
+| Overall status | Phases 9–11 and F-030 committed; Phase 12 verified and uncommitted |
 
 ---
 
@@ -116,7 +116,7 @@ Update this table whenever a development phase changes.
 | 9 | Offline Persistence | Completed | 100% |
 | 10 | Synchronization Engine | Completed | 100% |
 | 11 | Conflict Management | Completed | 100% |
-| 12 | PWA and Offline Application Shell | Not Started | 0% |
+| 12 | PWA and Offline Application Shell | Completed | 100% |
 | 13 | Integration and Quality Assurance | Not Started | 0% |
 | 14 | Deployment and Release | Not Started | 0% |
 
@@ -144,18 +144,44 @@ Update this section whenever a new feature implementation session begins.
 |---|---|
 | Session date | 2026-11-22 |
 | Agent/session identifier | OpenCode (Big Pickle) |
-| Current phase | Phase 10 — Synchronization Engine (Completed and committed) |
-| Current feature | F-030 Public Inspector Signup (explicitly approved product/security exception) |
+| Current phase | Phase 12 — PWA and Offline Application Shell (Completed and verified) |
+| Current feature | F-025 PWA Support |
 | Feature status | Completed |
 | Last updated | 2026-11-22 |
 
-## 5.1 Current objective
+## 5.1A Current objective (Phase 12)
+
+**Objective:**
+
+Make the built frontend installable as a PWA and able to load its application shell offline, while keeping IndexedDB as the only durable store for inspection data and never caching sensitive API responses.
+
+**Included:**
+
+- Add a web manifest, install icons, and HTML install metadata.
+- Generate and version `sw.js` and a static-asset manifest from the production build.
+- Cache only the application shell and approved static assets.
+- Provide offline navigation fallback, background revalidation, old-cache cleanup, and update activation UX.
+- Add automated tests for install metadata, cache policy, offline startup, registration, and update UI.
+
+**Progress:**
+
+| Task | Status | Notes |
+|---|---|---|
+| Inspect Phase 12 requirements and existing frontend structure | Completed | Development phases, frontend/offline-sync/testing docs, Vite config, app entry, and UI primitives reviewed |
+| Implement manifest, icons, and HTML metadata | Completed | Manifest, deterministic PNG generator/output, and favicon linked from `index.html` |
+| Implement versioned service worker and asset manifest | Completed | Vite multi-entry build, build ID, generated static-asset manifest, shell/static cache policy |
+| Implement update handling UX | Completed | Production registration, update hook, and accessible update banner |
+| Add and verify PWA tests | Completed | 15 new tests; full frontend suite 92 passed |
+| Verify acceptance criteria | Completed | Typecheck, lint, tests, build, dist artifact inspection, audit, and diff check passed |
+| Commit Phase 12 | Pending | Verified changes remain uncommitted |
+
+## 5.1 Prior objective (F-030, completed)
 
 **Objective:**
 
 Add explicitly approved public self-registration so a user can create an `INSPECTOR` account, sign in, and test the application. The registration contract must not permit self-assigned `ADMIN` accounts, must reuse the existing session flow, and must be covered by backend and frontend tests.
 
-## 5.2 Current implementation scope
+## 5.2 Prior implementation scope (F-030, completed)
 
 **Included:**
 
@@ -182,7 +208,7 @@ Add explicitly approved public self-registration so a user can create an `INSPEC
 - The user explicitly approved public signup and Phase 11 on 2026-11-22.
 - The approved exception changes PRD/API/security/frontend documentation; those documents were updated rather than leaving implementation and contracts inconsistent.
 
-## 5.3 Current progress
+## 5.3 Prior progress (F-030, completed)
 
 | Task | Status | Notes |
 |---|---|---|
@@ -1707,7 +1733,7 @@ Add a new row when a feature is identified.
 | F-022 | Conflict detection | 11 | Completed | offline-sync-design.md |
 | F-023 | Conflict resolution | 11 | Completed | offline-sync-design.md |
 | F-024 | Sync Center | 11 | Completed | frontend-design.md |
-| F-025 | PWA support | 12 | Not Started | frontend-design.md |
+| F-025 | PWA support | 12 | Completed | frontend-design.md |
 | F-026 | Integration testing | 13 | Not Started | testing-strategy.md |
 | F-027 | E2E testing | 13 | Not Started | testing-strategy.md |
 | F-028 | Production deployment | 14 | Not Started | development-phases.md |
@@ -1992,6 +2018,13 @@ Do not report tests as passed if they were not actually executed.
 | 2026-11-22 | `npm run build` (Phase 11) | Production build | 1 | 0 | Succeeded with pre-existing Zod/comment and chunk-size warnings |
 | 2026-11-22 | `npm audit --audit-level=moderate` (Phase 11) | Security check | 1 | 0 | Zero vulnerabilities |
 | 2026-11-22 | `git diff --check` (Phase 11) | Diff hygiene | 1 | 0 | No whitespace errors; line-ending normalization notices only |
+| 2026-11-22 | `npx vitest run src/pwa --reporter=dot` (Phase 12) | PWA feature tests | 15 | 0 | 2 files; manifest, cache policy, offline shell, registration, and update UI passed |
+| 2026-11-22 | `npx vitest run --reporter=dot` (Phase 12) | Full frontend suite | 92 | 0 | 19 test files; includes 15 new PWA tests |
+| 2026-11-22 | `npx tsc --noEmit` (Phase 12) | TypeScript check | 1 | 0 | Strict check passed |
+| 2026-11-22 | `npm run lint` (Phase 12) | Lint | 1 | 0 | Zero warnings |
+| 2026-11-22 | `npm run build` (Phase 12) | Production build | 1 | 0 | Generated `sw.js`, manifest, icons, and asset manifest; pre-existing Zod/chunk warnings |
+| 2026-11-22 | `npm audit --audit-level=moderate` (Phase 12) | Security check | 1 | 0 | Zero vulnerabilities |
+| 2026-11-22 | `git diff --check` (Phase 12) | Diff hygiene | 1 | 0 | No whitespace errors; line-ending normalization notices only |
 
 ---
 
@@ -2145,6 +2178,7 @@ Add a new entry whenever a development session makes meaningful changes.
 | 2026-11-22 | OpenCode (Big Pickle) | Post-Phase 10 | F-030 | User explicitly approved public signup; added INSPECTOR-only backend registration, independent rate limiting, signup page/form, normal login-after-signup flow, route wiring, documentation updates, and 13 new tests; final verification was 79 backend tests, 68 frontend tests, clean typecheck/lint, successful build, and zero audit vulnerabilities | Completed |
 | 2026-11-22 | OpenCode (Big Pickle) | Post-Phase 10 | F-030 commit | Committed the verified signup implementation as `fcb2828 feat: add public inspector signup`; not pushed | Completed |
 | 2026-11-22 | OpenCode (Big Pickle) | Phase 11 | F-022/F-023/F-024 | Added full conflict audit metadata and correlation by `operation_id`, conflict API client, local conflict hydration/resolution repositories, version-checked keep-local/manual-merge workflows, shared Sync Center for both roles, conflict diff dialog with explicit confirmations and audit history, and 9 new frontend tests; final verification was 79 backend tests, 77 frontend tests, clean typecheck/lint, successful build, and zero audit vulnerabilities | Completed |
+| 2026-11-22 | OpenCode (Big Pickle) | Phase 12 | F-025 | Added install manifest, generated PNG icons, production service worker with versioned shell/static caching and offline navigation fallback, asset-manifest generation, API/authenticated cache exclusions, old-cache cleanup, update banner, and 15 new PWA tests; final verification was 92 frontend tests, clean typecheck/lint, successful build with expected dist artifacts, and zero audit vulnerabilities | Completed |
 
 For each entry, include a concise summary of:
 
@@ -2165,7 +2199,7 @@ Keep older history entries. Do not rewrite historical entries to make incomplete
 |---|---|
 | Feature ID | F-022 / F-023 / F-024 |
 | Development phase | Phase 11 — Conflict Management |
-| Status | Completed and verified; not yet committed |
+| Status | Completed, verified, and committed as `bd024c9` |
 | Documentation source | `docs/development-phases.md`, `docs/api-contracts.md`, `docs/offline-sync-design.md`, `docs/frontend-design.md` |
 
 ### Important decisions
@@ -2236,6 +2270,87 @@ Keep older history entries. Do not rewrite historical entries to make incomplete
 
 ---
 
+# 14B. Phase 12 Implementation Record
+
+## Feature: F-025 PWA Support
+
+| Property | Value |
+|---|---|
+| Feature ID | F-025 |
+| Development phase | Phase 12 — PWA and Offline Application Shell |
+| Status | Completed and verified; not yet committed |
+| Documentation source | `docs/development-phases.md`, `docs/frontend-design.md`, `docs/offline-sync-design.md`, `docs/testing-strategy.md` |
+
+### Important decisions
+
+- No new PWA dependency was introduced. A small custom service worker and Vite build plugin provide the approved behavior.
+- The production build emits a build-specific cache name, `sw.js`, and `asset-manifest.json`; the latter lists generated JavaScript and CSS assets for precaching.
+- The service worker caches the application shell and approved static build assets only. API, authentication, health, documentation, cross-origin, and credentialed requests are never cached.
+- Navigations use a network-first strategy with cached `index.html` fallback. Static assets use stale-while-revalidate so cached startup is fast and updates still arrive.
+- Optional generated assets are cached best-effort; a single missing asset cannot prevent service-worker installation.
+- Activation removes only obsolete Fieldmark cache names and preserves unrelated caches.
+- Service-worker registration is production-only. A React banner exposes update availability and sends `SKIP_WAITING`, while an authorized `controllerchange` reload completes the update.
+- IndexedDB remains the only durable store for inspection records, answers, and sync operations.
+
+### Files created
+
+- `frontend/public/manifest.webmanifest`
+- `frontend/public/favicon.svg`
+- `frontend/public/icons/icon-192.png`
+- `frontend/public/icons/icon-512.png`
+- `frontend/public/icons/icon-maskable-512.png`
+- `frontend/scripts/generate-pwa-icons.py`
+- `frontend/src/pwa/serviceWorkerCore.ts`
+- `frontend/src/pwa/serviceWorkerCore.test.ts`
+- `frontend/src/pwa/sw.ts`
+- `frontend/src/pwa/registerServiceWorker.ts`
+- `frontend/src/pwa/useServiceWorkerUpdate.ts`
+- `frontend/src/pwa/serviceWorkerUpdate.test.tsx`
+- `frontend/src/pwa/components/ServiceWorkerUpdateBanner.tsx`
+
+### Files modified
+
+- `frontend/index.html`
+- `frontend/tsconfig.json`
+- `frontend/vite.config.ts`
+- `frontend/src/vite-env.d.ts`
+- `frontend/src/app/main.tsx`
+- `frontend/src/app/App.tsx`
+- `frontend/README.md`
+- `README.md`
+- `docs/development-phases.md`
+- `docs/frontend-design.md`
+- `docs/offline-sync-design.md`
+- `docs/testing-strategy.md`
+- `progress-tracker.md`
+
+### Verification
+
+- Frontend full suite: `npx vitest run --reporter=dot` — 92 passed across 19 files, including 15 new PWA tests.
+- TypeScript: `npx tsc --noEmit` — passed.
+- Lint: `npm run lint` — passed with zero warnings.
+- Build: `npm run build` — succeeded with pre-existing Zod comment and chunk-size warnings.
+- Build output inspection: `dist/sw.js`, `dist/manifest.webmanifest`, `dist/asset-manifest.json`, `dist/favicon.svg`, and all three PNG icons are present.
+- Audit: `npm audit --audit-level=moderate` — zero vulnerabilities.
+- Diff hygiene: `git diff --check` — no whitespace errors; line-ending normalization notices only.
+
+### Acceptance criteria
+
+- [x] Application can be installed where supported.
+- [x] Application shell loads offline.
+- [x] Downloaded inspection data remains available.
+- [x] Cache updates work correctly.
+- [x] User-specific data is not leaked through caches.
+- [x] Offline startup tests pass.
+
+### Known limitations
+
+- Service-worker registration is production-only; browser installation and offline reload must be demonstrated from `npm run preview` or a deployed HTTPS origin.
+- Browser-driven installation, reload-after-deploy, and offline E2E scenarios remain scheduled for Phase 13. Phase 12 covers manifest metadata, service-worker policy, registration, update UI, and offline shell fallback with automated unit/component tests.
+- The generated main JavaScript chunk still exceeds Vite's 500 kB warning threshold; performance reviews remain a later phase.
+
+---
+
 # 15. Latest Handoff Summary
 
 This is the most important section for an agent continuing from another session.
@@ -2246,19 +2361,19 @@ Update it before stopping work.
 
 **Last completed phase:**
 
-Phase 11 — Conflict Management. All acceptance criteria were verified. Phase 9 was committed as `45c03ff feat: implement phase 9 offline persistence`, Phase 10 as `cb4face feat: implement phase 10 synchronization engine`, and F-030 as `fcb2828 feat: add public inspector signup`. The Phase 11 working tree is verified but not yet committed.
+Phase 12 — PWA and Offline Application Shell. All acceptance criteria were verified. Phase 11 was committed as `bd024c9 feat: implement phase 11 conflict management`; Phase 12 is verified but uncommitted. The full verified commit sequence remains Phase 9 `45c03ff`, Phase 10 `cb4face`, F-030 `fcb2828`, and Phase 11 `bd024c9`. None of these commits was pushed.
 
 **Last completed feature:**
 
-F-022/F-023/F-024 — conflict detection correlation, explicit resolution, and the shared Sync Center. Conflict responses now carry audit metadata and the originating `operation_id`; the client hydrates full local/server snapshots, shows differences, and only updates local state after server confirmation.
+F-025 PWA Support. Production builds now emit a web manifest, generated icons, a versioned service worker, and a static-asset manifest. The worker caches only approved application resources, supports offline shell startup, cleans obsolete caches, and exposes update availability through an in-app banner.
 
 **Current phase:**
 
-Phase 11 — Conflict Management (Completed, awaiting commit). Phase 12 — PWA and Offline Application Shell is not started and must not be started without explicit approval.
+Phase 12 — PWA and Offline Application Shell (Completed, awaiting commit). Phase 13 — Integration and Quality Assurance remains unapproved.
 
 **Current feature:**
 
-F-022 Conflict Detection, F-023 Conflict Resolution, and F-024 Sync Center.
+F-025 PWA Support.
 
 **Current feature status:**
 
@@ -2266,38 +2381,31 @@ Completed and verified; not yet committed.
 
 **Last completed task:**
 
-Added the conflict API client, local hydration/resolution repositories, version-checked keep-local and manual-merge workflows, the shared Sync Center for admin and inspector routes, the conflict diff dialog with explicit confirmations and audit history, queue retry controls, and 9 new frontend tests. Final verification was 79 backend tests, 77 frontend tests, clean typecheck/lint, successful production build, and zero audit vulnerabilities.
+Implemented the production PWA shell: manifest and icons, versioned service worker with shell/static-asset precache and network-first navigation fallback, API/authenticated request exclusions, update/activation handling, Vite asset-manifest generation, and 15 new PWA tests. Final verification was 92 frontend tests, clean typecheck/lint, successful production build with expected dist artifacts, and zero audit vulnerabilities.
 
 **Current stopping point:**
 
-Phase 11 is implemented and verified. The verified changes need to be committed; no Phase 12 files should be changed.
+Phase 12 is implemented and verified. The verified changes need to be committed; no Phase 13 files should be changed.
 
 ## Files to inspect first
 
 1. `progress-tracker.md`
-2. `docs/development-phases.md` — Phase 11 acceptance criteria and Phase 12 boundary
-3. `docs/api-contracts.md` — conflict list/detail/resolve contracts
-4. `docs/offline-sync-design.md` — conflict detection, resolution, and audit rules
-5. `docs/frontend-design.md` — Sync Center and conflict dialog requirements
-6. `backend/app/schemas/sync.py` — conflict audit metadata contract
-7. `backend/app/services/conflict_service.py` — authorization, version checks, and audit persistence
-8. `backend/app/api/v1/endpoints/conflicts.py` — conflict endpoints
-9. `backend/tests/test_sync.py` — conflict scoping and resolution tests
-10. `frontend/src/services/api/conflictApi.ts` — remote conflict client
-11. `frontend/src/db/conflictRepository.ts` — local hydration, snapshot helpers, resolution application, and retry
-12. `frontend/src/services/sync/conflictResolutionService.ts` — server confirmation and new version-checked operations
-13. `frontend/src/features/sync/pages/SyncCenterPage.tsx` — shared Sync Center
-14. `frontend/src/features/sync/components/ConflictDetailsDialog.tsx` — diff and explicit resolution UI
-15. `frontend/src/features/sync/components/SyncQueueTable.tsx` — queue history and retry action
-16. `frontend/src/features/sync/services/conflictViewService.ts` — local/remote conflict merge
-17. `frontend/src/db/conflictRepository.test.ts` — repository persistence tests
-18. `frontend/src/features/sync/conflictManagement.test.tsx` — UI and resolution workflow tests
-19. `frontend/src/app/router.tsx` — admin and inspector Sync Center routes
-20. `frontend/src/services/sync/syncEngine.ts` — coordinating engine and triggers
-21. `frontend/src/db/syncRepositories.ts` — atomic push result and conflict persistence
-22. `frontend/src/db/localTypes.ts` and `frontend/src/db/localRepositories.ts` — durable local conflict shape and queue
-23. `frontend/src/store/syncStore.ts` — foreground sync state
-24. `frontend/src/features/inspections/pages/ExecuteInspectionPage.tsx` — offline operation identities and versions
+2. `docs/development-phases.md` — Phase 12 acceptance criteria and Phase 13 boundary
+3. `docs/frontend-design.md` — PWA and offline application shell requirements
+4. `docs/offline-sync-design.md` — service-worker versus IndexedDB responsibilities
+5. `docs/testing-strategy.md` — PWA and service-worker testing requirements
+6. `frontend/vite.config.ts` — service-worker entry, build ID, and generated asset manifest
+7. `frontend/index.html` — manifest, icon, and theme metadata
+8. `frontend/public/manifest.webmanifest` — installability contract
+9. `frontend/public/icons/` and `frontend/scripts/generate-pwa-icons.py` — generated app icons
+10. `frontend/src/pwa/serviceWorkerCore.ts` — cache policy and offline shell behavior
+11. `frontend/src/pwa/sw.ts` — browser service-worker event wiring
+12. `frontend/src/pwa/registerServiceWorker.ts` — production registration
+13. `frontend/src/pwa/useServiceWorkerUpdate.ts` — update and activation state
+14. `frontend/src/pwa/components/ServiceWorkerUpdateBanner.tsx` — user-facing update action
+15. `frontend/src/pwa/serviceWorkerCore.test.ts` — manifest, cache, and offline startup tests
+16. `frontend/src/pwa/serviceWorkerUpdate.test.tsx` — registration and update UI tests
+17. `frontend/src/app/main.tsx` and `frontend/src/app/App.tsx` — registration and banner integration
 
 ## Work remaining
 
@@ -2315,8 +2423,10 @@ Phase 11 is implemented and verified. The verified changes need to be committed;
 - [x] Build the shared Sync Center and conflict diff/resolution UI on persisted snapshots.
 - [x] Implement explicit accept-server, keep-local, and manual-merge workflows with version-checked operations.
 - [x] Add and verify Phase 11 backend and frontend conflict tests.
-- [ ] Commit the verified Phase 11 changes.
-- [ ] In later phases, complete the PWA shell, E2E scenarios, and deployment work after explicit approval.
+- [x] Commit the verified Phase 11 changes as `bd024c9 feat: implement phase 11 conflict management`; not pushed.
+- [x] Implement Phase 12 PWA manifest, icons, service worker, offline shell, cache/update handling, and tests.
+- [ ] Commit the verified Phase 12 changes when instructed.
+- [ ] In later phases, complete E2E scenarios and deployment work after explicit approval.
 
 ## Known problems
 
@@ -2333,25 +2443,28 @@ Phase 11 is implemented and verified. The verified changes need to be committed;
 - Administrative resolution records the server-side decision; it does not automatically merge local work that exists only on another user's device.
 - Browser-level multi-tab E2E coverage remains Phase 13; the lock has concurrent-trigger unit coverage and uses Web Locks/localStorage where available.
 - Offline access uses a seven-day default validity window and is not revalidated with the server until connectivity returns.
+- Browser-driven PWA installation, deployment reload, and offline E2E scenarios remain Phase 13; Phase 12 has manifest, cache-policy, registration, update UI, and offline shell fallback tests.
+- Service-worker registration is intentionally production-only; use `npm run preview` or a deployed HTTPS origin to exercise installation/offline startup.
 
 ## Next agent instructions
 
 The next agent must:
 
 1. Read `AGENTS.md`, the approved documentation, and this progress tracker.
-2. Inspect the actual Phase 11 source files listed above before changing behavior.
-3. Commit the verified Phase 11 changes when instructed; do not push unless explicitly asked.
+2. Inspect the actual Phase 12 source files listed above before changing behavior.
+3. Preserve the Phase 11 commit `bd024c9`; commit Phase 12 only when instructed and never push unless explicitly asked.
 4. Preserve the INSPECTOR-only signup boundary; do not add self-assigned ADMIN registration without a new explicit security/product decision.
 5. Preserve stable operation IDs, immutable payloads, dependency order, and idempotent result handling.
 6. Keep the pull cursor inside the same Dexie transaction as the applied batch.
 7. Preserve conflict snapshots; do not introduce last-write-wins for inspection answers.
 8. Keep API and IndexedDB access outside presentation components.
 9. Preserve the in-memory access-token policy and HTTP-only refresh-cookie strategy.
-10. Do not start Phase 12 — PWA and Offline Application Shell without explicit approval.
+10. Do not start Phase 13 — Integration and Quality Assurance without a new explicit approval.
+11. Preserve the service-worker boundary: no API, authentication, health, documentation, cross-origin, or credentialed response caching.
 
 **Exact next action:**
 
-Commit the verified Phase 11 work as `feat: implement phase 11 conflict management` (or the user's chosen message), then stop at the phase boundary and wait for approval before Phase 12.
+Commit the verified Phase 12 work as `feat: implement phase 12 pwa offline shell` (or the user's chosen message), then stop at the phase boundary and wait for approval before Phase 13.
 
 ---
 

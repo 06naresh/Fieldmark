@@ -1146,6 +1146,8 @@ Requirements:
 
 The service worker is responsible for application resource caching.
 
+The approved implementation serves `/manifest.webmanifest`, install icons, a versioned `sw.js`, and a generated `asset-manifest.json` from the production build. The worker precaches the shell and generated static assets, uses a network-first fallback to cached `index.html` for navigation requests, and uses stale-while-revalidate for approved static assets. API, authentication, health, documentation, cross-origin, and credentialed requests are never cached. Each build uses a distinct cache name; activation removes older Fieldmark caches. A user-visible banner offers reload when an updated worker is waiting.
+
 Dexie and IndexedDB are responsible for durable inspection data and the sync queue.
 
 Do not confuse service-worker caching with business-data persistence.

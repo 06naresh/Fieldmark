@@ -115,6 +115,8 @@ The correct sequence is:
 
 TanStack Query must not be treated as the offline database. IndexedDB is responsible for durable offline persistence.
 
+The service worker caches only the application shell and approved static build assets. It does not cache API responses, authenticated requests, inspection records, or synchronization operations. Those remain the responsibility of the server and the Dexie repositories.
+
 ---
 
 ## 5. IndexedDB Database Design

@@ -900,12 +900,12 @@ Make Fieldmark installable and available as an offline application shell.
 
 ## Acceptance criteria
 
-- [ ] Application can be installed where supported.
-- [ ] Application shell loads offline.
-- [ ] Downloaded inspection data remains available.
-- [ ] Cache updates work correctly.
-- [ ] User-specific data is not leaked through caches.
-- [ ] Offline startup tests pass.
+- [x] Application can be installed where supported.
+- [x] Application shell loads offline.
+- [x] Downloaded inspection data remains available.
+- [x] Cache updates work correctly.
+- [x] User-specific data is not leaked through caches.
+- [x] Offline startup tests pass.
 
 ---
 
