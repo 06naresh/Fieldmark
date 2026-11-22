@@ -423,6 +423,10 @@ export async function queueAnswerChange(input: AnswerOperationInput): Promise<Sy
   const existingOperation = existingAnswer?.operation_id
     ? await fieldmarkLocalDb.sync_queue.get(existingAnswer.operation_id)
     : undefined;
+  const inspectionRecord = await getLocalInspectionRecord(input.ownerId, input.inspectionId);
+  const dependencies = inspectionRecord?.start_operation_id
+    ? [inspectionRecord.start_operation_id]
+    : [];
 
   // A pending, unsent operation may be coalesced. Sent or terminal operations
   // are immutable; a later local edit receives a new operation ID.
@@ -445,6 +449,7 @@ export async function queueAnswerChange(input: AnswerOperationInput): Promise<Sy
           // not been sent yet.
           payload_hash: await hashPayload(payload),
           base_version: input.baseVersion,
+          dependencies,
         }
       : await createQueueOperation({
           id: canReuse ? existingOperation?.id : undefined,
@@ -455,6 +460,7 @@ export async function queueAnswerChange(input: AnswerOperationInput): Promise<Sy
           operationType: input.baseVersion <= 1 ? 'CREATE' : 'UPDATE',
           payload,
           baseVersion: input.baseVersion,
+          dependencies,
           createdAt: now,
         });
 
@@ -647,6 +653,32 @@ export async function queueInspectionSubmission(
   }
 
   const deviceId = await getOrCreateDeviceId(ownerId);
+  const startOperation = record.start_operation_id
+    ? await fieldmarkLocalDb.sync_queue.get(record.start_operation_id)
+    : undefined;
+  const answerOperations = await fieldmarkLocalDb.sync_queue
+    .where('user_id')
+    .equals(ownerId)
+    .filter(
+      (candidate) =>
+        candidate.entity_type === 'inspection_answer' &&
+        candidate.payload.inspection_id === detail.id,
+    )
+    .toArray();
+  const dependencies = [
+    ...new Set([
+      ...(record.start_operation_id ? [record.start_operation_id] : []),
+      ...answerOperations.map((candidate) => candidate.id),
+    ]),
+  ];
+
+  // Starting an accepted inspection increments its server version. A queued
+  // start therefore means the submission must be based on the predicted next
+  // version, otherwise it would conflict when connectivity returns.
+  const baseVersion = startOperation
+    ? (startOperation.base_version ?? detail.version) + 1
+    : record.server_version || detail.version;
+
   const operation = await createQueueOperation({
     userId: ownerId,
     deviceId,
@@ -658,7 +690,8 @@ export async function queueInspectionSubmission(
       summary,
       overall_status: overallStatus,
     },
-    baseVersion: detail.version,
+    baseVersion,
+    dependencies,
   });
 
   await fieldmarkLocalDb.transaction(

@@ -6,6 +6,7 @@ export class ApiError extends Error {
   readonly status: number;
   readonly details: ApiErrorDetail[];
   readonly requestId?: string;
+  readonly retryAfterHeader?: string;
 
   constructor(options: {
     code: string;
@@ -13,6 +14,7 @@ export class ApiError extends Error {
     status: number;
     details?: ApiErrorDetail[];
     requestId?: string;
+    retryAfterHeader?: string;
   }) {
     super(options.message);
     this.name = 'ApiError';
@@ -20,7 +22,24 @@ export class ApiError extends Error {
     this.status = options.status;
     this.details = options.details ?? [];
     this.requestId = options.requestId;
+    this.retryAfterHeader = options.retryAfterHeader;
   }
+}
+
+function readRetryAfterHeader(headers: unknown): string | undefined {
+  if (!headers || typeof headers !== 'object') {
+    return undefined;
+  }
+
+  const candidate = headers as Record<string, unknown> & {
+    get?: (name: string) => unknown;
+  };
+  const value = typeof candidate.get === 'function' ? candidate.get('retry-after') : candidate['retry-after'];
+
+  if (Array.isArray(value)) {
+    return typeof value[0] === 'string' ? value[0] : undefined;
+  }
+  return typeof value === 'string' || typeof value === 'number' ? String(value) : undefined;
 }
 
 function isApiErrorPayload(value: unknown): value is ApiErrorPayload {
@@ -45,6 +64,7 @@ export function normalizeApiError(error: unknown): ApiError {
   if (axios.isAxiosError(error)) {
     const status = error.response?.status ?? 0;
     const payload = error.response?.data;
+    const retryAfter = readRetryAfterHeader(error.response?.headers);
 
     if (isApiErrorPayload(payload)) {
       return new ApiError({
@@ -53,6 +73,7 @@ export function normalizeApiError(error: unknown): ApiError {
         status,
         details: payload.error.details,
         requestId: payload.error.request_id,
+        retryAfterHeader: retryAfter,
       });
     }
 
@@ -61,6 +82,7 @@ export function normalizeApiError(error: unknown): ApiError {
         code: 'NETWORK_ERROR',
         message: 'The server could not be reached. Check your connection and try again.',
         status,
+        retryAfterHeader: retryAfter,
       });
     }
 
@@ -68,6 +90,7 @@ export function normalizeApiError(error: unknown): ApiError {
       code: 'HTTP_ERROR',
       message: status >= 500 ? 'The server is temporarily unavailable.' : 'The request could not be completed.',
       status,
+      retryAfterHeader: retryAfter,
     });
   }
 

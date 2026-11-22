@@ -1,3 +1,4 @@
+import { createId } from '@/lib/id';
 import type {
   AnswerValue,
   InspectionDetail,
@@ -66,11 +67,9 @@ export function createServerAnswers(detail: InspectionDetail): Record<string, Sa
   return snapshots;
 }
 
+/** Submission IDs are validated as UUIDs by the synchronization API. */
 export function createSubmissionId(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
-  }
-  return `submission-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return createId();
 }
 
 export function createStoredDraft(detail: InspectionDetail, ownerId: string): StoredInspectionDraft {

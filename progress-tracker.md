@@ -92,9 +92,9 @@ The next agent must be able to continue without repeating completed work.
 | Authentication | JWT |
 | State management | Zustand + TanStack Query |
 | Testing | pytest, Vitest, React Testing Library, Playwright |
-| Current development phase | Phase 9 — Offline Persistence (Completed; uncommitted changes in working tree) |
-| Current feature | F-017 IndexedDB Persistence and F-018 Durable Sync Queue |
-| Overall status | Phase 8 committed as `c5c9eec`; Phase 9 implemented and verified, awaiting commit decision |
+| Current development phase | Phase 10 — Synchronization Engine (Completed) |
+| Current feature | F-019 Push Synchronization, F-020 Pull Synchronization, and F-021 Retry Mechanism |
+| Overall status | Phase 9 committed as `45c03ff`; Phase 10 complete and verified but uncommitted |
 
 ---
 
@@ -114,7 +114,7 @@ Update this table whenever a development phase changes.
 | 7 | Frontend Authentication and Admin Features | Completed | 100% |
 | 8 | Inspector Workflow | Completed | 100% |
 | 9 | Offline Persistence | Completed | 100% |
-| 10 | Synchronization Engine | Not Started | 0% |
+| 10 | Synchronization Engine | Completed | 100% |
 | 11 | Conflict Management | Not Started | 0% |
 | 12 | PWA and Offline Application Shell | Not Started | 0% |
 | 13 | Integration and Quality Assurance | Not Started | 0% |
@@ -142,61 +142,68 @@ Update this section whenever a new feature implementation session begins.
 
 | Property | Current value |
 |---|---|
-| Session date | 2026-11-21 |
+| Session date | 2026-11-22 |
 | Agent/session identifier | OpenCode (Big Pickle) |
-| Current phase | Phase 9 — Offline Persistence (Completed; stopped at phase boundary) |
-| Current feature | F-017 IndexedDB Persistence and F-018 Durable Sync Queue |
+| Current phase | Phase 10 — Synchronization Engine (Completed) |
+| Current feature | F-019 Push Synchronization, F-020 Pull Synchronization, and F-021 Retry Mechanism |
 | Feature status | Completed |
-| Last updated | 2026-11-21 |
+| Last updated | 2026-11-22 |
 
 ## 5.1 Current objective
 
 **Objective:**
 
-Implement Phase 9 Offline Persistence: configure Dexie, define the approved local tables and versioning, add account-scoped repositories, download inspections and checklist templates, persist answers and a durable operation queue locally, handle IndexedDB errors, expose offline status, and verify refresh/restart behavior.
+Implement Phase 10 Synchronization Engine: connect the durable Dexie queue to the backend sync APIs with dependency-aware push, per-operation result handling, authorized pull, transactional local application and cursor persistence, retry/backoff with jitter, connectivity management, synchronization locking, and manual/triggered synchronization.
 
 ## 5.2 Current implementation scope
 
 **Included:**
 
-- Dexie database `fieldmark_local_db` with the eight approved local tables.
-- Local users, sites, inspections, templates, answers, metadata, conflicts, and synchronization queue records.
-- Account-scoped local repositories and atomic local transactions.
-- Inspection and checklist download services.
-- Durable replacement for the Phase 8 in-memory draft repository.
-- Local answer persistence before server confirmation.
-- Offline-aware data access and status indicators for inspector workflows.
-- IndexedDB tests, including refresh/restart and account isolation.
+- Reuse the Phase 9 operation factory and durable queue records without changing operation identity semantics.
+- Add frontend sync API services for device context, push, pull, and status endpoints.
+- Add dependency manager, queue service, retry manager, connectivity manager, push service, pull service, and coordinating sync engine.
+- Persist every operation result locally and keep conflicts, rejections, and retryable failures intact.
+- Apply pull batches and their cursor in one Dexie transaction; advance the cursor only after local application succeeds.
+- Add bounded exponential backoff with jitter and `Retry-After` handling.
+- Add a safe synchronization lock and foreground triggers plus a manual sync action.
+- Add synchronization integration tests for dependencies, duplicate responses, cursor persistence, interrupted sync, and network recovery.
 
 **Not included:**
 
-- Push/pull synchronization engine, retry/backoff, dependency execution, and Sync Center behavior; these remain Phase 10+.
-- Conflict resolution UI; Phase 9 only defines local conflict records.
+- Full Sync Center UI and conflict resolution workflows; these remain Phase 11 (`F-022`–`F-024`).
 - PWA installation and offline application shell; these remain Phase 12.
+- Backend API changes; Phase 5 already provides the approved sync contracts.
 
 **Dependencies:**
 
-- Phases 0–8 are completed and verified.
-- Phase 8 was committed as `c5c9eec feat: implement phase 8 inspector workflow`; it was not pushed.
-- Approved local schema and behavior were reviewed in `docs/offline-sync-design.md` and `docs/development-phases.md`.
+- Phases 0–9 are completed and verified.
+- Phase 9 was committed as `45c03ff feat: implement phase 9 offline persistence` after user request.
+- The user explicitly approved Phase 10 on 2026-11-22.
+- Approved sync behavior was reviewed in `docs/development-phases.md`, `docs/offline-sync-design.md`, and `docs/api-contracts.md`.
 
 ## 5.3 Current progress
 
 | Task | Status | Notes |
 |---|---|---|
-| Review Phase 9 documentation | Completed | Development phases, offline-sync design, frontend design, and testing strategy reviewed |
-| Inspect existing implementation | Completed | Phase 8 draft store, execution page, API services, fixtures, and test setup inspected |
-| Commit Phase 8 work | Completed | Committed as `c5c9eec feat: implement phase 8 inspector workflow` |
-| Configure Dexie and versioned local tables | Completed | `fieldmark_local_db` v1 with all eight approved tables |
-| Implement account-scoped local repositories | Completed | Owner-scoped IDs, offline-session checks, and atomic transactions |
-| Implement inspection/checklist downloads | Completed | Detail download caches site, template revision, and answers |
-| Replace in-memory drafts with durable answer storage | Completed | Dexie is the source of truth; Zustand remains a synchronous mirror |
-| Add durable sync queue and metadata records | Completed | Stable IDs, canonical payload hashes, account/device context, conflicts, and metadata |
-| Add offline status indicators and error handling | Completed | Offline banners, local-save labels, typed offline errors, and persisted error state |
-| Add IndexedDB and offline persistence tests | Completed | 12 repository tests plus 3 offline workflow tests |
-| Run verification | Completed | 49/49 frontend tests, clean lint/typecheck, build, preview, and audit passed |
+| Review Phase 10 documentation | Completed | Development phases, offline-sync design, API contracts, and tracker reviewed |
+| Verify Phase 9 commit | Completed | `45c03ff feat: implement phase 9 offline persistence` created; no push requested |
+| Inspect existing queue and API implementation | Completed | Reviewed local repositories, Axios/auth session, and backend sync contracts |
+| Design sync module boundaries | Completed | Push, pull, retry, dependency, connectivity, locking, and engine modules are independently testable |
+| Implement sync API client and queue service | Completed | Account/device-scoped API client; stable IDs; explicit and implicit dependency metadata |
+| Implement push and per-operation results | Completed | Bounded batches; conflicts, rejections, and retryable failures preserved locally |
+| Implement pull and transactional cursor persistence | Completed | Opaque cursor; batch and cursor written in one Dexie transaction |
+| Implement retry, connectivity, lock, triggers, and manual sync | Completed | Bounded jittered retry, `Retry-After`, foreground lock, debounced triggers, header action |
+| Add synchronization integration tests | Completed | 10 new sync tests plus 2 identifier tests added |
+| Run verification | Completed | Typecheck, lint, 61/61 tests, build, preview HTTP 200, and audit passed |
 
-Update the task statuses as work progresses.
+### 5.4 Phase 10 verification summary
+
+- `npx tsc --noEmit`: clean.
+- `npm run lint`: clean with zero warnings.
+- `npm test -- --run`: 61 passed across 13 test files.
+- `npm run build`: production build succeeded; non-blocking chunk-size and Zod annotation warnings.
+- Vite preview smoke check: HTTP 200.
+- `npm audit --audit-level=moderate`: zero vulnerabilities.
 
 ---
 
@@ -1408,6 +1415,135 @@ Phase 9 is complete and verified. Stop at the phase boundary. The Phase 9 change
 
 ---
 
+## Feature: F-019/F-020/F-021 Synchronization Engine
+
+| Property | Value |
+|---|---|
+| Feature ID | F-019, F-020, F-021 |
+| Development phase | Phase 10 |
+| Status | Completed |
+| Priority | Critical |
+| Started date | 2026-11-22 |
+| Last updated | 2026-11-22 |
+| Completed date | 2026-11-22 |
+| Implemented by | OpenCode (Big Pickle) |
+
+### Phase10.1 Feature objective
+
+Connect the Phase 9 durable Dexie queue to the Phase 5 backend synchronization APIs with dependency-aware push, per-operation result persistence, authorized pull, transactional local application and cursor advancement, bounded retry behavior, connectivity handling, synchronization locking, and foreground/manual triggers.
+
+### Phase10.2 Current implementation scope
+
+**Included:** UUID-shaped queue IDs and deterministic answer IDs; explicit and implicit operation dependencies; bounded push batches; per-operation `ACCEPTED`, `CONFLICT`, `REJECTED`, and `RETRYABLE_ERROR` handling; idempotent duplicate result application; paginated pull; atomic Dexie batch/cursor writes; conflict snapshots without last-write-wins; bounded exponential backoff with jitter and `Retry-After`; interrupted-operation recovery; Web Locks with localStorage lease fallback; debounced online/startup/login/visibility/interval triggers; and a header-level manual sync action.
+
+**Not included:** Full Sync Center UI, user-facing conflict resolution workflows, PWA installation/offline application shell, browser E2E scenarios, and backend API changes. These remain Phases 11–14.
+
+**Dependencies:** Phases 0–9 are complete. Phase 9 was committed as `45c03ff feat: implement phase 9 offline persistence`. Phase 10 was explicitly approved by the user on 2026-11-22. The implementation uses the existing Phase 5 `/api/v1/sync/*` contracts without redesigning them.
+
+### Phase10.3 Progress
+
+| Task | Status | Notes |
+|---|---|---|
+| Create operation factory and durable queue service | Completed | Reused Phase 9 factory; added sync repository and explicit dependency metadata |
+| Implement operation dependencies | Completed | Start → answer → submit ordering, including legacy queue records without explicit metadata |
+| Implement synchronization locking | Completed | Web Locks plus in-process guard and short-lived localStorage lease |
+| Implement connectivity management | Completed | Browser connectivity and device status, including inactive-device re-registration |
+| Implement push synchronization | Completed | Bounded batches with stable operation IDs and no client-supplied `payload_hash` |
+| Implement per-operation result handling | Completed | Duplicate results do not create duplicate conflicts or duplicate business state |
+| Implement pull and safe local batch application | Completed | Validated records, tombstones, pending-edit protection, and account-scoped writes |
+| Implement cursor persistence | Completed | Cursor is written last inside the same Dexie transaction as the batch |
+| Implement exponential backoff with jitter | Completed | Six-attempt budget, temporary error classes, `Retry-After`, and terminal rejection |
+| Implement manual synchronization | Completed | Header “Sync now” action with result feedback |
+| Implement synchronization triggers | Completed | Online restoration, session changes, visibility, and a foreground interval |
+| Add synchronization integration tests | Completed | 10 sync tests plus 2 identifier tests |
+| Run verification | Completed | Typecheck, lint, 61/61 tests, build, preview, and audit passed |
+
+### Phase10.4 Files created
+
+| File path | Purpose | Status |
+|---|---|---|
+| `frontend/src/services/api/syncApi.ts` | Device, status, push, and pull API client | Created |
+| `frontend/src/services/sync/syncTypes.ts` | Shared sync request, result, trigger, and state types | Created |
+| `frontend/src/services/sync/retryManager.ts` | Temporary-error classification, bounded backoff, jitter, and `Retry-After` parsing | Created |
+| `frontend/src/services/sync/dependencyManager.ts` | Explicit and implicit dependency resolution and ready-batch selection | Created |
+| `frontend/src/services/sync/connectivityManager.ts` | Browser/device connectivity state | Created |
+| `frontend/src/services/sync/syncLock.ts` | Cross-trigger synchronization lock | Created |
+| `frontend/src/services/sync/pushSync.ts` | Bounded dependency-ordered push flow | Created |
+| `frontend/src/services/sync/pullSync.ts` | Paginated authorized pull flow | Created |
+| `frontend/src/services/sync/syncEngine.ts` | Coordinating engine, recovery, triggers, and manual action | Created |
+| `frontend/src/services/sync/syncTestFixtures.ts` | UUID-shaped sync test fixtures | Created |
+| `frontend/src/services/sync/syncEngine.test.ts` | Push, retry, lock, ordering, and account-isolation tests | Created |
+| `frontend/src/db/syncRepositories.ts` | Atomic push-result, pull-batch, cursor, and recovery persistence | Created |
+| `frontend/src/db/syncRepositories.test.ts` | Duplicate result, conflict, interrupted-sync, and cursor atomicity tests | Created |
+| `frontend/src/store/syncStore.ts` | Foreground sync status state | Created |
+| `frontend/src/layouts/components/ManualSyncButton.tsx` | Header-level manual sync action | Created |
+| `frontend/src/lib/id.test.ts` | UUID and deterministic-identifier tests | Created |
+
+### Phase10.5 Files modified
+
+| File path | Modification | Reason |
+|---|---|---|
+| `frontend/src/lib/id.ts` | Emit UUID-shaped IDs and add `stableIdFromKey()` | Backend validates UUIDs for operation, answer, device, and submission IDs |
+| `frontend/src/lib/error.ts` | Read `Retry-After` through Axios-compatible headers | Temporary rate-limit failures must honor server guidance |
+| `frontend/src/db/localRepositories.ts` | Record explicit dependencies and predict the post-start submission version | Preserve dependency order and avoid a predictable false conflict after offline start |
+| `frontend/src/features/inspections/pages/ExecuteInspectionPage.tsx` | Use stable UUID answer IDs and cache the predicted post-start version | Keep offline-created records compatible with backend UUID validation and version checks |
+| `frontend/src/features/inspections/types/inspectionWorkflow.ts` | Use the shared UUID generator for submission IDs | Remove the non-UUID fallback identifier |
+| `frontend/src/app/providers.tsx` | Register foreground triggers and account-aware sync scheduling | Synchronize on connectivity/session changes without requiring the Sync Center |
+| `frontend/src/layouts/components/Header.tsx` | Add the manual sync button | Provide explicit foreground synchronization |
+| `progress-tracker.md` | Record Phase 10 implementation, verification, and handoff | Mandatory progress tracking |
+
+### Phase10.6 Important decisions
+
+- The Phase 5 backend sync contracts are authoritative; no backend endpoint, schema, or migration was changed.
+- Sync responsibilities are separated into API client, queue repository, dependency manager, retry manager, connectivity manager, lock, push service, pull service, and coordinating engine.
+- Both explicit dependency IDs and implicit workflow links are used so older Phase 9 queue records remain safe to process.
+- Operation IDs and payloads are immutable after a send attempt; retries reuse both.
+- The pull cursor is stored last inside the same Dexie transaction as the applied batch, so a failed record never advances it.
+- Server changes never overwrite an answer with a pending local operation; a conflict snapshot is recorded instead.
+- Retryable failures stop after a bounded budget and become terminal for automatic scheduling; manual force can retry them.
+- Version conflicts are preserved for Phase 11 resolution rather than automatically applying last-write-wins.
+- Background Sync is not used; all correctness is provided by foreground triggers and the manual action.
+- An inactive server device is re-registered once, while authentication failures leave local work queued.
+
+### Phase10.7 Verification
+
+| Check | Result |
+|---|---|
+| `npx tsc --noEmit` | Passed |
+| `npm run lint` | Passed with zero warnings |
+| `npm test -- --run` | 61 passed across 13 test files |
+| `npx vitest run src/services/sync/syncEngine.test.ts src/db/syncRepositories.test.ts` | 10 passed |
+| `npx vitest run src/lib/id.test.ts` | 2 passed |
+| `npm run build` | Passed; non-blocking chunk-size and Zod annotation warnings |
+| Vite preview smoke check | HTTP 200 |
+| `npm audit --audit-level=moderate` | 0 vulnerabilities |
+
+### Phase10.8 Known issues
+
+- Full Sync Center UI and conflict resolution workflows remain Phase 11; the header action only reports sync results through a toast.
+- Browser-level multi-tab E2E coverage remains Phase 13; the lock is covered by concurrent in-process trigger tests and uses Web Locks/localStorage where available.
+- PWA installation and offline application shell remain Phase 12.
+- No backend source changed in Phase 10, so the Phase 5 backend test results are retained rather than rerun.
+- Vitest continues to emit a non-blocking `--localstorage-file` warning in this environment.
+- The production bundle continues to emit a non-blocking chunk-size warning.
+
+### Phase10.9 Acceptance criteria
+
+- [x] Pending operations synchronize successfully.
+- [x] Duplicate operations remain idempotent.
+- [x] Dependencies are respected.
+- [x] Failed requests can be retried.
+- [x] Pull changes apply safely.
+- [x] Cursor advancement is transactional.
+- [x] Multiple sync triggers do not cause unsafe duplicate processing.
+- [x] Sync tests pass.
+
+### Phase10.10 Handoff instructions
+
+Phase 10 is complete and verified. Stop at the phase boundary. The Phase 10 changes remain uncommitted because the user requested a commit only for Phase 9. Do not start Phase 11 — Conflict Management without explicit approval. The next phase must build the Sync Center and conflict resolution UI on top of the persisted conflict snapshots, version checks, and sync state delivered here.
+
+---
+
 # 7. Feature Register
 
 Maintain a summary of all features.
@@ -1436,9 +1572,9 @@ Add a new row when a feature is identified.
 | F-016 | Inspector dashboard | 8 | Completed | frontend-design.md |
 | F-017 | IndexedDB persistence | 9 | Completed | offline-sync-design.md, development-phases.md |
 | F-018 | Durable sync queue | 9 | Completed | offline-sync-design.md, development-phases.md |
-| F-019 | Push synchronization | 10 | Not Started | offline-sync-design.md |
-| F-020 | Pull synchronization | 10 | Not Started | offline-sync-design.md |
-| F-021 | Retry mechanism | 10 | Not Started | offline-sync-design.md |
+| F-019 | Push synchronization | 10 | Completed | offline-sync-design.md, api-contracts.md |
+| F-020 | Pull synchronization | 10 | Completed | offline-sync-design.md, api-contracts.md |
+| F-021 | Retry mechanism | 10 | Completed | offline-sync-design.md |
 | F-022 | Conflict detection | 11 | Not Started | offline-sync-design.md |
 | F-023 | Conflict resolution | 11 | Not Started | offline-sync-design.md |
 | F-024 | Sync Center | 11 | Not Started | frontend-design.md |
@@ -1539,24 +1675,27 @@ Because synchronization is a critical Fieldmark feature, maintain its progress s
 | Durable operation queue | Completed | Yes — start, answer, and submit operations queued locally |
 | Stable operation IDs | Completed | Yes — backend push and frontend queue IDs; coalescing only before send |
 | Payload hash validation | Completed | Yes — canonical JSON hashing on the backend and local operation factory |
-| Dependency ordering | Not Started | No |
-| Push synchronization | Completed | Yes |
-| Per-operation push results | Completed | Yes |
-| Pull synchronization | Completed | Yes |
-| Commit-safe pull cursor | Completed | Yes |
-| Atomic local pull application | Not Started | No |
-| Retry with backoff and jitter | Not Started | No |
+| Dependency ordering | Completed | Yes — `syncEngine.test.ts` verifies start → answer → submit batches |
+| Push synchronization | Completed | Yes — backend Phase 5 plus frontend Phase 10 tests |
+| Per-operation push results | Completed | Yes — duplicate-result and terminal-state tests in `syncRepositories.test.ts` |
+| Pull synchronization | Completed | Yes — Phase 5 backend tests plus paginated frontend pull flow |
+| Commit-safe pull cursor | Completed | Yes — opaque cursor written inside the Dexie batch transaction |
+| Atomic local pull application | Completed | Yes — failed batch test proves rollback of data and cursor |
+| Retry with backoff and jitter | Completed | Yes — bounded retry, `Retry-After`, and permanent-failure tests |
 | Tombstone handling | Completed | Yes |
 | Conflict detection | Completed | Yes |
-| Conflict resolution | Completed | Yes |
-| Multi-tab coordination | Not Started | No |
+| Conflict resolution | Completed | Yes — backend capability only; frontend UI remains Phase 11 |
+| Multi-tab coordination | Completed | Yes — Web Locks with localStorage lease fallback; concurrent-trigger test proves skipping |
 | Account-scoped local data | Completed | Yes — owner IDs, offline-session checks, sign-out mirror clearing, and isolation tests |
-| Interrupted-sync recovery | Not Started | No |
+| Interrupted-sync recovery | Completed | Yes — PROCESSING operations are immediately replayable under the sync lock |
+| Foreground sync triggers | Completed | Yes — online, session, visibility, and interval triggers plus manual action |
 | Sync Center UI | Not Started | No |
 
 **Phase 5 verification note:** The backend capabilities marked Completed are verified by `backend/tests/test_sync.py` and the existing commit-order cursor test. Conflict resolution here means the backend conflict list, detail, and resolve APIs with permission and version checks; the frontend conflict UI remains a later phase.
 
-**Phase 9 verification note:** Dexie initialization, local repositories, local answer persistence, durable queue creation, account scoping, and IndexedDB error surfacing are now verified by `frontend/src/db/localRepositories.test.ts` and `frontend/src/features/inspections/offlinePersistence.test.tsx`. Dependency ordering, retry/backoff/jitter, atomic local pull application, interrupted-sync recovery, multi-tab coordination, and the Sync Center remain Phase 10+ work.
+**Phase 9 verification note:** Dexie initialization, local repositories, local answer persistence, durable queue creation, account scoping, and IndexedDB error surfacing are verified by `frontend/src/db/localRepositories.test.ts` and `frontend/src/features/inspections/offlinePersistence.test.tsx`.
+
+**Phase 10 verification note:** Dependency ordering, idempotent duplicate results, interrupted-sync recovery, atomic pull/cursor application, conflict snapshot preservation, bounded retry, permanent-failure handling, concurrent-trigger locking, and account isolation are verified by `frontend/src/services/sync/syncEngine.test.ts` and `frontend/src/db/syncRepositories.test.ts`. The Sync Center and user-facing conflict resolution remain Phase 11 work.
 
 Do not mark a capability as verified merely because its code exists. Record the test that proves it works.
 
@@ -1574,11 +1713,13 @@ Track testing at project level.
 | Database tests | Completed | 8 passed | Schema, constraints, relationships, latest migrations, unique `submission_id`, `submitted_version`, `template_key`, and cursor ordering; expected head now `0005_sync_scope_and_retry` |
 | Authentication tests | Completed | 19 passed | 4 password-hashing and 15 authentication tests |
 | RBAC tests | Completed | 12 passed | Phase 3 authorization tests plus Phase 4 and Phase 5 endpoint authorization coverage |
-| Frontend unit tests | Completed | 49 passed | Full Vitest suite for API client, theme, online status, router, admin flows, inspector workflow, IndexedDB, and shared UI |
+| Frontend unit tests | Completed | 61 passed | Full Vitest suite for API client, theme, online status, router, admin flows, inspector workflow, IndexedDB, sync engine, persistence, identifiers, and shared UI |
 | Component tests | Completed | 5 passed | Shared UI component test suite covering rendering, interactions, dialogs, menus, tabs, toast, and error states |
 | Inspector workflow tests | Completed | 5 passed | Assignment list, start action, validation, local drafts, answer saves, draft restore, and stable submission ID |
 | IndexedDB tests | Completed | 12 passed | Schema, account isolation, offline-session errors, storage failures, answer coalescing, start/submit IDs, conflicts, and Dexie reopen |
 | Offline tests | Completed | 3 passed | Downloaded inspection fallback, offline start without API, durable answers, remount restoration, and offline submission queue |
+| Frontend sync tests | Completed | 10 passed | Dependency order, idempotent results, retry/permanent failure, lock concurrency, account isolation, interrupted recovery, and atomic cursor |
+| Frontend identifier tests | Completed | 2 passed | UUID generation and deterministic answer identifier derivation |
 | Sync tests | Completed | 20 passed | `backend/tests/test_sync.py`; PostgreSQL integration tests for idempotency, conflicts, pull, tombstones, and devices |
 | Conflict tests | Completed | 2 passed | Conflict list/detail scoping and conflict-resolution permission/version enforcement in `test_sync.py` |
 | PWA tests | Not Started | Not Run | |
@@ -1688,6 +1829,20 @@ Do not report tests as passed if they were not actually executed.
 | 2026-11-21 | `npm run build` (Phase 9) | Production build | 1 | 0 | Vite build succeeded; non-blocking chunk-size and Zod annotation warnings |
 | 2026-11-21 | Vite preview smoke check (Phase 9) | Frontend startup | 1 | 0 | HTTP 200 |
 | 2026-11-21 | `npm audit --audit-level=moderate` (Phase 9) | Security check | 1 | 0 | Zero reported vulnerabilities |
+| 2026-11-22 | `npx tsc --noEmit` (initial Phase 10 run) | TypeScript check | 0 | 1 | Unused `now` variable in `syncRepositories.ts`; removed |
+| 2026-11-22 | `npx tsc --noEmit` (second Phase 10 run) | TypeScript check | 0 | 1 | Undefined `ownerId` in `localRepositories.ts`; corrected to `input.ownerId` |
+| 2026-11-22 | `npx tsc --noEmit` (third Phase 10 run) | TypeScript check | 0 | 4 | Test assertions used repository return types instead of queue records; test corrected |
+| 2026-11-22 | `npm test -- --run` (first Phase 10 full run) | Frontend tests | 58 | 1 | Concurrent-trigger test expected `failed` but received `partial`; engine now reports retryable operations as partial |
+| 2026-11-22 | `npx vitest run src/services/sync/syncEngine.test.ts src/db/syncRepositories.test.ts` | Frontend sync tests | 10 | 0 | All dependency, persistence, retry, lock, and isolation tests passed after the fix |
+| 2026-11-22 | `npm run lint` (Phase 10) | Lint | 1 | 0 | ESLint passed with zero warnings |
+| 2026-11-22 | `npm test -- --run` (Phase 10 run after fix) | Frontend tests | 59 | 0 | All 12 test files passed before identifier tests were added |
+| 2026-11-22 | `npm run build` (Phase 10) | Production build | 1 | 0 | Vite build succeeded; non-blocking chunk-size and Zod annotation warnings |
+| 2026-11-22 | Vite preview smoke check (Phase 10) | Frontend startup | 1 | 0 | HTTP 200 |
+| 2026-11-22 | `npm audit --audit-level=moderate` (Phase 10) | Security check | 1 | 0 | Zero reported vulnerabilities |
+| 2026-11-22 | `npx tsc --noEmit` (final Phase 10 run) | TypeScript check | 1 | 0 | Strict TypeScript configuration passed after identifier tests were added |
+| 2026-11-22 | `npm run lint` (final Phase 10 run) | Lint | 1 | 0 | ESLint passed with zero warnings |
+| 2026-11-22 | `npm test -- --run` (final Phase 10 run) | Frontend tests | 61 | 0 | All 13 test files passed |
+| 2026-11-22 | `npm run build` (final Phase 10 run) | Production build | 1 | 0 | Vite build succeeded with the existing non-blocking warnings |
 
 ---
 
@@ -1752,6 +1907,17 @@ Maintain a chronological record of significant implementation decisions.
 | D-053 | 2026-11-21 | Avoid API calls for offline start, answer save, and submit; queue durable operations instead | Downloaded inspections must be completable without connectivity; Phase 10 will process the queue | Inspector pages and local repositories |
 | D-054 | 2026-11-21 | Fall back to cached details, summaries, sites, and templates when `navigator.onLine` is false | Keeps downloaded assignments and their labels available offline | `frontend/src/features/inspections/services/offlineInspectionService.ts` |
 | D-055 | 2026-11-21 | Use `fake-indexeddb` only in Vitest setup | Dexie needs IndexedDB in tests without adding a browser runtime dependency | `frontend/package.json`, `frontend/src/test/setup.ts` |
+| D-056 | 2026-11-22 | Split the frontend sync engine into API, repository, dependency, retry, connectivity, lock, push, pull, store, and coordinator modules | Synchronization is critical; independent modules keep transaction and retry boundaries testable | `frontend/src/services/sync/`, `frontend/src/db/syncRepositories.ts`, `frontend/src/store/syncStore.ts` |
+| D-057 | 2026-11-22 | Consume the existing Phase 5 sync API contracts without backend changes | The backend already implements stable IDs, canonical hashes, idempotency, conflicts, and scoped pull | `frontend/src/services/api/syncApi.ts` |
+| D-058 | 2026-11-22 | Store explicit operation dependencies and also derive implicit start → answer → submit links | Older Phase 9 queue records lack explicit metadata; both sources keep dependency ordering safe | `localRepositories.ts`, `dependencyManager.ts` |
+| D-059 | 2026-11-22 | Reuse operation IDs and payloads across retries and ignore duplicate terminal results | Backend idempotency requires stable identity; duplicate responses must not create duplicate local state or conflicts | `syncRepositories.ts`, `pushSync.ts` |
+| D-060 | 2026-11-22 | Write the pull cursor last inside the same Dexie transaction as the applied batch | A partially applied batch must never advance the cursor and skip changes | `syncRepositories.ts`, `syncRepositories.test.ts` |
+| D-061 | 2026-11-22 | Preserve version conflicts as local snapshots and leave resolution to Phase 11 | Last-write-wins is prohibited for important inspection answers | `syncRepositories.ts`, `pullSync.ts` |
+| D-062 | 2026-11-22 | Stop automatic retries after six attempts and honor `Retry-After` when provided | Temporary failures need recovery, but permanent or repeated failures must not loop forever | `retryManager.ts`, `syncRepositories.ts` |
+| D-063 | 2026-11-22 | Use Web Locks with an in-process guard and short-lived localStorage lease fallback | Multiple foreground triggers must not process the same queue concurrently across tabs or browsers | `syncLock.ts`, `syncEngine.test.ts` |
+| D-064 | 2026-11-22 | Generate UUID-shaped answer/submission IDs and predict the post-start inspection version for queued submissions | Backend UUID validation and start-driven version increments would otherwise reject synchronized offline work | `id.ts`, `ExecuteInspectionPage.tsx`, `localRepositories.ts` |
+| D-065 | 2026-11-22 | Keep synchronization foreground-only and expose a minimal header action | Correctness must not depend on Background Sync; the full Sync Center belongs to Phase 11 | `syncEngine.ts`, `providers.tsx`, `ManualSyncButton.tsx` |
+| D-066 | 2026-11-22 | Re-register once when a cached server device is inactive, but leave work queued on authentication failure | Device revocation is recoverable without weakening account authorization | `syncEngine.ts`, `connectivityManager.ts` |
 
 When adding a decision:
 
@@ -1816,6 +1982,8 @@ Add a new entry whenever a development session makes meaningful changes.
 | 2026-11-21 | OpenCode (Big Pickle) | Phase 8 | F-012/F-016 | Added inspector layout, dashboard, assignment list, details and execution pages, dynamic answer controls, validation, progress, account-scoped drafts, and stable-ID submission; final verification was 34/34 tests, clean lint and typecheck, successful build and preview, and zero audit vulnerabilities | Completed |
 | 2026-11-21 | OpenCode (Big Pickle) | Phase 8 | Commit | Committed verified Phase 8 work as `c5c9eec feat: implement phase 8 inspector workflow` after explicit user request; not pushed | Completed |
 | 2026-11-21 | OpenCode (Big Pickle) | Phase 9 | F-017/F-018 | Added versioned Dexie database, account-scoped repositories, offline inspection/checklist caches, durable drafts and answer/start/submit operation queue, offline UI states, and 15 new IndexedDB/offline tests; final verification was 49/49 tests, clean lint and typecheck, successful build and preview, and zero audit vulnerabilities | Completed |
+| 2026-11-22 | OpenCode (Big Pickle) | Phase 9 | Commit | Committed verified Phase 9 work as `45c03ff feat: implement phase 9 offline persistence` after explicit user request; not pushed | Completed |
+| 2026-11-22 | OpenCode (Big Pickle) | Phase 10 | F-019/F-020/F-021 | Added the frontend synchronization engine: API client, dependency-aware bounded push, per-operation result persistence, authorized paginated pull, atomic cursor application, retry with jitter and `Retry-After`, connectivity, locking, recovery, triggers, manual action, and 12 new tests; final verification was 61/61 tests, clean lint and typecheck, successful build and preview, and zero audit vulnerabilities | Completed |
 
 For each entry, include a concise summary of:
 
@@ -1838,15 +2006,15 @@ Update it before stopping work.
 
 **Last completed phase:**
 
-Phase 9 — Offline Persistence. All acceptance criteria were verified. Phase 8 was committed as `c5c9eec feat: implement phase 8 inspector workflow`; Phase 9 changes are complete but remain uncommitted in the working tree.
+Phase 10 — Synchronization Engine. All acceptance criteria were verified. Phase 9 was committed as `45c03ff feat: implement phase 9 offline persistence`; Phase 10 changes are complete but remain uncommitted in the working tree.
 
 **Current phase:**
 
-Phase 9 — Offline Persistence (Completed; stopped at phase boundary).
+Phase 10 — Synchronization Engine (Completed; stopped at phase boundary).
 
 **Current feature:**
 
-F-017 IndexedDB Persistence and F-018 Durable Sync Queue.
+F-019 Push Synchronization, F-020 Pull Synchronization, and F-021 Retry Mechanism.
 
 **Current feature status:**
 
@@ -1854,38 +2022,41 @@ Completed.
 
 **Last completed task:**
 
-Implemented `fieldmark_local_db` v1 with the eight approved tables, account-scoped repositories, offline inspection/checklist caches, durable drafts and answer/start/submit operations, offline status UI, and 15 new IndexedDB/offline tests. Final verification was 49/49 frontend tests, clean TypeScript and lint checks, a successful production build and preview, and zero audit vulnerabilities.
+Implemented the frontend synchronization engine: dependency-aware bounded push, per-operation result persistence, authorized paginated pull, atomic local batch/cursor application, interrupted-operation recovery, bounded jittered retry with `Retry-After`, connectivity checks, synchronization locking, foreground triggers, and a manual header action. Final verification was 61/61 frontend tests, clean TypeScript and lint checks, a successful production build and preview, and zero audit vulnerabilities.
 
 **Current stopping point:**
 
-Phase 9 is complete. Do not start Phase 10 — Synchronization Engine without explicit approval. Phase 9 changes are uncommitted and should be committed only if the user requests a commit.
+Phase 10 is complete. Do not start Phase 11 — Conflict Management without explicit approval. Phase 10 changes are uncommitted because the user requested a commit only for Phase 9.
 
 ## Files to inspect first
 
 1. `progress-tracker.md`
-2. `docs/development-phases.md` — Phase 9 acceptance criteria and Phase 10 boundary
-3. `docs/offline-sync-design.md` — local schema, queue, and authorization rules
-4. `frontend/src/db/fieldmarkDb.ts` — Dexie v1 schema
-5. `frontend/src/db/localTypes.ts` — durable record and error types
-6. `frontend/src/db/localRepositories.ts` — account-scoped repositories and transactions
-7. `frontend/src/services/sync/operationFactory.ts` — stable IDs and payload hashes
-8. `frontend/src/features/inspections/store/inspectionDraftStore.ts` — durable draft mirror
-9. `frontend/src/features/inspections/services/offlineInspectionService.ts` — offline fallbacks
-10. `frontend/src/features/inspections/pages/ExecuteInspectionPage.tsx` — offline execution
-11. `frontend/src/features/inspections/pages/InspectionDetailsPage.tsx` — download and offline start
-12. `frontend/src/features/inspections/offlinePersistence.test.tsx` — workflow tests
-13. `frontend/src/db/localRepositories.test.ts` — IndexedDB tests
-14. `frontend/src/services/auth/session.ts` — local account context and sign-out isolation
+2. `docs/development-phases.md` — Phase 10 acceptance criteria and Phase 11 boundary
+3. `docs/offline-sync-design.md` — queue, push, pull, retry, cursor, and conflict rules
+4. `frontend/src/services/sync/syncEngine.ts` — coordinating engine and triggers
+5. `frontend/src/services/sync/pushSync.ts` — bounded dependency-ordered push
+6. `frontend/src/services/sync/pullSync.ts` — paginated pull flow
+7. `frontend/src/services/sync/dependencyManager.ts` — explicit and implicit dependencies
+8. `frontend/src/services/sync/retryManager.ts` — retry classification, jitter, and `Retry-After`
+9. `frontend/src/services/sync/syncLock.ts` — cross-trigger lock
+10. `frontend/src/db/syncRepositories.ts` — atomic results, conflicts, batches, cursor, and recovery
+11. `frontend/src/services/api/syncApi.ts` — device, status, push, and pull client
+12. `frontend/src/store/syncStore.ts` — foreground sync state
+13. `frontend/src/services/sync/syncEngine.test.ts` — integration tests
+14. `frontend/src/db/syncRepositories.test.ts` — transaction and persistence tests
+15. `frontend/src/db/localRepositories.ts` — durable queue and dependency metadata
+16. `frontend/src/features/inspections/pages/ExecuteInspectionPage.tsx` — offline operation identities and versions
 
 ## Work remaining
 
-- [x] Commit Phase 8 as requested.
-- [x] Implement Phase 9 durable local persistence.
-- [x] Implement Phase 9 durable queue records and stable operation IDs.
-- [x] Verify Phase 9 acceptance criteria.
-- [ ] Commit Phase 9 only if the user requests it.
-- [ ] In Phase 10, connect the durable queue to push/pull APIs with retries, dependency ordering, and cursor handling.
-- [ ] In later phases, add conflict resolution UI, Sync Center, and PWA shell.
+- [x] Commit Phase 9 as requested.
+- [x] Implement Phase 10 push synchronization and per-operation results.
+- [x] Implement Phase 10 pull synchronization and transactional cursor advancement.
+- [x] Implement Phase 10 retry, dependency, connectivity, lock, trigger, and manual sync behavior.
+- [x] Add and verify Phase 10 synchronization tests.
+- [ ] Commit Phase 10 only if the user requests it.
+- [ ] In Phase 11, build the Sync Center and conflict resolution UI on the persisted snapshots.
+- [ ] In later phases, complete the PWA shell, E2E scenarios, and deployment work.
 
 ## Known problems
 
@@ -1894,8 +2065,8 @@ Phase 9 is complete. Do not start Phase 10 — Synchronization Engine without ex
 - Non-blocking: installed Starlette/TestClient and passlib/argon2 backend versions emit deprecation warnings. No backend tests fail.
 - Non-blocking: optional PATCH fields are displayed as nullable in OpenAPI even though runtime validators reject `null` for non-clearable fields; runtime behavior is correct.
 - Resolved: the original global `lib/` ignore rule was fixed and earlier phases included the newly trackable `frontend/src/lib/` sources.
-- Intentional Phase 9 limitation: queued operations are durable but are not transmitted until Phase 10.
-- Server dashboard counts and local queue counts are shown separately; a unified Sync Center remains Phase 10/11 work.
+- The full Sync Center and conflict resolution UI remain Phase 11; the header action only reports results through a toast.
+- Browser-level multi-tab E2E coverage remains Phase 13; the lock has concurrent-trigger unit coverage and uses Web Locks/localStorage where available.
 - Offline access uses a seven-day default validity window and is not revalidated with the server until connectivity returns.
 - The login rate limiter remains process-local; a multi-instance deployment needs a shared limiter.
 
@@ -1904,19 +2075,19 @@ Phase 9 is complete. Do not start Phase 10 — Synchronization Engine without ex
 The next agent must:
 
 1. Read `AGENTS.md`, the approved documentation, and this progress tracker.
-2. Inspect the actual Phase 9 source files listed above before changing behavior.
-3. Confirm Phase 9 is marked Completed and verified.
-4. Stop at the phase boundary and wait for explicit approval before Phase 10 — Synchronization Engine.
-5. Preserve the account-scoped local IDs, offline-session checks, and durable transaction boundaries.
-6. Keep API and IndexedDB access outside presentation components.
-7. Preserve stable operation IDs and payload hashes when implementing the sync engine.
-8. Preserve the in-memory access-token policy and HTTP-only refresh-cookie strategy.
-9. Do not use last-write-wins for inspection answers.
-10. Commit Phase 9 only when explicitly requested.
+2. Inspect the actual Phase 10 source files listed above before changing behavior.
+3. Confirm Phase 10 is marked Completed and verified.
+4. Stop at the phase boundary and wait for explicit approval before Phase 11 — Conflict Management.
+5. Preserve stable operation IDs, immutable payloads, dependency order, and idempotent result handling.
+6. Keep the pull cursor inside the same Dexie transaction as the applied batch.
+7. Preserve conflict snapshots; do not introduce last-write-wins for inspection answers.
+8. Keep API and IndexedDB access outside presentation components.
+9. Preserve the in-memory access-token policy and HTTP-only refresh-cookie strategy.
+10. Commit Phase 10 only when explicitly requested.
 
 **Exact next action:**
 
-Report Phase 9 completion. Commit Phase 9 only if the user requests it; otherwise stop and wait for approval to start Phase 10 — Synchronization Engine.
+Report Phase 10 completion and stop at the phase boundary. Commit Phase 10 only if the user requests it; otherwise wait for approval to start Phase 11 — Conflict Management.
 
 ---
 

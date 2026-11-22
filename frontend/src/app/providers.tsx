@@ -3,6 +3,13 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { ToastProvider } from '@/components/ui/Toast';
 import { queryClient } from '@/lib/queryClient';
 import { bootstrapSession, registerSessionRefresh } from '@/services/auth/session';
+import {
+  cancelScheduledSync,
+  registerSyncTriggers,
+  scheduleSync,
+} from '@/services/sync/syncEngine';
+import { useAuthStore } from '@/store/authStore';
+import { useSyncStore } from '@/store/syncStore';
 import { useThemeStore } from '@/store/themeStore';
 
 interface AppProvidersProps {
@@ -38,6 +45,37 @@ export function AppProviders({ children }: AppProvidersProps): React.JSX.Element
     }
     bootstrapStarted.current = true;
     void bootstrapSession();
+  }, []);
+
+  useEffect(() => {
+    // Foreground synchronization only. Background Sync remains an optional
+    // enhancement and is never required for queue correctness.
+    const unregisterTriggers = registerSyncTriggers();
+    let previousUserId = useAuthStore.getState().user?.id ?? null;
+
+    const unsubscribeAuth = useAuthStore.subscribe((state) => {
+      const userId = state.user?.id ?? null;
+      if (userId !== previousUserId) {
+        if (previousUserId) {
+          cancelScheduledSync(previousUserId);
+        }
+        if (userId) {
+          // A session restored at startup and a fresh login are distinct
+          // foreground triggers, but both use the same safe sync cycle.
+          scheduleSync(previousUserId ? 'login' : 'startup');
+        }
+        previousUserId = userId;
+      }
+      if (!userId) {
+        useSyncStore.getState().reset();
+      }
+    });
+
+    return () => {
+      unsubscribeAuth();
+      unregisterTriggers();
+      cancelScheduledSync();
+    };
   }, []);
 
   return (

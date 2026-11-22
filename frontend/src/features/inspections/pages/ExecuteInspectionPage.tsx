@@ -28,6 +28,7 @@ import {
 import { normalizeOfflineError } from '@/db/localTypes';
 import { ROUTES } from '@/lib/constants';
 import { normalizeApiError } from '@/lib/error';
+import { stableIdFromKey } from '@/lib/id';
 import { zodResolver } from '@/lib/formResolver';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { inspectionsApi } from '@/services/api/inspectionsApi';
@@ -79,7 +80,9 @@ function formatSavedTime(value: string | null): string {
 /** Reuse the server answer ID when present; otherwise derive a stable local ID. */
 function answerIdFor(detail: InspectionDetail, checklistItemId: string): string {
   const existing = detail.answers.find((answer) => answer.checklist_item_id === checklistItemId);
-  return existing?.id ?? `${detail.id}:${checklistItemId}`;
+  // New answers need a stable UUID because the backend persists this ID when
+  // the CREATE operation is synchronized.
+  return existing?.id ?? stableIdFromKey(`answer:${detail.id}:${checklistItemId}`);
 }
 
 export function ExecuteInspectionPage(): React.JSX.Element {
@@ -119,7 +122,9 @@ export function ExecuteInspectionPage(): React.JSX.Element {
           throw new Error('Download this inspection before starting it offline.');
         }
         await queueInspectionStart(ownerId, detail.data);
-        return { status: 'IN_PROGRESS' as const, version, queuedOffline: true };
+        // The server increments the inspection version when the queued start is
+        // accepted. Cache that predicted version so offline submission uses it.
+        return { status: 'IN_PROGRESS' as const, version: version + 1, queuedOffline: true };
       }
       const result = await inspectionsApi.start(id, version);
       return { ...result, queuedOffline: false };

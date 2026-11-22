@@ -3,6 +3,7 @@ import { Badge, Button } from '@/components/ui';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useAppStore } from '@/store/appStore';
 import { useAuthStore } from '@/store/authStore';
+import { ManualSyncButton } from '@/layouts/components/ManualSyncButton';
 import { ThemeToggle } from '@/layouts/components/ThemeToggle';
 import { UserMenu } from '@/layouts/components/UserMenu';
 
@@ -39,6 +40,7 @@ export function Header({ showMobileToggle = true }: HeaderProps): React.JSX.Elem
         {isOnline ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
         {isOnline ? 'Online' : 'Offline'}
       </Badge>
+      <ManualSyncButton />
       <ThemeToggle />
       <UserMenu />
     </header>
