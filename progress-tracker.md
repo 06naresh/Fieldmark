@@ -94,7 +94,7 @@ The next agent must be able to continue without repeating completed work.
 | Testing | pytest, Vitest, React Testing Library, Playwright |
 | Current development phase | Phase 10 — Synchronization Engine (Completed) |
 | Current feature | F-019 Push Synchronization, F-020 Pull Synchronization, and F-021 Retry Mechanism |
-| Overall status | Phase 9 committed as `45c03ff`; Phase 10 complete and verified but uncommitted |
+| Overall status | Phase 9 committed as `45c03ff`; Phase 10 committed as `cb4face`; signup access request pending design decision |
 
 ---
 
@@ -144,9 +144,9 @@ Update this section whenever a new feature implementation session begins.
 |---|---|
 | Session date | 2026-11-22 |
 | Agent/session identifier | OpenCode (Big Pickle) |
-| Current phase | Phase 10 — Synchronization Engine (Completed) |
-| Current feature | F-019 Push Synchronization, F-020 Pull Synchronization, and F-021 Retry Mechanism |
-| Feature status | Completed |
+| Current phase | Phase 10 — Synchronization Engine (Completed and committed) |
+| Current feature | Post-commit account access setup; no public signup contract is approved |
+| Feature status | Blocked pending design decision |
 | Last updated | 2026-11-22 |
 
 ## 5.1 Current objective
@@ -195,6 +195,8 @@ Implement Phase 10 Synchronization Engine: connect the durable Dexie queue to th
 | Implement retry, connectivity, lock, triggers, and manual sync | Completed | Bounded jittered retry, `Retry-After`, foreground lock, debounced triggers, header action |
 | Add synchronization integration tests | Completed | 10 new sync tests plus 2 identifier tests added |
 | Run verification | Completed | Typecheck, lint, 61/61 tests, build, preview HTTP 200, and audit passed |
+| Commit Phase 10 | Completed | `cb4face feat: implement phase 10 synchronization engine`; not pushed |
+| Add requested signup page | Blocked | Approved docs define ADMIN-created users only; no public `/auth/signup` or `/auth/register` contract exists |
 
 ### 5.4 Phase 10 verification summary
 
@@ -1939,6 +1941,7 @@ Track unresolved issues centrally.
 | Issue ID | Description | Severity | Status | Owner/agent | Next action |
 |---|---|---|---|---|---|
 | B-001 | Valid PostgreSQL credentials were initially unavailable | High | Resolved | OpenCode session | User added `backend/.env`; migration and all tests passed |
+| B-002 | A public signup page was requested, but approved contracts only allow ADMIN user creation through `POST /api/v1/users` | High | Open | User / OpenCode session | Choose between a documented development-only bootstrap admin and an explicitly approved public self-registration design |
 
 ### Severity levels
 
@@ -1984,6 +1987,8 @@ Add a new entry whenever a development session makes meaningful changes.
 | 2026-11-21 | OpenCode (Big Pickle) | Phase 9 | F-017/F-018 | Added versioned Dexie database, account-scoped repositories, offline inspection/checklist caches, durable drafts and answer/start/submit operation queue, offline UI states, and 15 new IndexedDB/offline tests; final verification was 49/49 tests, clean lint and typecheck, successful build and preview, and zero audit vulnerabilities | Completed |
 | 2026-11-22 | OpenCode (Big Pickle) | Phase 9 | Commit | Committed verified Phase 9 work as `45c03ff feat: implement phase 9 offline persistence` after explicit user request; not pushed | Completed |
 | 2026-11-22 | OpenCode (Big Pickle) | Phase 10 | F-019/F-020/F-021 | Added the frontend synchronization engine: API client, dependency-aware bounded push, per-operation result persistence, authorized paginated pull, atomic cursor application, retry with jitter and `Retry-After`, connectivity, locking, recovery, triggers, manual action, and 12 new tests; final verification was 61/61 tests, clean lint and typecheck, successful build and preview, and zero audit vulnerabilities | Completed |
+| 2026-11-22 | OpenCode (Big Pickle) | Phase 10 | Commit | Committed verified Phase 10 work as `cb4face feat: implement phase 10 synchronization engine` after explicit user request; not pushed | Completed |
+| 2026-11-22 | OpenCode (Big Pickle) | Post-commit | Account access setup | Reviewed approved auth contracts after the user requested a signup page; blocked because public registration is not defined and user creation is ADMIN-only | Blocked |
 
 For each entry, include a concise summary of:
 
@@ -2006,7 +2011,7 @@ Update it before stopping work.
 
 **Last completed phase:**
 
-Phase 10 — Synchronization Engine. All acceptance criteria were verified. Phase 9 was committed as `45c03ff feat: implement phase 9 offline persistence`; Phase 10 changes are complete but remain uncommitted in the working tree.
+Phase 10 — Synchronization Engine. All acceptance criteria were verified. Phase 9 was committed as `45c03ff feat: implement phase 9 offline persistence`; Phase 10 was committed as `cb4face feat: implement phase 10 synchronization engine`. Neither commit was pushed.
 
 **Current phase:**
 
@@ -2026,7 +2031,7 @@ Implemented the frontend synchronization engine: dependency-aware bounded push, 
 
 **Current stopping point:**
 
-Phase 10 is complete. Do not start Phase 11 — Conflict Management without explicit approval. Phase 10 changes are uncommitted because the user requested a commit only for Phase 9.
+Phase 10 is complete and committed. The user then requested a signup page for manual testing. That request is blocked pending a design decision because the approved contracts define ADMIN-created users only and contain no public registration endpoint.
 
 ## Files to inspect first
 
@@ -2054,7 +2059,8 @@ Phase 10 is complete. Do not start Phase 11 — Conflict Management without expl
 - [x] Implement Phase 10 pull synchronization and transactional cursor advancement.
 - [x] Implement Phase 10 retry, dependency, connectivity, lock, trigger, and manual sync behavior.
 - [x] Add and verify Phase 10 synchronization tests.
-- [ ] Commit Phase 10 only if the user requests it.
+- [x] Commit Phase 10 as requested.
+- [ ] Resolve the signup/bootstrap design decision before changing authentication behavior.
 - [ ] In Phase 11, build the Sync Center and conflict resolution UI on the persisted snapshots.
 - [ ] In later phases, complete the PWA shell, E2E scenarios, and deployment work.
 
@@ -2066,6 +2072,7 @@ Phase 10 is complete. Do not start Phase 11 — Conflict Management without expl
 - Non-blocking: optional PATCH fields are displayed as nullable in OpenAPI even though runtime validators reject `null` for non-clearable fields; runtime behavior is correct.
 - Resolved: the original global `lib/` ignore rule was fixed and earlier phases included the newly trackable `frontend/src/lib/` sources.
 - The full Sync Center and conflict resolution UI remain Phase 11; the header action only reports results through a toast.
+- Public self-registration is not an approved requirement. `docs/PRD.md`, `docs/api-contracts.md`, and `docs/security-design.md` define ADMIN-created users only; adding a signup page requires an explicit product/security decision.
 - Browser-level multi-tab E2E coverage remains Phase 13; the lock has concurrent-trigger unit coverage and uses Web Locks/localStorage where available.
 - Offline access uses a seven-day default validity window and is not revalidated with the server until connectivity returns.
 - The login rate limiter remains process-local; a multi-instance deployment needs a shared limiter.
@@ -2083,11 +2090,11 @@ The next agent must:
 7. Preserve conflict snapshots; do not introduce last-write-wins for inspection answers.
 8. Keep API and IndexedDB access outside presentation components.
 9. Preserve the in-memory access-token policy and HTTP-only refresh-cookie strategy.
-10. Commit Phase 10 only when explicitly requested.
+10. Do not add public signup or a new registration endpoint until the product/security decision is explicitly approved.
 
 **Exact next action:**
 
-Report Phase 10 completion and stop at the phase boundary. Commit Phase 10 only if the user requests it; otherwise wait for approval to start Phase 11 — Conflict Management.
+Ask the user to choose a documented account-access approach: a development-only bootstrap admin plus ADMIN-created accounts, or an explicitly approved public self-registration design. Do not start Phase 11 — Conflict Management until the signup decision and future-phase approval are resolved.
 
 ---
 
