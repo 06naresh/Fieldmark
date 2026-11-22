@@ -247,6 +247,7 @@ Every API endpoint must have tests for:
 | Endpoint | Test scenarios |
 |---|---|
 | `POST /api/v1/auth/login` | Valid login, incorrect password, unknown email, inactive user |
+| `POST /api/v1/auth/signup` | Valid inspector registration, duplicate email, invalid password, role-field rejection, rate limiting, subsequent login |
 | `POST /api/v1/auth/refresh` | Valid refresh, expired refresh, revoked refresh, token rotation |
 | `GET /api/v1/auth/me` | Valid access token, missing token, expired token |
 | `POST /api/v1/auth/logout` | Valid logout, repeated logout, invalid refresh session |
@@ -539,9 +540,12 @@ Test important pages:
 
 ### Authentication
 
-- Login form displays correctly.
+- Login form displays correctly and links to signup.
 - Invalid login shows an error.
 - Valid login navigates to the correct dashboard.
+- Signup form validates required fields, password length, and password confirmation.
+- Successful signup creates a session and navigates to the inspector dashboard.
+- Failed signup preserves entered values and displays the server error.
 - Inactive users cannot access protected pages.
 - Session expiration is handled correctly.
 
@@ -1668,6 +1672,7 @@ A release cannot be considered ready until all critical criteria pass.
 ## 24.1 Authentication and authorization
 
 - [ ] Login works.
+- [ ] Public signup creates only INSPECTOR accounts.
 - [ ] Invalid credentials are rejected.
 - [ ] Access-token expiration is enforced.
 - [ ] Refresh-token rotation works.

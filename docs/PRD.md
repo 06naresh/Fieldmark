@@ -123,6 +123,7 @@ Field inspectors perform assigned inspections.
 
 Responsibilities:
 
+- Create an INSPECTOR account through public signup.
 - Log in to Fieldmark.
 - Download assigned inspection information.
 - View assigned sites and inspection details.
@@ -144,6 +145,7 @@ Inspectors must only access inspection records assigned to them or otherwise exp
 ## 4.1 Authentication
 
 - As an administrator, I want to create inspector accounts so that employees can access Fieldmark.
+- As an inspector, I want to create my own INSPECTOR account so that I can access Fieldmark without waiting for administrator provisioning.
 - As an inspector, I want to log in securely so that I can access my assignments.
 - As a user, I want my session to remain valid according to the configured authentication policy.
 - As a user, I want to log out securely.
@@ -209,6 +211,8 @@ Inspectors must only access inspection records assigned to them or otherwise exp
 **FR-AUTH-09:** The application shall support an offline reopening policy for previously authenticated users on the same device.
 
 **FR-AUTH-10:** The application shall not store raw passwords or refresh tokens in IndexedDB.
+
+**FR-AUTH-11:** The system shall allow public self-registration of `INSPECTOR` accounts through the documented signup contract. Public signup shall not allow a user to assign the `ADMIN` role.
 
 ## 5.2 User Management
 

@@ -955,7 +955,7 @@ Initial API groups:
 
 | API Group | Purpose |
 |---|---|
-| `/auth` | Login, refresh, logout, current user |
+| `/auth` | Public inspector signup, login, refresh, logout, current user |
 | `/users` | User administration |
 | `/sites` | Site management |
 | `/checklist-templates` | Checklist template management |

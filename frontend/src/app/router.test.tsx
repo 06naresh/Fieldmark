@@ -144,4 +144,26 @@ describe('application router', () => {
     expect(screen.getByTestId('location')).toHaveTextContent('/admin/dashboard');
     expect(screen.queryByRole('heading', { name: 'Sign in to Fieldmark' })).not.toBeInTheDocument();
   });
+
+  it('allows an unauthenticated user to open the signup page', () => {
+    renderWithProviders(<AppRoutes />, { route: '/signup' });
+
+    expect(screen.getByRole('heading', { name: 'Create your account' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/login');
+  });
+
+  it('redirects an authenticated user away from the signup page', () => {
+    useAuthStore.setState({ user: inspectorCurrentUser, status: 'authenticated' });
+
+    renderWithProviders(
+      <>
+        <LocationProbe />
+        <AppRoutes />
+      </>,
+      { route: '/signup' },
+    );
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/inspector/dashboard');
+    expect(screen.queryByRole('heading', { name: 'Create your account' })).not.toBeInTheDocument();
+  });
 });

@@ -16,6 +16,12 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface SignupCredentials {
+  full_name: string;
+  email: string;
+  password: string;
+}
+
 export interface LoginResponse {
   access_token: string;
   token_type: string;

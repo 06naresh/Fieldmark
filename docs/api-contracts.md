@@ -398,6 +398,56 @@ POST /api/v1/auth/logout
 
 ---
 
+## 6.5 Public Inspector Signup
+
+**Endpoint**
+
+```http
+POST /api/v1/auth/signup
+```
+
+**Access:** Public.
+
+### Request
+
+```json
+{
+  "full_name": "Sam Inspector",
+  "email": "sam.inspector@example.com",
+  "password": "inspector-password"
+}
+```
+
+The request does not accept a `role` field. Public signup always creates an active `INSPECTOR` account. `ADMIN` accounts must be created through the ADMIN-only user-management endpoint.
+
+### Successful Response
+
+`201 Created`
+
+```json
+{
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "full_name": "Sam Inspector",
+    "email": "sam.inspector@example.com",
+    "role": "INSPECTOR",
+    "is_active": true
+  }
+}
+```
+
+### Rules
+
+- Validate full name, email, and password using the documented password policy.
+- Normalize the email address to lowercase.
+- Reject duplicate email addresses with `409 Conflict`.
+- Apply signup rate limiting independently from login rate limiting.
+- Never return a password hash or a session token from this endpoint.
+- The client must use `POST /api/v1/auth/login` after successful signup to establish a session.
+- A newly registered inspector has no inspection assignments until an administrator assigns work.
+
+---
+
 # 7. User Management APIs
 
 All user-management endpoints require `ADMIN` permissions unless explicitly stated otherwise.

@@ -52,6 +52,10 @@ npm run preview   # Serve the production build locally
 
 `VITE_API_BASE_URL` defaults to `http://localhost:8000/api/v1` when it is not set. Access tokens are kept in application memory; refresh tokens are carried by the backend's HTTP-only cookie and are never read by frontend JavaScript.
 
+### Account access
+
+Open `http://localhost:5173/signup` to create an `INSPECTOR` account, then sign in. Public self-registration intentionally cannot create `ADMIN` accounts; administrator accounts remain provisioned through authenticated administrative user management. A self-registered inspector can log in immediately, but inspections must still be created and assigned by an administrator before they appear in the inspector workspace.
+
 ## Documentation
 
 Full architectural specifications are located in `docs/`:

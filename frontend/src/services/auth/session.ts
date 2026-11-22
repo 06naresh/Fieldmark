@@ -9,7 +9,12 @@ import { queryClient } from '@/lib/queryClient';
 import { authApi } from '@/services/api/authApi';
 import { useInspectionDraftStore } from '@/features/inspections/store/inspectionDraftStore';
 import { useAuthStore } from '@/store/authStore';
-import type { CurrentUser, LoginCredentials, UserRole } from '@/types/auth';
+import type {
+  CurrentUser,
+  LoginCredentials,
+  SignupCredentials,
+  UserRole,
+} from '@/types/auth';
 
 export async function refreshAccessToken(): Promise<string | null> {
   try {
@@ -64,6 +69,15 @@ export async function signIn(credentials: LoginCredentials): Promise<UserRole> {
   await ensureLocalAccount(user).catch(() => undefined);
   queryClient.clear();
   return user.role;
+}
+
+/**
+ * Create an inspector account, then use the ordinary login flow to establish
+ * the same session contract for both new and existing users.
+ */
+export async function signUp(credentials: SignupCredentials): Promise<UserRole> {
+  await authApi.signup(credentials);
+  return signIn({ email: credentials.email, password: credentials.password });
 }
 
 export async function signOut(logoutAllDevices = false): Promise<void> {

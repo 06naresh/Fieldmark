@@ -301,6 +301,7 @@ Routes must be grouped by authentication and user role.
 | Route | Page | Description |
 |---|---|---|
 | `/login` | LoginPage | User authentication |
+| `/signup` | SignupPage | Public INSPECTOR self-registration |
 | `/forgot-password` | ForgotPasswordPage | Password recovery, if enabled |
 
 ### Admin routes
@@ -536,6 +537,7 @@ Components:
 - Show/hide password control.
 - Remembered account or device information where appropriate.
 - Login button.
+- Link to public inspector signup.
 - Validation messages.
 - Authentication error message.
 
@@ -549,6 +551,29 @@ Behavior:
 - Navigate to the appropriate role dashboard.
 
 Do not implement persistent password storage.
+
+### 9.1.1 Signup Page
+
+Purpose: Allow a user to create an `INSPECTOR` account.
+
+Components:
+
+- Full name field.
+- Email field.
+- Password field with show/hide control.
+- Confirm-password field.
+- Signup button.
+- Link back to login.
+- Validation and API error messages.
+- Notice that public registration cannot create `ADMIN` accounts.
+
+Behavior:
+
+- Validate all fields with React Hook Form and Zod.
+- Submit only full name, email, and password to the backend.
+- Use the normal login flow after successful account creation.
+- Navigate to the inspector dashboard after the session is established.
+- Preserve entered values when account creation fails.
 
 ### 9.2 Admin Dashboard
 

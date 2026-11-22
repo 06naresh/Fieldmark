@@ -4,6 +4,7 @@ import { AdminLayout } from '@/layouts/AdminLayout';
 import { AuthenticatedLayout } from '@/layouts/AuthenticatedLayout';
 import { InspectorLayout } from '@/layouts/InspectorLayout';
 import { LoginPage } from '@/features/auth/pages/LoginPage';
+import { SignupPage } from '@/features/auth/pages/SignupPage';
 import { ProfilePage } from '@/features/auth/pages/ProfilePage';
 import { SettingsPage } from '@/features/auth/pages/SettingsPage';
 import { AdminDashboardPage } from '@/features/dashboard/pages/AdminDashboardPage';
@@ -29,6 +30,15 @@ export function AppRoutes(): React.JSX.Element {
         element={
           <PublicOnly>
             <LoginPage />
+          </PublicOnly>
+        }
+      />
+
+      <Route
+        path={ROUTES.signup}
+        element={
+          <PublicOnly>
+            <SignupPage />
           </PublicOnly>
         }
       />

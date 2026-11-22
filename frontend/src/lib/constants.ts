@@ -5,6 +5,7 @@ export const DEFAULT_API_BASE_URL = 'http://localhost:8000/api/v1';
 export const ROUTES = {
   home: '/',
   login: '/login',
+  signup: '/signup',
   profile: '/profile',
   settings: '/settings',
   notFound: '*',

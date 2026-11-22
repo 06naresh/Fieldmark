@@ -19,6 +19,9 @@ from app.core.security import (
 )
 from app.database.models import User
 from app.repositories import AuthRepository
+from app.schemas.auth import SignupRequest
+from app.schemas.users import UserCreate
+from app.services.user_service import UserService
 
 logger = get_logger(__name__)
 
@@ -40,6 +43,7 @@ class SessionResult:
 
 class AuthService:
     def __init__(self, db: Session) -> None:
+        self.db = db
         self.repository = AuthRepository(db)
 
     def login(self, email: str, password: str) -> SessionResult:
@@ -50,6 +54,23 @@ class AuthService:
             extra={"user_id": str(user.id), "role": user.role},
         )
         return result
+
+    def signup(self, payload: SignupRequest) -> User:
+        # Public registration is intentionally restricted to inspectors. Role
+        # escalation must only be possible through an authenticated ADMIN.
+        user = UserService(self.db).create(
+            UserCreate(
+                full_name=payload.full_name,
+                email=payload.email,
+                password=payload.password,
+                role="INSPECTOR",
+            )
+        )
+        logger.info(
+            "signup_succeeded",
+            extra={"user_id": str(user.id), "role": user.role},
+        )
+        return user
 
     def authenticate(self, email: str, password: str) -> User:
         normalized_email = email.strip().lower()

@@ -14,10 +14,12 @@ class InMemoryLoginRateLimiter:
         max_attempts: int,
         window_seconds: int,
         max_keys: int,
+        failure_message: str = "Too many failed login attempts. Please try again later.",
     ) -> None:
         self._max_attempts = max_attempts
         self._window_seconds = window_seconds
         self._max_keys = max_keys
+        self._failure_message = failure_message
         self._buckets: OrderedDict[str, deque[float]] = OrderedDict()
         self._lock = threading.Lock()
 
@@ -30,7 +32,7 @@ class InMemoryLoginRateLimiter:
             now = time.monotonic()
             self._prune(failures, now)
             if len(failures) >= self._max_attempts:
-                raise RateLimitError("Too many failed login attempts. Please try again later.")
+                raise RateLimitError(self._failure_message)
             if not failures:
                 self._buckets.pop(key, None)
 
@@ -62,4 +64,13 @@ login_rate_limiter = InMemoryLoginRateLimiter(
     max_attempts=settings.LOGIN_RATE_LIMIT_MAX_ATTEMPTS,
     window_seconds=settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS,
     max_keys=settings.LOGIN_RATE_LIMIT_MAX_KEYS,
+)
+
+# Public signup is rate limited independently from login so repeated duplicate
+# registrations cannot be used to exhaust the login limiter, and vice versa.
+signup_rate_limiter = InMemoryLoginRateLimiter(
+    max_attempts=settings.LOGIN_RATE_LIMIT_MAX_ATTEMPTS,
+    window_seconds=settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS,
+    max_keys=settings.LOGIN_RATE_LIMIT_MAX_KEYS,
+    failure_message="Too many signup attempts. Please try again later.",
 )

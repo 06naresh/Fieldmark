@@ -4,12 +4,12 @@ from uuid import uuid4
 import jwt
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.security import hash_refresh_token, utc_now
-from app.database.models import RefreshToken
+from app.database.models import RefreshToken, User
 
 
 def set_cookie(client: TestClient, name: str, value: str, path: str) -> None:
@@ -350,6 +350,124 @@ def test_login_rate_limit_rejects_repeated_failures(api_client: TestClient) -> N
         assert response.status_code == 401
 
     limited = login(api_client, email, "WrongPassword123!")
+
+    assert limited.status_code == 429
+    assert limited.json()["error"]["code"] == "RATE_LIMIT_EXCEEDED"
+
+
+def signup_request(client: TestClient, email: str, password: str = "InspectorPass123!") -> TestClient:
+    return client.post(
+        f"{settings.API_PREFIX}/auth/signup",
+        json={
+            "full_name": "Sam Signup",
+            "email": email,
+            "password": password,
+        },
+    )
+
+
+def test_signup_creates_active_inspector_without_secrets(
+    api_client: TestClient, migrated_engine
+) -> None:
+    email = f"signup-{uuid4().hex}@example.com"
+
+    response = signup_request(api_client, email)
+
+    assert response.status_code == 201
+    body = response.json()["data"]
+    assert body["email"] == email
+    assert body["full_name"] == "Sam Signup"
+    assert body["role"] == "INSPECTOR"
+    assert body["is_active"] is True
+    assert "password_hash" not in response.text
+    assert "InspectorPass123!" not in response.text
+
+    with Session(migrated_engine) as db:
+        stored = db.scalar(select(User).where(User.email == email))
+        assert stored is not None
+        assert stored.role == "INSPECTOR"
+        assert stored.password_hash.startswith("$argon2id$")
+
+
+def test_signup_can_use_the_normal_login_flow(
+    api_client: TestClient,
+) -> None:
+    email = f"signup-login-{uuid4().hex}@example.com"
+    password = "InspectorPass123!"
+
+    created = signup_request(api_client, email, password)
+    assert created.status_code == 201
+
+    logged_in = login(api_client, email, password)
+    assert logged_in.status_code == 200
+    assert logged_in.json()["data"]["user"]["email"] == email
+    assert logged_in.json()["data"]["user"]["role"] == "INSPECTOR"
+    assert settings.REFRESH_COOKIE_NAME in logged_in.cookies
+
+
+def test_signup_rejects_duplicate_email_without_creating_another_user(
+    api_client: TestClient, migrated_engine
+) -> None:
+    email = f"signup-duplicate-{uuid4().hex}@example.com"
+
+    first = signup_request(api_client, email)
+    assert first.status_code == 201
+
+    duplicate = api_client.post(
+        f"{settings.API_PREFIX}/auth/signup",
+        json={
+            "full_name": "Another Name",
+            "email": email.upper(),
+            "password": "DifferentPass123!",
+        },
+    )
+
+    assert duplicate.status_code == 409
+    assert duplicate.json()["error"]["code"] == "CONFLICT"
+    with Session(migrated_engine) as db:
+        count = db.scalar(
+            select(func.count()).select_from(User).where(User.email == email)
+        )
+        assert count == 1
+
+
+def test_signup_cannot_assign_the_admin_role(api_client: TestClient) -> None:
+    email = f"signup-role-{uuid4().hex}@example.com"
+
+    response = api_client.post(
+        f"{settings.API_PREFIX}/auth/signup",
+        json={
+            "full_name": "Attempted Admin",
+            "email": email,
+            "password": "InspectorPass123!",
+            "role": "ADMIN",
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_signup_enforces_the_password_policy(api_client: TestClient) -> None:
+    email = f"signup-password-{uuid4().hex}@example.com"
+
+    response = signup_request(api_client, email, "short")
+
+    assert response.status_code == 422
+
+
+def test_signup_rate_limit_rejects_repeated_duplicate_attempts(
+    api_client: TestClient,
+) -> None:
+    email = f"signup-rate-limit-{uuid4().hex}@example.com"
+    max_attempts = settings.LOGIN_RATE_LIMIT_MAX_ATTEMPTS
+
+    assert signup_request(api_client, email).status_code == 201
+
+    for _ in range(max_attempts):
+        duplicate = signup_request(api_client, email)
+        assert duplicate.status_code == 409
+
+    limited = signup_request(api_client, email)
 
     assert limited.status_code == 429
     assert limited.json()["error"]["code"] == "RATE_LIMIT_EXCEEDED"

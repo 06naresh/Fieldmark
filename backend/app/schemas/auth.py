@@ -18,6 +18,28 @@ class LoginRequest(BaseModel):
         return value.strip().lower()
 
 
+class SignupRequest(BaseModel):
+    """Public self-registration request.
+
+    Role is deliberately absent: public signup can only create INSPECTOR
+    accounts. Administrative accounts remain administrator-created.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    full_name: str = Field(min_length=1, max_length=150)
+    email: str = Field(max_length=255, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+    password: str = Field(min_length=8, max_length=128)
+
+    @field_validator("full_name", "email")
+    @classmethod
+    def normalize_text(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("The value must not be blank.")
+        return normalized.lower() if "@" in normalized else normalized
+
+
 class LogoutRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

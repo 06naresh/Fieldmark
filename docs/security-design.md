@@ -165,6 +165,24 @@ The backend must:
 
 Never return password hashes or raw refresh tokens in API response bodies.
 
+### Public inspector signup endpoint
+
+`POST /api/v1/auth/signup`
+
+Public self-registration is an explicit product exception that creates `INSPECTOR` accounts only. The request contract intentionally has no role field, so a caller cannot self-assign `ADMIN`.
+
+The backend must:
+
+- Validate full name, email, and password before creating an account.
+- Hash the password with Argon2id.
+- Reject duplicate email addresses without disclosing password or credential material.
+- Apply rate limiting separately from the login limiter.
+- Create the account as active and authorized for no assignments until an administrator assigns work.
+- Return only the safe user representation.
+- Not issue an access token or refresh cookie from the signup endpoint.
+
+The client establishes a session by calling the normal login endpoint after successful signup. Administrator accounts remain provisioned only through authenticated administrative user management.
+
 ---
 
 ## 5. Password Security

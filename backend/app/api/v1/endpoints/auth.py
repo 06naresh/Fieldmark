@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.exceptions import UnauthorizedError
-from app.core.rate_limit import login_rate_limiter
+from app.core.exceptions import ConflictError, UnauthorizedError
+from app.core.rate_limit import login_rate_limiter, signup_rate_limiter
 from app.core.security import (
     clear_csrf_cookie,
     clear_refresh_cookie,
@@ -17,10 +17,13 @@ from app.schemas.auth import (
     LoginRequest,
     LoginResponse,
     LogoutRequest,
+    SignupRequest,
     TokenResponse,
     TokenUser,
 )
 from app.schemas.common import DataResponse, MessageResponse
+from app.schemas.users import UserResponse
+from app.services.user_service import user_response
 from app.services.auth_service import AuthService, InvalidCredentials
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -63,6 +66,33 @@ def login(
             ),
         )
     )
+
+
+@router.post(
+    "/signup", response_model=DataResponse[UserResponse], status_code=201
+)
+def signup(
+    payload: SignupRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> DataResponse[UserResponse]:
+    """Create an INSPECTOR account for public, self-service onboarding.
+
+    A session is intentionally not issued here. The client uses the normal
+    login flow after creation so both login and signup share one session
+    contract.
+    """
+    rate_limit_key = f"signup:{_client_ip(request)}:{payload.email}"
+    signup_rate_limiter.check(rate_limit_key)
+
+    try:
+        user = AuthService(db).signup(payload)
+    except ConflictError:
+        signup_rate_limiter.record_failure(rate_limit_key)
+        raise
+
+    signup_rate_limiter.reset(rate_limit_key)
+    return DataResponse(data=user_response(user))
 
 
 @router.post("/refresh", response_model=DataResponse[TokenResponse])
