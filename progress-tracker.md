@@ -93,8 +93,8 @@ The next agent must be able to continue without repeating completed work.
 | State management | Zustand + TanStack Query |
 | Testing | pytest, Vitest, React Testing Library, Playwright |
 | Current development phase | Phase 10 — Synchronization Engine (Completed) |
-| Current feature | F-019 Push Synchronization, F-020 Pull Synchronization, and F-021 Retry Mechanism |
-| Overall status | Phase 9 committed as `45c03ff`; Phase 10 committed as `cb4face`; signup access request pending design decision |
+| Current feature | F-030 Public Inspector Signup (post-commit account access feature) |
+| Overall status | Phase 9 committed as `45c03ff`; Phase 10 committed as `cb4face`; F-030 committed as `fcb2828`; Phase 11 approved but not started |
 
 ---
 
@@ -145,41 +145,42 @@ Update this section whenever a new feature implementation session begins.
 | Session date | 2026-11-22 |
 | Agent/session identifier | OpenCode (Big Pickle) |
 | Current phase | Phase 10 — Synchronization Engine (Completed and committed) |
-| Current feature | Post-commit account access setup; no public signup contract is approved |
-| Feature status | Blocked pending design decision |
+| Current feature | F-030 Public Inspector Signup (explicitly approved product/security exception) |
+| Feature status | Completed |
 | Last updated | 2026-11-22 |
 
 ## 5.1 Current objective
 
 **Objective:**
 
-Implement Phase 10 Synchronization Engine: connect the durable Dexie queue to the backend sync APIs with dependency-aware push, per-operation result handling, authorized pull, transactional local application and cursor persistence, retry/backoff with jitter, connectivity management, synchronization locking, and manual/triggered synchronization.
+Add explicitly approved public self-registration so a user can create an `INSPECTOR` account, sign in, and test the application. The registration contract must not permit self-assigned `ADMIN` accounts, must reuse the existing session flow, and must be covered by backend and frontend tests.
 
 ## 5.2 Current implementation scope
 
 **Included:**
 
-- Reuse the Phase 9 operation factory and durable queue records without changing operation identity semantics.
-- Add frontend sync API services for device context, push, pull, and status endpoints.
-- Add dependency manager, queue service, retry manager, connectivity manager, push service, pull service, and coordinating sync engine.
-- Persist every operation result locally and keep conflicts, rejections, and retryable failures intact.
-- Apply pull batches and their cursor in one Dexie transaction; advance the cursor only after local application succeeds.
-- Add bounded exponential backoff with jitter and `Retry-After` handling.
-- Add a safe synchronization lock and foreground triggers plus a manual sync action.
-- Add synchronization integration tests for dependencies, duplicate responses, cursor persistence, interrupted sync, and network recovery.
+- Add `POST /api/v1/auth/signup` with a strict request schema and `201` user response.
+- Create active `INSPECTOR` accounts only; reject a submitted `role` field through `extra="forbid"`.
+- Hash passwords with the existing Argon2id service and reuse admin user-creation persistence/change logging.
+- Apply an independent bounded signup rate limiter for duplicate-attempt abuse.
+- Add a public `/signup` page, React Hook Form/Zod validation, confirm-password check, API error display, and automatic normal login after creation.
+- Update PRD, API, security, architecture, frontend, testing, and README documentation to reflect the approved exception.
+- Add backend API/integration tests and frontend form/API/router tests.
 
 **Not included:**
 
-- Full Sync Center UI and conflict resolution workflows; these remain Phase 11 (`F-022`–`F-024`).
+- Public creation of `ADMIN` accounts; administrator accounts remain provisioned through authenticated administrative user management.
+- Initial administrator bootstrap tooling.
+- Phase 11 Sync Center and conflict-resolution UI; Phase 11 is approved but work has not started.
 - PWA installation and offline application shell; these remain Phase 12.
-- Backend API changes; Phase 5 already provides the approved sync contracts.
 
 **Dependencies:**
 
-- Phases 0–9 are completed and verified.
+- Phases 0–10 are completed and verified.
 - Phase 9 was committed as `45c03ff feat: implement phase 9 offline persistence` after user request.
-- The user explicitly approved Phase 10 on 2026-11-22.
-- Approved sync behavior was reviewed in `docs/development-phases.md`, `docs/offline-sync-design.md`, and `docs/api-contracts.md`.
+- Phase 10 was committed as `cb4face feat: implement phase 10 synchronization engine` after user request.
+- The user explicitly approved public signup and Phase 11 on 2026-11-22.
+- The approved exception changes PRD/API/security/frontend documentation; those documents were updated rather than leaving implementation and contracts inconsistent.
 
 ## 5.3 Current progress
 
@@ -196,16 +197,23 @@ Implement Phase 10 Synchronization Engine: connect the durable Dexie queue to th
 | Add synchronization integration tests | Completed | 10 new sync tests plus 2 identifier tests added |
 | Run verification | Completed | Typecheck, lint, 61/61 tests, build, preview HTTP 200, and audit passed |
 | Commit Phase 10 | Completed | `cb4face feat: implement phase 10 synchronization engine`; not pushed |
-| Add requested signup page | Blocked | Approved docs define ADMIN-created users only; no public `/auth/signup` or `/auth/register` contract exists |
+| Resolve signup design decision | Completed | User explicitly approved public signup; Phase 11 approved separately |
+| Implement public signup backend | Completed | Strict schema, INSPECTOR-only creation, Argon2id hashing, conflict handling, independent limiter |
+| Implement public signup frontend | Completed | `/signup` route, validated form, login-after-signup flow, error preservation |
+| Update approved documentation | Completed | PRD, API, security, architecture, frontend, testing, and README updated for the approved exception |
+| Add signup tests | Completed | 6 backend and 7 frontend tests added |
+| Run verification | Completed | 79 backend tests and 68 frontend tests passed; typecheck, lint, build, and audit passed |
 
-### 5.4 Phase 10 verification summary
+### 5.4 F-030 verification summary
 
+- `.venv/Scripts/python.exe -m pytest -q`: 79 passed; 2 non-blocking deprecation warnings.
+- `.venv/Scripts/python.exe -m pytest tests/test_authentication.py -q`: 21 passed.
 - `npx tsc --noEmit`: clean.
 - `npm run lint`: clean with zero warnings.
-- `npm test -- --run`: 61 passed across 13 test files.
+- `npm test -- --run`: 68 passed across 15 test files.
 - `npm run build`: production build succeeded; non-blocking chunk-size and Zod annotation warnings.
-- Vite preview smoke check: HTTP 200.
 - `npm audit --audit-level=moderate`: zero vulnerabilities.
+- No database migration was required because the existing `users` table and constraints already support INSPECTOR accounts.
 
 ---
 
@@ -1542,7 +1550,125 @@ Connect the Phase 9 durable Dexie queue to the Phase 5 backend synchronization A
 
 ### Phase10.10 Handoff instructions
 
-Phase 10 is complete and verified. Stop at the phase boundary. The Phase 10 changes remain uncommitted because the user requested a commit only for Phase 9. Do not start Phase 11 — Conflict Management without explicit approval. The next phase must build the Sync Center and conflict resolution UI on top of the persisted conflict snapshots, version checks, and sync state delivered here.
+Phase 10 is complete and verified. It was subsequently committed as `cb4face feat: implement phase 10 synchronization engine`; the commit was not pushed. Phase 11 — Conflict Management is now approved, but the next agent must first verify that F-030 Public Inspector Signup is committed before starting it.
+
+---
+
+## Feature: F-030 Public Inspector Signup
+
+| Property | Value |
+|---|---|
+| Feature ID | F-030 |
+| Development phase | Post-Phase 10 account access |
+| Status | Completed |
+| Priority | High |
+| Started date | 2026-11-22 |
+| Last updated | 2026-11-22 |
+| Completed date | 2026-11-22 |
+| Implemented by | OpenCode (Big Pickle) |
+| Approval | User explicitly approved public signup and Phase 11 on 2026-11-22 |
+
+### F-030.1 Feature objective
+
+Provide a safe, self-service way for a user to create an `INSPECTOR` account and immediately sign in for feature testing, without allowing role escalation or weakening the existing JWT/refresh-cookie session design.
+
+### F-030.2 Requirements
+
+- [x] Publicly register an active `INSPECTOR` account.
+- [x] Reject client-submitted roles so callers cannot create `ADMIN` accounts.
+- [x] Validate name, email, and password using the same policy as administrator-created users.
+- [x] Hash passwords with Argon2id and never return credential material.
+- [x] Handle duplicate emails with `409 Conflict` without creating a second account.
+- [x] Apply signup-specific rate limiting.
+- [x] Sign in through the existing login flow after successful registration.
+- [x] Provide accessible signup and login navigation.
+- [x] Preserve entered values and show server errors when registration fails.
+- [x] Update approved documentation for the explicit product/security exception.
+- [x] Cover the behavior with backend and frontend tests.
+
+### F-030.3 Files created
+
+| File path | Purpose | Status |
+|---|---|---|
+| `frontend/src/features/auth/schemas/signupSchema.ts` | React Hook Form/Zod validation and password confirmation | Created |
+| `frontend/src/features/auth/components/SignupForm.tsx` | Accessible signup form and API error handling | Created |
+| `frontend/src/features/auth/pages/SignupPage.tsx` | Public signup page | Created |
+| `frontend/src/features/auth/components/SignupForm.test.tsx` | Validation, success navigation, and failure-preservation tests | Created |
+| `frontend/src/services/api/authApi.test.ts` | Signup endpoint client contract test | Created |
+
+### F-030.4 Files modified
+
+| File path | Modification | Reason |
+|---|---|---|
+| `backend/app/schemas/auth.py` | Added `SignupRequest` with no role field | Prevent public role assignment |
+| `backend/app/services/auth_service.py` | Added `signup()` and retained the database session | Reuse validated user creation and change logging |
+| `backend/app/api/v1/endpoints/auth.py` | Added `POST /auth/signup` with independent rate limiting | Public registration contract |
+| `backend/app/core/rate_limit.py` | Added configurable failure message and signup limiter | Separate signup abuse from login failures |
+| `backend/tests/test_authentication.py` | Added six signup API tests | Verify role safety, duplicates, password policy, login, and limiting |
+| `frontend/src/types/auth.ts` | Added `SignupCredentials` | Typed frontend request contract |
+| `frontend/src/services/api/authApi.ts` | Added `signup()` | Call the documented endpoint |
+| `frontend/src/services/auth/session.ts` | Added `signUp()` and normal login after creation | Reuse the single session contract |
+| `frontend/src/features/auth/pages/LoginPage.tsx` | Added signup link | Make account creation discoverable |
+| `frontend/src/lib/constants.ts` | Added `ROUTES.signup` | Central route definition |
+| `frontend/src/app/router.tsx` | Added public-only `/signup` route | Route wiring and authenticated redirect |
+| `frontend/src/app/router.test.tsx` | Added signup route coverage | Verify public access and redirect |
+| `docs/PRD.md` | Added self-registration story and FR-AUTH-11 | Record approved product exception |
+| `docs/api-contracts.md` | Added `POST /api/v1/auth/signup` contract | Define request, response, and rules |
+| `docs/security-design.md` | Added public signup security requirements | Record role and rate-limit controls |
+| `docs/architecture.md` | Added signup to `/auth` responsibility | Keep architecture aligned |
+| `docs/frontend-design.md` | Added route and page design | Keep UI contract aligned |
+| `docs/testing-strategy.md` | Added signup API/page/release criteria | Define required coverage |
+| `README.md` | Added account access instructions | Explain local signup and INSPECTOR-only scope |
+| `progress-tracker.md` | Recorded implementation, verification, and handoff | Mandatory progress tracking |
+
+### F-030.5 Important decisions
+
+| Decision | Reason | Impact |
+|---|---|---|
+| Public signup creates only `INSPECTOR` accounts | The user approved public signup, but self-assigned administrative privilege is not an acceptable security default | ADMIN accounts remain administrator-provisioned |
+| No `role` field is accepted by the API schema | Server-side enforcement is stronger than hiding a frontend control | Requests containing `role` receive `422` |
+| Signup does not issue a session | Keeps one session contract and avoids duplicating refresh-cookie/CSRF logic | Client automatically calls the normal login endpoint after creation |
+| Reuse `UserService.create()` | Preserves Argon2id hashing, conflict behavior, and change-feed logging | No duplicate user-creation logic |
+| Independent signup limiter | Duplicate registrations should not consume the login limiter budget | Limiter is process-local like the existing login limiter |
+| Preserve form values on failure | Recoverable failures must not discard inspection-adjacent user input | React Hook Form state remains intact on API errors |
+| Update approved documents after explicit approval | Implementation must not silently diverge from the source of truth | PRD/API/security/frontend/testing docs now describe signup |
+
+### F-030.6 Verification
+
+| Check | Result |
+|---|---|
+| `.venv/Scripts/python.exe -m pytest tests/test_authentication.py -q` | 21 passed; first run found `AuthService` missing its `db` attribute, fixed by retaining the session |
+| `npx vitest run src/features/auth/components/SignupForm.test.tsx src/services/api/authApi.test.ts src/app/router.test.tsx` | 11 passed; first run found mutation context passed to the mock, fixed with an explicit mutation wrapper |
+| `.venv/Scripts/python.exe -m pytest -q` | 79 passed; 2 non-blocking warnings |
+| `npx tsc --noEmit` | Passed |
+| `npm run lint` | Passed with zero warnings |
+| `npm test -- --run` | 68 passed across 15 test files |
+| `npm run build` | Passed; non-blocking chunk-size and Zod annotation warnings |
+| `npm audit --audit-level=moderate` | 0 vulnerabilities |
+| `git diff --check` | No whitespace errors; line-ending normalization notices only |
+
+### F-030.7 Known issues
+
+- Public signup does not create `ADMIN` accounts; a deployment-specific initial administrator provisioning process is still required.
+- The signup rate limiter is process-local, matching the existing login limiter; a multi-instance deployment needs a shared limiter.
+- If the normal login call fails after successful account creation, the account exists but no session is established; the user can sign in manually.
+- Browser-level E2E signup coverage remains Phase 13; component and router tests cover the current UI contract.
+
+### F-030.8 Acceptance criteria
+
+- [x] A user can open `/signup` while unauthenticated.
+- [x] A valid request creates an active `INSPECTOR` account.
+- [x] A submitted `ADMIN` role is rejected.
+- [x] Duplicate registration is rejected with `409` and does not create another user.
+- [x] Password policy violations are rejected with `422`.
+- [x] Repeated duplicate signups are rate limited with `429`.
+- [x] Successful registration is followed by normal login and inspector-dashboard navigation.
+- [x] Failed registration preserves entered values and displays an error.
+- [x] Backend and frontend tests pass.
+
+### F-030.9 Handoff instructions
+
+F-030 was committed as `fcb2828 feat: add public inspector signup`; the commit was not pushed. Phase 11 is explicitly approved and must build the Sync Center and conflict-resolution UI on the persisted conflict snapshots from Phase 10. Do not change the signup role boundary without another explicit security/product decision.
 
 ---
 
@@ -1577,6 +1703,7 @@ Add a new row when a feature is identified.
 | F-019 | Push synchronization | 10 | Completed | offline-sync-design.md, api-contracts.md |
 | F-020 | Pull synchronization | 10 | Completed | offline-sync-design.md, api-contracts.md |
 | F-021 | Retry mechanism | 10 | Completed | offline-sync-design.md |
+| F-030 | Public inspector signup | Post-Phase 10 | Completed | PRD.md, api-contracts.md, security-design.md, frontend-design.md |
 | F-022 | Conflict detection | 11 | Not Started | offline-sync-design.md |
 | F-023 | Conflict resolution | 11 | Not Started | offline-sync-design.md |
 | F-024 | Sync Center | 11 | Not Started | frontend-design.md |
@@ -1598,6 +1725,7 @@ Track API implementation separately.
 | `/health` | GET | Yes | Yes | Public basic health check |
 | `/health/ready` | GET | Yes | Yes | Verifies PostgreSQL with `SELECT 1` |
 | `/api/v1/auth/login` | POST | Yes | Yes | Argon2id verification, generic errors, rate limiting, cookies |
+| `/api/v1/auth/signup` | POST | Yes | Yes | Public INSPECTOR-only creation, strict schema, duplicate conflict, independent limiter |
 | `/api/v1/auth/refresh` | POST | Yes | Yes | CSRF, rotation, reuse detection, expiry checks |
 | `/api/v1/auth/me` | GET | Yes | Yes | Bearer JWT validation; database user is authoritative |
 | `/api/v1/auth/logout` | POST | Yes | Yes | CSRF, current/all-device revocation, cookie clearing |
@@ -1709,13 +1837,13 @@ Track testing at project level.
 
 | Test category | Status | Last result | Notes |
 |---|---|---|---|
-| Backend unit tests | Completed | 73 passed | Full backend pytest suite |
-| Backend integration tests | Completed | 73 passed | PostgreSQL temporary schema; includes Phase 4 APIs and Phase 5 device, push, pull, status, and conflict tests |
-| API tests | Completed | 73 passed | Full suite includes health, readiness, versioning/docs, CORS, error formats, logging, auth, authorization, Phase 4 endpoints, and Phase 5 sync endpoints |
+| Backend unit tests | Completed | 79 passed | Full backend pytest suite |
+| Backend integration tests | Completed | 79 passed | PostgreSQL temporary schema; includes Phase 4 APIs, Phase 5 sync endpoints, and F-030 public signup |
+| API tests | Completed | 79 passed | Full suite includes health, readiness, versioning/docs, CORS, error formats, logging, auth, signup, authorization, Phase 4 endpoints, and Phase 5 sync endpoints |
 | Database tests | Completed | 8 passed | Schema, constraints, relationships, latest migrations, unique `submission_id`, `submitted_version`, `template_key`, and cursor ordering; expected head now `0005_sync_scope_and_retry` |
-| Authentication tests | Completed | 19 passed | 4 password-hashing and 15 authentication tests |
+| Authentication tests | Completed | 21 passed | 4 password-hashing, 15 authentication, and 6 public-signup tests |
 | RBAC tests | Completed | 12 passed | Phase 3 authorization tests plus Phase 4 and Phase 5 endpoint authorization coverage |
-| Frontend unit tests | Completed | 61 passed | Full Vitest suite for API client, theme, online status, router, admin flows, inspector workflow, IndexedDB, sync engine, persistence, identifiers, and shared UI |
+| Frontend unit tests | Completed | 68 passed | Full Vitest suite for API client, signup, theme, online status, router, admin flows, inspector workflow, IndexedDB, sync engine, persistence, identifiers, and shared UI |
 | Component tests | Completed | 5 passed | Shared UI component test suite covering rendering, interactions, dialogs, menus, tabs, toast, and error states |
 | Inspector workflow tests | Completed | 5 passed | Assignment list, start action, validation, local drafts, answer saves, draft restore, and stable submission ID |
 | IndexedDB tests | Completed | 12 passed | Schema, account isolation, offline-session errors, storage failures, answer coalescing, start/submit IDs, conflicts, and Dexie reopen |
@@ -1845,6 +1973,17 @@ Do not report tests as passed if they were not actually executed.
 | 2026-11-22 | `npm run lint` (final Phase 10 run) | Lint | 1 | 0 | ESLint passed with zero warnings |
 | 2026-11-22 | `npm test -- --run` (final Phase 10 run) | Frontend tests | 61 | 0 | All 13 test files passed |
 | 2026-11-22 | `npm run build` (final Phase 10 run) | Production build | 1 | 0 | Vite build succeeded with the existing non-blocking warnings |
+| 2026-11-22 | `.venv/Scripts/python.exe -m pytest tests/test_authentication.py -q` (initial F-030 run) | Backend auth/signup | 17 | 4 | `AuthService` did not retain the `Session`; fixed by assigning `self.db` |
+| 2026-11-22 | `npm test -- --run` (initial F-030 run) | Frontend tests | 67 | 1 | Mutation context was passed to the signup mock; fixed with an explicit mutation wrapper |
+| 2026-11-22 | `.venv/Scripts/python.exe -m pytest tests/test_authentication.py -q` | Backend auth/signup | 21 | 0 | All signup role, duplicate, password, login, and rate-limit tests passed |
+| 2026-11-22 | `npx vitest run src/features/auth/components/SignupForm.test.tsx src/services/api/authApi.test.ts src/app/router.test.tsx` | Frontend signup | 11 | 0 | Form, API client, and router tests passed |
+| 2026-11-22 | `.venv/Scripts/python.exe -m pytest -q` (final F-030 run) | Full backend suite | 79 | 0 | 2 non-blocking deprecation warnings |
+| 2026-11-22 | `npx tsc --noEmit` (F-030) | TypeScript check | 1 | 0 | Strict TypeScript configuration passed |
+| 2026-11-22 | `npm run lint` (F-030) | Lint | 1 | 0 | ESLint passed with zero warnings |
+| 2026-11-22 | `npm test -- --run` (final F-030 run) | Frontend tests | 68 | 0 | All 15 test files passed; non-blocking Node localStorage warning remains |
+| 2026-11-22 | `npm run build` (F-030) | Production build | 1 | 0 | Vite build succeeded with non-blocking chunk-size and Zod annotation warnings |
+| 2026-11-22 | `npm audit --audit-level=moderate` (F-030) | Security check | 1 | 0 | Zero reported vulnerabilities |
+| 2026-11-22 | `git diff --check` (F-030) | Diff hygiene | 1 | 0 | No whitespace errors; line-ending normalization notices only |
 
 ---
 
@@ -1920,6 +2059,12 @@ Maintain a chronological record of significant implementation decisions.
 | D-064 | 2026-11-22 | Generate UUID-shaped answer/submission IDs and predict the post-start inspection version for queued submissions | Backend UUID validation and start-driven version increments would otherwise reject synchronized offline work | `id.ts`, `ExecuteInspectionPage.tsx`, `localRepositories.ts` |
 | D-065 | 2026-11-22 | Keep synchronization foreground-only and expose a minimal header action | Correctness must not depend on Background Sync; the full Sync Center belongs to Phase 11 | `syncEngine.ts`, `providers.tsx`, `ManualSyncButton.tsx` |
 | D-066 | 2026-11-22 | Re-register once when a cached server device is inactive, but leave work queued on authentication failure | Device revocation is recoverable without weakening account authorization | `syncEngine.ts`, `connectivityManager.ts` |
+| D-067 | 2026-11-22 | Implement explicitly approved public signup as an INSPECTOR-only exception rather than allowing self-assigned roles | The user requested account access for testing, but administrative privilege must remain administrator-provisioned | `SignupRequest`, `AuthService.signup()`, auth endpoint, PRD/security docs |
+| D-068 | 2026-11-22 | Use `extra="forbid"` so a `role` field in the signup request is rejected with `422` | A silent ignored role could mislead clients and hide attempted privilege escalation | `backend/app/schemas/auth.py`, `test_signup_cannot_assign_the_admin_role` |
+| D-069 | 2026-11-22 | Reuse `UserService.create()` and `user_response()` for signup | Preserve Argon2id hashing, duplicate-email handling, change logging, and the safe response shape without duplicate business logic | `auth_service.py`, `auth.py`, `user_service.py` |
+| D-070 | 2026-11-22 | Add a separate process-local signup rate limiter and do not issue a session from the signup endpoint | Duplicate registrations need abuse control, and one session contract is safer than duplicating refresh/CSRF behavior | `rate_limit.py`, `auth.py`, `session.ts` |
+| D-071 | 2026-11-22 | Make the signup form explicit about INSPECTOR-only registration and preserve values on API failure | Users should not expect administrative access, and recoverable failures must not discard input | `SignupForm.tsx`, `SignupPage.tsx`, frontend design docs |
+| D-072 | 2026-11-22 | Update PRD, API, security, architecture, frontend, testing, and README documents for the approved exception | The documented source of truth must match implemented behavior after approval | `docs/`, `README.md` |
 
 When adding a decision:
 
@@ -1941,7 +2086,7 @@ Track unresolved issues centrally.
 | Issue ID | Description | Severity | Status | Owner/agent | Next action |
 |---|---|---|---|---|---|
 | B-001 | Valid PostgreSQL credentials were initially unavailable | High | Resolved | OpenCode session | User added `backend/.env`; migration and all tests passed |
-| B-002 | A public signup page was requested, but approved contracts only allow ADMIN user creation through `POST /api/v1/users` | High | Open | User / OpenCode session | Choose between a documented development-only bootstrap admin and an explicitly approved public self-registration design |
+| B-002 | A public signup page was requested, but approved contracts only allow ADMIN user creation through `POST /api/v1/users` | High | Resolved | User / OpenCode session | User explicitly approved public signup; F-030 implemented INSPECTOR-only registration and updated the approved docs |
 
 ### Severity levels
 
@@ -1988,7 +2133,9 @@ Add a new entry whenever a development session makes meaningful changes.
 | 2026-11-22 | OpenCode (Big Pickle) | Phase 9 | Commit | Committed verified Phase 9 work as `45c03ff feat: implement phase 9 offline persistence` after explicit user request; not pushed | Completed |
 | 2026-11-22 | OpenCode (Big Pickle) | Phase 10 | F-019/F-020/F-021 | Added the frontend synchronization engine: API client, dependency-aware bounded push, per-operation result persistence, authorized paginated pull, atomic cursor application, retry with jitter and `Retry-After`, connectivity, locking, recovery, triggers, manual action, and 12 new tests; final verification was 61/61 tests, clean lint and typecheck, successful build and preview, and zero audit vulnerabilities | Completed |
 | 2026-11-22 | OpenCode (Big Pickle) | Phase 10 | Commit | Committed verified Phase 10 work as `cb4face feat: implement phase 10 synchronization engine` after explicit user request; not pushed | Completed |
-| 2026-11-22 | OpenCode (Big Pickle) | Post-commit | Account access setup | Reviewed approved auth contracts after the user requested a signup page; blocked because public registration is not defined and user creation is ADMIN-only | Blocked |
+| 2026-11-22 | OpenCode (Big Pickle) | Post-commit | Account access setup | Reviewed approved auth contracts after the user requested a signup page; initially blocked because public registration was not defined and user creation was ADMIN-only | Resolved |
+| 2026-11-22 | OpenCode (Big Pickle) | Post-Phase 10 | F-030 | User explicitly approved public signup; added INSPECTOR-only backend registration, independent rate limiting, signup page/form, normal login-after-signup flow, route wiring, documentation updates, and 13 new tests; final verification was 79 backend tests, 68 frontend tests, clean typecheck/lint, successful build, and zero audit vulnerabilities | Completed |
+| 2026-11-22 | OpenCode (Big Pickle) | Post-Phase 10 | F-030 commit | Committed the verified signup implementation as `fcb2828 feat: add public inspector signup`; not pushed | Completed |
 
 For each entry, include a concise summary of:
 
@@ -2013,44 +2160,57 @@ Update it before stopping work.
 
 Phase 10 — Synchronization Engine. All acceptance criteria were verified. Phase 9 was committed as `45c03ff feat: implement phase 9 offline persistence`; Phase 10 was committed as `cb4face feat: implement phase 10 synchronization engine`. Neither commit was pushed.
 
+**Last completed feature:**
+
+F-030 Public Inspector Signup. The user explicitly approved public signup specifically for local account access/testing. Signup is implemented as an INSPECTOR-only exception; ADMIN accounts remain administrator-provisioned. The implementation and approved documentation are complete and verified, but the working tree still needs to be committed.
+
 **Current phase:**
 
-Phase 10 — Synchronization Engine (Completed; stopped at phase boundary).
+Phase 10 — Synchronization Engine (Completed). Phase 11 — Conflict Management is explicitly approved but has not been started.
 
 **Current feature:**
 
-F-019 Push Synchronization, F-020 Pull Synchronization, and F-021 Retry Mechanism.
+F-030 Public Inspector Signup.
 
 **Current feature status:**
 
-Completed.
+Completed and verified; committed as `fcb2828` and not pushed.
 
 **Last completed task:**
 
-Implemented the frontend synchronization engine: dependency-aware bounded push, per-operation result persistence, authorized paginated pull, atomic local batch/cursor application, interrupted-operation recovery, bounded jittered retry with `Retry-After`, connectivity checks, synchronization locking, foreground triggers, and a manual header action. Final verification was 61/61 frontend tests, clean TypeScript and lint checks, a successful production build and preview, and zero audit vulnerabilities.
+Added `POST /api/v1/auth/signup`, INSPECTOR-only registration service logic, an independent signup rate limiter, a public `/signup` page with React Hook Form/Zod validation, normal login after account creation, route/link wiring, backend and frontend tests, and documentation updates. Final verification was 79 backend tests, 68 frontend tests, clean typecheck/lint, successful production build, and zero audit vulnerabilities.
 
 **Current stopping point:**
 
-Phase 10 is complete and committed. The user then requested a signup page for manual testing. That request is blocked pending a design decision because the approved contracts define ADMIN-created users only and contain no public registration endpoint.
+F-030 is committed and verified. Phase 11 — Conflict Management is already approved but has not been started in this session.
 
 ## Files to inspect first
 
 1. `progress-tracker.md`
-2. `docs/development-phases.md` — Phase 10 acceptance criteria and Phase 11 boundary
-3. `docs/offline-sync-design.md` — queue, push, pull, retry, cursor, and conflict rules
-4. `frontend/src/services/sync/syncEngine.ts` — coordinating engine and triggers
-5. `frontend/src/services/sync/pushSync.ts` — bounded dependency-ordered push
-6. `frontend/src/services/sync/pullSync.ts` — paginated pull flow
-7. `frontend/src/services/sync/dependencyManager.ts` — explicit and implicit dependencies
-8. `frontend/src/services/sync/retryManager.ts` — retry classification, jitter, and `Retry-After`
-9. `frontend/src/services/sync/syncLock.ts` — cross-trigger lock
-10. `frontend/src/db/syncRepositories.ts` — atomic results, conflicts, batches, cursor, and recovery
-11. `frontend/src/services/api/syncApi.ts` — device, status, push, and pull client
-12. `frontend/src/store/syncStore.ts` — foreground sync state
-13. `frontend/src/services/sync/syncEngine.test.ts` — integration tests
-14. `frontend/src/db/syncRepositories.test.ts` — transaction and persistence tests
-15. `frontend/src/db/localRepositories.ts` — durable queue and dependency metadata
-16. `frontend/src/features/inspections/pages/ExecuteInspectionPage.tsx` — offline operation identities and versions
+2. `backend/app/api/v1/endpoints/auth.py` — login/signup endpoint contracts
+3. `backend/app/schemas/auth.py` — strict signup request schema
+4. `backend/app/services/auth_service.py` — signup and session service
+5. `backend/app/core/rate_limit.py` — login and signup limiters
+6. `frontend/src/features/auth/components/SignupForm.tsx` — signup UI and error behavior
+7. `frontend/src/features/auth/schemas/signupSchema.ts` — signup validation
+8. `frontend/src/services/auth/session.ts` — signup-to-login session flow
+9. `frontend/src/app/router.tsx` — public routes and guards
+10. `docs/api-contracts.md` and `docs/security-design.md` — approved signup exception
+11. `docs/development-phases.md` — Phase 10 acceptance criteria and Phase 11 boundary
+12. `docs/offline-sync-design.md` — queue, push, pull, retry, cursor, and conflict rules
+13. `frontend/src/services/sync/syncEngine.ts` — coordinating engine and triggers
+14. `frontend/src/services/sync/pushSync.ts` — bounded dependency-ordered push
+15. `frontend/src/services/sync/pullSync.ts` — paginated pull flow
+16. `frontend/src/services/sync/dependencyManager.ts` — explicit and implicit dependencies
+17. `frontend/src/services/sync/retryManager.ts` — retry classification, jitter, and `Retry-After`
+18. `frontend/src/services/sync/syncLock.ts` — cross-trigger lock
+19. `frontend/src/db/syncRepositories.ts` — atomic results, conflicts, batches, cursor, and recovery
+20. `frontend/src/services/api/syncApi.ts` — device, status, push, and pull client
+21. `frontend/src/store/syncStore.ts` — foreground sync state
+22. `frontend/src/services/sync/syncEngine.test.ts` — integration tests
+23. `frontend/src/db/syncRepositories.test.ts` — transaction and persistence tests
+24. `frontend/src/db/localRepositories.ts` — durable queue and dependency metadata
+25. `frontend/src/features/inspections/pages/ExecuteInspectionPage.tsx` — offline operation identities and versions
 
 ## Work remaining
 
@@ -2060,7 +2220,10 @@ Phase 10 is complete and committed. The user then requested a signup page for ma
 - [x] Implement Phase 10 retry, dependency, connectivity, lock, trigger, and manual sync behavior.
 - [x] Add and verify Phase 10 synchronization tests.
 - [x] Commit Phase 10 as requested.
-- [ ] Resolve the signup/bootstrap design decision before changing authentication behavior.
+- [x] Resolve the signup/bootstrap design decision before changing authentication behavior.
+- [x] Implement explicitly approved public INSPECTOR-only signup.
+- [x] Update approved documentation and verify signup tests.
+- [x] Commit F-030 signup work as `fcb2828 feat: add public inspector signup`; not pushed.
 - [ ] In Phase 11, build the Sync Center and conflict resolution UI on the persisted snapshots.
 - [ ] In later phases, complete the PWA shell, E2E scenarios, and deployment work.
 
@@ -2071,30 +2234,31 @@ Phase 10 is complete and committed. The user then requested a signup page for ma
 - Non-blocking: installed Starlette/TestClient and passlib/argon2 backend versions emit deprecation warnings. No backend tests fail.
 - Non-blocking: optional PATCH fields are displayed as nullable in OpenAPI even though runtime validators reject `null` for non-clearable fields; runtime behavior is correct.
 - Resolved: the original global `lib/` ignore rule was fixed and earlier phases included the newly trackable `frontend/src/lib/` sources.
+- Public signup intentionally creates only INSPECTOR accounts; initial ADMIN provisioning remains a deployment responsibility.
+- The signup rate limiter is process-local, like the login limiter; a multi-instance deployment needs a shared limiter.
+- If login fails immediately after successful signup, the account exists but must be signed in manually.
 - The full Sync Center and conflict resolution UI remain Phase 11; the header action only reports results through a toast.
-- Public self-registration is not an approved requirement. `docs/PRD.md`, `docs/api-contracts.md`, and `docs/security-design.md` define ADMIN-created users only; adding a signup page requires an explicit product/security decision.
 - Browser-level multi-tab E2E coverage remains Phase 13; the lock has concurrent-trigger unit coverage and uses Web Locks/localStorage where available.
 - Offline access uses a seven-day default validity window and is not revalidated with the server until connectivity returns.
-- The login rate limiter remains process-local; a multi-instance deployment needs a shared limiter.
 
 ## Next agent instructions
 
 The next agent must:
 
 1. Read `AGENTS.md`, the approved documentation, and this progress tracker.
-2. Inspect the actual Phase 10 source files listed above before changing behavior.
-3. Confirm Phase 10 is marked Completed and verified.
-4. Stop at the phase boundary and wait for explicit approval before Phase 11 — Conflict Management.
+2. Inspect the actual F-030 and Phase 10 source files listed above before changing behavior.
+3. Confirm F-030 is committed before starting any later phase.
+4. Preserve the INSPECTOR-only signup boundary; do not add self-assigned ADMIN registration without a new explicit security/product decision.
 5. Preserve stable operation IDs, immutable payloads, dependency order, and idempotent result handling.
 6. Keep the pull cursor inside the same Dexie transaction as the applied batch.
 7. Preserve conflict snapshots; do not introduce last-write-wins for inspection answers.
 8. Keep API and IndexedDB access outside presentation components.
 9. Preserve the in-memory access-token policy and HTTP-only refresh-cookie strategy.
-10. Do not add public signup or a new registration endpoint until the product/security decision is explicitly approved.
+10. Start Phase 11 — Conflict Management only after F-030 is committed; Phase 11 approval has already been given.
 
 **Exact next action:**
 
-Ask the user to choose a documented account-access approach: a development-only bootstrap admin plus ADMIN-created accounts, or an explicitly approved public self-registration design. Do not start Phase 11 — Conflict Management until the signup decision and future-phase approval are resolved.
+Wait for the next instruction before implementing Phase 11 — Conflict Management. Phase 11 approval is already recorded, but no Phase 11 files should be changed in this session.
 
 ---
 
