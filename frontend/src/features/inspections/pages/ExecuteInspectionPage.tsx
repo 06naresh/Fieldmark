@@ -340,7 +340,12 @@ export function ExecuteInspectionPage(): React.JSX.Element {
     for (const item of items) {
       const value = values.answers[item.id] ?? null;
       const notes = values.notes[item.id] ?? '';
-      if (!hasAnswerValue(value) || sameSavedAnswer(serverAnswers[item.id], value, notes)) {
+      // Notes on an otherwise unanswered item are still meaningful and must be
+      // persisted. Only skip when there is no current or saved content at all.
+      if (!hasAnswerValue(value) && !notes.trim() && !serverAnswers[item.id]) {
+        continue;
+      }
+      if (sameSavedAnswer(serverAnswers[item.id], value, notes)) {
         continue;
       }
 
@@ -443,6 +448,11 @@ export function ExecuteInspectionPage(): React.JSX.Element {
 
       if (isOffline()) {
         await removeInspectionDraft(ownerId, id);
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['inspections'] }),
+          queryClient.invalidateQueries({ queryKey: ['inspection', id, 'detail'] }),
+          queryClient.invalidateQueries({ queryKey: ['dashboard', 'summary'] }),
+        ]);
         toast({
           title: 'Submission saved offline',
           description: 'It will be synchronized automatically when connectivity returns.',

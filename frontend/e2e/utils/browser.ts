@@ -49,6 +49,7 @@ export interface LocalAnswerRow {
   inspection_id: string;
   checklist_item_id: string;
   value: unknown;
+  remarks: string;
   sync_status: string;
   operation_id: string | null;
 }

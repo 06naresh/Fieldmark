@@ -21,6 +21,7 @@ import type {
   ChecklistTemplate,
   Inspection,
   InspectionAnswer,
+  InspectionResult,
   InspectionStatus,
   Site,
 } from '@/types/entities';
@@ -71,6 +72,11 @@ function requiredNumber(record: Record<string, unknown>, field: string): number 
     throw new SyncError(`Synchronization change has an invalid ${field}.`, 'INVALID_CHANGE');
   }
   return value;
+}
+
+function optionalNumber(record: Record<string, unknown>, field: string, fallback: number): number {
+  const value = record[field];
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 }
 
 function requiredBoolean(record: Record<string, unknown>, field: string): boolean {
@@ -833,6 +839,69 @@ async function applyUserChange(
   return 'applied';
 }
 
+function parseInspectionResult(payload: Record<string, unknown> | null): InspectionResult {
+  if (!isRecord(payload)) {
+    throw new SyncError('Synchronization change has an invalid submission result.', 'INVALID_CHANGE');
+  }
+  const overallStatus = requiredString(payload, 'overall_status');
+  if (!['PASS', 'FAIL', 'NEEDS_REVIEW'].includes(overallStatus)) {
+    throw new SyncError('Synchronization change has an invalid overall status.', 'INVALID_CHANGE');
+  }
+  const submittedAt = requiredString(payload, 'submitted_at');
+  if (Number.isNaN(Date.parse(submittedAt))) {
+    throw new SyncError('Synchronization change has an invalid submitted_at.', 'INVALID_CHANGE');
+  }
+
+  return {
+    id: requiredString(payload, 'id'),
+    inspection_id: requiredString(payload, 'inspection_id'),
+    submission_id: requiredString(payload, 'submission_id'),
+    submission_number: optionalNumber(payload, 'submission_number', 1),
+    submitted_version: optionalNumber(payload, 'submitted_version', 1),
+    submitted_at: submittedAt,
+    summary: optionalString(payload, 'summary'),
+    overall_status: overallStatus as InspectionResult['overall_status'],
+  };
+}
+
+/** Cache an authoritative submission result without touching pending answers. */
+async function applyResultChange(
+  ownerId: string,
+  change: SyncChangeItem,
+  now: string,
+): Promise<PullOutcome> {
+  if (change.change_type === 'DELETE') {
+    return 'skipped';
+  }
+  const result = parseInspectionResult(change.payload);
+  const records = await fieldmarkLocalDb.local_inspections
+    .where('owner_id')
+    .equals(ownerId)
+    .filter((record) => record.server_id === result.inspection_id)
+    .toArray();
+
+  let applied = false;
+  for (const record of records) {
+    if (!record.detail) {
+      continue;
+    }
+    const existing = record.detail.result;
+    if (
+      existing &&
+      new Date(existing.submitted_at).getTime() >= new Date(result.submitted_at).getTime()
+    ) {
+      continue;
+    }
+    await fieldmarkLocalDb.local_inspections.put({
+      ...record,
+      detail: { ...record.detail, result },
+      local_updated_at: now,
+    });
+    applied = true;
+  }
+  return applied ? 'applied' : 'skipped';
+}
+
 export interface PullBatchResult {
   applied: number;
   skipped: number;
@@ -895,8 +964,9 @@ export async function applyPullBatch(
             // event is intentionally ignored rather than partially applied.
             break;
           case 'inspection_result':
-            // The accompanying inspection change carries the authoritative
-            // lifecycle status used by the local cache.
+            // The inspection change carries lifecycle status; this change
+            // carries the submitted summary, result, and timestamp.
+            outcome = await applyResultChange(ownerId, change, now);
             break;
           default:
             break;

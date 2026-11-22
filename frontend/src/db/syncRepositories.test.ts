@@ -6,6 +6,7 @@ import {
   listQueueOperations,
   queueAnswerChange,
   queueInspectionStart,
+  saveDownloadedInspectionDetail,
   setSyncMetadata,
 } from '@/db/localRepositories';
 import {
@@ -16,7 +17,7 @@ import {
   recoverInterruptedOperations,
 } from '@/db/syncRepositories';
 import type { Site } from '@/types/entities';
-import { currentUser, detail } from '@/services/sync/syncTestFixtures';
+import { currentUser, detail, SUBMISSION_ID } from '@/services/sync/syncTestFixtures';
 
 const ANSWER_ID = '44444444-4444-4444-8444-444444444444';
 const CHECKLIST_ITEM_ID = '55555555-5555-4555-8555-555555555555';
@@ -260,5 +261,50 @@ describe('pull batch safety', () => {
     const stored = await fieldmarkLocalDb.local_inspections.get(`${currentUser.id}:${detail.id}`);
     expect(stored?.status).toBe('IN_PROGRESS');
     expect(stored?.start_operation_id).toBe(startOperationId);
+  });
+
+  it('caches an authoritative submission result from a pull change', async () => {
+    await saveDownloadedInspectionDetail(currentUser.id, detail);
+    const submittedAt = '2026-11-22T10:00:00Z';
+    const resultId = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
+
+    const outcome = await applyPullBatch(
+      currentUser.id,
+      [
+        {
+          change_id: 'bbbbbbbb-cccc-4ddd-8eee-ffffffffffff',
+          entity_type: 'inspection_result',
+          entity_id: resultId,
+          change_type: 'CREATE',
+          entity_version: 1,
+          payload: {
+            id: resultId,
+            inspection_id: detail.id,
+            submission_id: SUBMISSION_ID,
+            submission_number: 1,
+            submitted_version: 2,
+            overall_status: 'PASS',
+            summary: 'All checks completed.',
+            submitted_at: submittedAt,
+          },
+        },
+      ],
+      'cursor-1',
+    );
+
+    expect(outcome).toEqual({ applied: 1, skipped: 0, conflicts: 0 });
+    const stored = await fieldmarkLocalDb.local_inspections.get(
+      `${currentUser.id}:${detail.id}`,
+    );
+    expect(stored?.detail?.result).toEqual({
+      id: resultId,
+      inspection_id: detail.id,
+      submission_id: SUBMISSION_ID,
+      submission_number: 1,
+      submitted_version: 2,
+      overall_status: 'PASS',
+      summary: 'All checks completed.',
+      submitted_at: submittedAt,
+    });
   });
 });

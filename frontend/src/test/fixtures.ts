@@ -5,6 +5,7 @@ import type {
   DashboardSummary,
   Inspection,
   InspectionDetail,
+  InspectionResult,
   Site,
   User,
 } from '@/types/entities';
@@ -139,6 +140,17 @@ export const inspectionDetailFixture: InspectionDetail = {
   },
   checklist_items: workflowItemsFixture,
   answers: [],
+};
+
+export const submittedResultFixture: InspectionResult = {
+  id: 'result-1',
+  inspection_id: inspectionFixture.id,
+  submission_id: '7d9f4f0e-5f60-4f4e-aad4-8f9f1b6e6b11',
+  submission_number: 1,
+  submitted_version: 2,
+  submitted_at: '2026-11-22T12:00:00Z',
+  summary: 'All checks completed.',
+  overall_status: 'PASS',
 };
 
 export const summaryFixture: DashboardSummary = {

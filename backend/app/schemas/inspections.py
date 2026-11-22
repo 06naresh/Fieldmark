@@ -128,11 +128,23 @@ class AnswerResponse(BaseModel):
     version: int
 
 
+class InspectionResultResponse(BaseModel):
+    id: UUID
+    inspection_id: UUID
+    submission_id: UUID
+    submission_number: int
+    submitted_version: int
+    submitted_at: datetime
+    summary: str | None
+    overall_status: OverallStatus
+
+
 class InspectionDetailResponse(InspectionResponse):
     site: dict[str, Any]
     template: dict[str, Any]
     checklist_items: list[dict[str, Any]]
     answers: list[AnswerResponse]
+    result: InspectionResultResponse | None = None
 
 
 class StartResponse(BaseModel):

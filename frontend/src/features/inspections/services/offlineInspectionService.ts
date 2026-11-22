@@ -27,8 +27,9 @@ export async function cacheInspectionForOffline(
 }
 
 /**
- * Return an inspection detail from the local cache when offline, or fetch and
- * cache it while online. A failed online request falls back to cached data.
+ * Return an inspection detail from the local cache when offline. While online,
+ * fetch from the server without implicitly downloading it; offline copies are
+ * created only by an explicit download action.
  */
 export async function getInspectionDetail(
   ownerId: string,
@@ -46,14 +47,7 @@ export async function getInspectionDetail(
     );
   }
 
-  const detail = await fetchDetail();
-  // A cache failure must not break the online workflow.
-  try {
-    await cacheInspectionForOffline(ownerId, detail);
-  } catch {
-    // The next successful download retries the cache.
-  }
-  return detail;
+  return fetchDetail();
 }
 
 /** Return assigned inspections, falling back to downloaded summaries offline. */

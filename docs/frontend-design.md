@@ -707,7 +707,7 @@ Components:
 - Status.
 - Search and filters.
 - Assign inspection action.
-- Inspection details.
+- Inspection details, including saved answers, notes, and the submitted result.
 
 Administrators must be able to identify overdue, pending, in-progress, and completed work.
 
@@ -724,6 +724,7 @@ Components:
 - Scheduled date.
 - Checklist information.
 - Local availability indicator.
+- Explicit download action while online.
 - Synchronization status.
 - Continue inspection action.
 
@@ -746,8 +747,9 @@ Show:
 - Checklist template and revision.
 - Scheduled date.
 - Current status.
-- Local availability.
+- Local availability and an explicit download or refresh action while online.
 - Last synchronization information.
+- Read-only saved answers, notes, submission summary, overall result, and submitted time when available.
 
 Actions must depend on the inspection's current business state.
 

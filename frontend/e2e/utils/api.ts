@@ -53,6 +53,19 @@ export interface InspectionRecord {
   assigned_to: string;
 }
 
+export interface InspectionDetailRecord extends InspectionRecord {
+  answers: Array<{
+    checklist_item_id: string;
+    answer_value: unknown;
+    notes: string | null;
+  }>;
+  result?: {
+    submission_number: number;
+    overall_status: string;
+    summary: string | null;
+  } | null;
+}
+
 export interface DeviceRecord {
   id: string;
   device_name: string | null;
@@ -299,9 +312,25 @@ export async function getAnswersApi(
   request: APIRequestContext,
   token: string,
   inspectionId: string,
-): Promise<Array<{ id: string; checklist_item_id: string; answer_value: unknown; version: number }>> {
+): Promise<
+  Array<{
+    id: string;
+    checklist_item_id: string;
+    answer_value: unknown;
+    notes: string | null;
+    version: number;
+  }>
+> {
   const body = await apiRequest<
-    ApiEnvelope<Array<{ id: string; checklist_item_id: string; answer_value: unknown; version: number }>>
+    ApiEnvelope<
+      Array<{
+        id: string;
+        checklist_item_id: string;
+        answer_value: unknown;
+        notes: string | null;
+        version: number;
+      }>
+    >
   >(
     request,
     'GET',
@@ -317,6 +346,20 @@ export async function getInspectionApi(
   inspectionId: string,
 ): Promise<InspectionRecord> {
   const body = await apiRequest<ApiEnvelope<InspectionRecord>>(
+    request,
+    'GET',
+    `/inspections/${inspectionId}`,
+    { token },
+  );
+  return body.data;
+}
+
+export async function getInspectionDetailApi(
+  request: APIRequestContext,
+  token: string,
+  inspectionId: string,
+): Promise<InspectionDetailRecord> {
+  const body = await apiRequest<ApiEnvelope<InspectionDetailRecord>>(
     request,
     'GET',
     `/inspections/${inspectionId}`,

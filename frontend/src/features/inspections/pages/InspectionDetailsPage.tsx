@@ -20,6 +20,7 @@ import { formatDateTime } from '@/lib/date';
 import { normalizeApiError } from '@/lib/error';
 import { inspectionsApi } from '@/services/api/inspectionsApi';
 import { useAuthStore } from '@/store/authStore';
+import { InspectionReview } from '@/features/inspections/components/InspectionReview';
 import { InspectionStatusBadge } from '@/features/inspections/components/InspectionStatusBadge';
 import {
   cacheInspectionForOffline,
@@ -165,7 +166,7 @@ export function InspectionDetailsPage(): React.JSX.Element {
               </>
             )}
           </div>
-          {!offlineStatus.data && isOnline ? (
+          {isOnline ? (
             <Button
               type="button"
               variant="outline"
@@ -174,7 +175,11 @@ export function InspectionDetailsPage(): React.JSX.Element {
               disabled={download.isPending}
             >
               <Download className="h-4 w-4" />
-              {download.isPending ? 'Downloading…' : 'Make available offline'}
+              {download.isPending
+                ? 'Downloading…'
+                : offlineStatus.data
+                  ? 'Refresh offline copy'
+                  : 'Make available offline'}
             </Button>
           ) : null}
         </CardContent>
@@ -272,6 +277,8 @@ export function InspectionDetailsPage(): React.JSX.Element {
           </CardContent>
         </Card>
       </div>
+
+      <InspectionReview detail={inspection} />
 
       {inspection.status === 'ASSIGNED' ? (
         <Card className="border-primary/40 bg-primary/5">

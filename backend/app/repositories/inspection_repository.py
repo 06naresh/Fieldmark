@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import desc, func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.db_errors import flush_changes
@@ -93,6 +93,14 @@ class InspectionRepository:
     def get_result_by_submission_id(self, submission_id: UUID) -> InspectionResult | None:
         return self.db.scalar(
             select(InspectionResult).where(InspectionResult.submission_id == submission_id)
+        )
+
+    def get_latest_result(self, inspection_id: UUID) -> InspectionResult | None:
+        return self.db.scalar(
+            select(InspectionResult)
+            .where(InspectionResult.inspection_id == inspection_id)
+            .order_by(desc(InspectionResult.submission_number), desc(InspectionResult.submitted_at))
+            .limit(1)
         )
 
     def next_submission_number(self, inspection_id: UUID) -> int:

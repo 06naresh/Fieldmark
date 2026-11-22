@@ -381,6 +381,8 @@ class SyncService:
                     "id": result.id,
                     "inspection_id": result.inspection_id,
                     "submission_id": result.submission_id,
+                    "submission_number": result.submission_number,
+                    "submitted_version": result.submitted_version,
                     "overall_status": result.overall_status,
                     "summary": result.summary,
                     "submitted_at": result.submitted_at,

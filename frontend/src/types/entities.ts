@@ -141,11 +141,30 @@ export interface InspectionAnswer {
   version: number;
 }
 
+export interface InspectionResult {
+  id: string;
+  inspection_id: string;
+  submission_id: string;
+  submission_number: number;
+  submitted_version: number;
+  submitted_at: string;
+  summary: string | null;
+  overall_status: OverallStatus;
+}
+
+export interface PendingInspectionSubmission {
+  summary: string | null;
+  overall_status: OverallStatus;
+}
+
 export interface InspectionDetail extends Inspection {
   site: Site;
   template: ChecklistTemplate;
   checklist_items: ChecklistItem[];
   answers: InspectionAnswer[];
+  result?: InspectionResult | null;
+  /** Client-only view of a submission that is still waiting to synchronize. */
+  pending_submission?: PendingInspectionSubmission | null;
 }
 
 export interface AnswerSavePayload {

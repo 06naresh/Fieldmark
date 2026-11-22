@@ -446,6 +446,7 @@ def test_inspection_lifecycle_answers_submission_and_idempotency(scenario, migra
     assert detail["template"]["id"] == scenario.template["id"]
     assert len(detail["checklist_items"]) == 2
     assert detail["answers"] == []
+    assert detail["result"] is None
 
     forbidden_detail = client.get(
         f"{API}/inspections/{inspection_id}", headers=scenario.other_headers
@@ -608,6 +609,11 @@ def test_inspection_lifecycle_answers_submission_and_idempotency(scenario, migra
     )
     assert admin_detail["status"] == "SUBMITTED"
     assert admin_detail["answers"][0]["answer_value"] is False
+    assert admin_detail["answers"][0]["notes"] == "Re-checked."
+    assert admin_detail["result"]["submission_id"] == submission_id
+    assert admin_detail["result"]["submission_number"] == 1
+    assert admin_detail["result"]["overall_status"] == "PASS"
+    assert admin_detail["result"]["summary"] == "All required checks completed."
 
 
 def test_dashboard_summaries_are_scoped_by_role(scenario, migrated_engine) -> None:

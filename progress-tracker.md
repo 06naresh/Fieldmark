@@ -93,8 +93,8 @@ The next agent must be able to continue without repeating completed work.
 | State management | Zustand + TanStack Query |
 | Testing | pytest, Vitest, React Testing Library, Playwright |
 | Current development phase | Phase 13 — Integration and Quality Assurance (Completed) |
-| Current feature | F-026 Integration and Quality Assurance / F-027 E2E Testing |
-| Overall status | Phases 9–13 and F-030 committed; Phase 13 verified with 79 backend tests, 97 frontend tests, and 8 E2E tests passing |
+| Current feature | F-031 Post-QA Inspection Review and Offline Download Fixes |
+| Overall status | Phases 0–13 complete; F-031 implemented and verified with 79 backend tests, 101 frontend tests, and 8 E2E tests passing; changes remain uncommitted; Phase 14 not started |
 
 ---
 
@@ -145,8 +145,8 @@ Update this section whenever a new feature implementation session begins.
 | Session date | 2026-11-22 |
 | Agent/session identifier | OpenCode (Big Pickle) |
 | Current phase | Phase 13 — Integration and Quality Assurance (Completed) |
-| Current feature | F-026 Integration and Quality Assurance / F-027 E2E Testing |
-| Feature status | Completed, verified, and committed locally |
+| Current feature | F-031 Post-QA Inspection Review and Offline Download Fixes |
+| Feature status | Implemented and verified with all relevant quality gates; uncommitted and awaiting review |
 | Last updated | 2026-11-22 |
 
 ## 5.1 Phase 13 objective (completed)
@@ -2457,6 +2457,113 @@ Keep older history entries. Do not rewrite historical entries to make incomplete
 
 ---
 
+# 14D. Approved Post-QA Defect Fix (F-031)
+
+## Feature: F-031 Inspection Review and Offline Download Fixes
+
+| Property | Value |
+|---|---|
+| Feature ID | F-031 |
+| Development phase | Phase 13 follow-up — not a new phase |
+| Status | Completed and verified; uncommitted |
+| Priority | High |
+| Started date | 2026-11-22 |
+| Last updated | 2026-11-22 |
+| Implemented by | OpenCode (Big Pickle) |
+
+### F-031.1 Objective
+
+Fix the approved post-QA defects where inspectors could not reliably find or create offline assignment copies, note-only edits were not persisted, and saved answers/notes/submission details were not visible in either inspector or administrator inspection detail views.
+
+### F-031.2 What changed
+
+- Inspector assignment rows now show a clear `Downloaded` indicator or an explicit `Download <title> for offline use` action while online.
+- Inspection details show `Available offline on this device` and allow an explicit `Refresh offline copy` action while online.
+- Viewing an inspection online no longer implicitly caches it; only the explicit download action creates or refreshes the offline copy.
+- Note-only answer edits are queued and persisted even when the answer value is empty but saved notes exist.
+- Saved answers, notes, submission summary, overall result, and submitted time are rendered through a shared read-only review component for both inspectors and administrators.
+- A still-pending offline submission is clearly labelled with its summary and result before server confirmation; it does not claim to be authoritative.
+- The inspection detail API now returns the latest authoritative submission result, including submission number and version.
+- Submission-result pull changes are applied to cached inspection details without overwriting pending local answers.
+- Change logs now include the full result record so pull clients receive consistent result data.
+
+### F-031.3 Files created
+
+| File path | Purpose |
+|---|---|
+| `frontend/src/features/inspections/components/InspectionReview.tsx` | Shared read-only answers, notes, submission result, and pending-submission view |
+
+### F-031.4 Files modified
+
+| File path | Modification |
+|---|---|
+| `backend/app/repositories/inspection_repository.py` | Added latest-result lookup ordered by submission number and submitted time |
+| `backend/app/schemas/inspections.py` | Added `InspectionResultResponse` and `InspectionDetailResponse.result` |
+| `backend/app/services/inspection_service.py` | Populated detail results and completed change-log result fields |
+| `backend/app/services/sync_service.py` | Completed result change-log fields |
+| `backend/tests/test_core_features.py` | Asserted `result: null` before submission and full notes/result visibility after submission |
+| `docs/api-contracts.md` | Documented detail answers-with-notes and result fields |
+| `docs/frontend-design.md` | Documented explicit download/refresh and read-only review content |
+| `frontend/src/db/localRepositories.ts` | Exposed pending submission details from the durable local record |
+| `frontend/src/db/syncRepositories.ts` | Applied authoritative result pull changes to cached details |
+| `frontend/src/db/syncRepositories.test.ts` | Added result-pull caching regression test |
+| `frontend/src/types/entities.ts` | Added result and pending-submission types |
+| `frontend/src/features/inspections/pages/MyInspectionsPage.tsx` | Added offline availability column and explicit download action |
+| `frontend/src/features/inspections/pages/InspectionDetailsPage.tsx` | Added refresh action and shared review rendering |
+| `frontend/src/features/inspections/pages/InspectionsPage.tsx` | Fetched online detail and rendered shared review inside the admin View dialog |
+| `frontend/src/features/inspections/pages/ExecuteInspectionPage.tsx` | Preserved note-only changes and invalidated detail/list queries after offline submission |
+| `frontend/src/features/inspections/services/offlineInspectionService.ts` | Removed implicit online caching; downloads are explicit |
+| `frontend/src/features/admin/adminFlows.test.tsx` | Added admin notes/result visibility regression test |
+| `frontend/src/features/inspections/inspectorFlows.test.tsx` | Added note-only persistence and inspector notes/result visibility tests |
+| `frontend/src/test/fixtures.ts` | Added submitted-result fixture |
+| `frontend/e2e/scenarios/online-workflow.spec.ts` | Asserted notes/summary/result on inspector and admin screens |
+| `frontend/e2e/scenarios/offline-workflow.spec.ts` | Expanded explicit download, offline notes, refresh, sync, pending result, and both-role review coverage |
+| `frontend/e2e/utils/api.ts` | Added detail API helper and notes/result response types |
+| `frontend/e2e/utils/browser.ts` | Added local answer `remarks` to IndexedDB assertions |
+| `progress-tracker.md` | Recorded status, decisions, verification, and handoff |
+
+### F-031.5 Important decisions
+
+- Offline copies are created only by a visible, explicit user action. Merely opening an online detail page is not treated as a download.
+- `InspectionDetailResponse.result` is the contract for authoritative submission visibility. No database migration was required because `inspection_results` already stores the data.
+- A client-only `pending_submission` field is never presented as an authoritative server result. It is derived from the durable queue operation until synchronization confirms the real result.
+- Pull-applied result changes update only cached detail result data and never overwrite pending local answers.
+- A single shared review component avoids divergent admin and inspector presentation of the same inspection evidence.
+- Note-only edits are skipped only when both the answer value and saved notes are empty.
+
+### F-031.6 Verification
+
+- `python -m pytest -q` — 79 passed, 2 non-blocking deprecation warnings.
+- `npm test` — 19 files, 101 tests passed.
+- `npm run lint` — clean with zero warnings.
+- `npm run typecheck:e2e` — clean.
+- `npm run build` — passed with existing non-blocking chunk-size and Zod annotation warnings.
+- `git diff --check` — no whitespace errors; Git emitted non-blocking LF-to-CRLF notices for working-copy files.
+- E2E build: `$env:VITE_API_BASE_URL='http://localhost:8011/api/v1'; npm run build` — passed.
+- E2E run: `$env:E2E_BACKEND_PORT='8011'; $env:E2E_API_BASE_URL='http://localhost:8011/api/v1'; npm run test:e2e` — 8 passed in 1.2m.
+- A default port-8000 E2E attempt failed at login because a pre-existing local backend on port 8000 only allows the Vite dev origin. The isolated port-8011 backend with matching frontend API configuration passed all scenarios; no application code was changed for that environment issue.
+
+### F-031.7 Known limitations
+
+- The pending-submission card intentionally cannot show the authoritative submission number or submitted time until the server confirms synchronization.
+- The admin inspection dialog loads full detail asynchronously; loading and error states are shown inside the dialog.
+- No database migration was needed, and no Phase 14 deployment work was performed.
+- All changes are uncommitted; commit or further review requires explicit user instruction.
+
+### F-031.8 Acceptance criteria
+
+- [x] Offline download is discoverable from the inspector assignment list.
+- [x] Offline availability and refresh are visible on inspector inspection details.
+- [x] Browser refresh preserves locally saved answers and notes.
+- [x] Note-only changes are persisted durably.
+- [x] Saved answers and notes are visible to inspectors and administrators.
+- [x] Authoritative submission result is visible to both roles after synchronization.
+- [x] Pending offline submissions are labelled without being treated as server-confirmed.
+- [x] Duplicate synchronization and conflict behaviour remain covered by the passing E2E suite.
+- [x] Phase 14 remains not started.
+
+---
+
 # 15. Latest Handoff Summary
 
 This is the most important section for an agent continuing from another session.
@@ -2467,11 +2574,11 @@ Update it before stopping work.
 
 **Last completed phase:**
 
-Phase 13 — Integration and Quality Assurance. All acceptance criteria were verified: 79 backend tests, 97 frontend tests, 8 Playwright scenarios, clean typechecks/lint/build, migration check, dependency audit, and diff check. Phase 12 is committed as `9af8197 feat: implement phase 12 pwa offline shell`; Phase 13 is committed as `b706dde feat: implement phase 13 integration and qa`. None of the local commits has been pushed.
+Phase 13 — Integration and Quality Assurance. Its committed baseline was verified with 79 backend tests, 97 frontend tests, 8 Playwright scenarios, clean typechecks/lint/build, migration check, dependency audit, and diff check. Phase 12 is committed as `9af8197 feat: implement phase 12 pwa offline shell`; Phase 13 is committed as `b706dde feat: implement phase 13 integration and qa`. None of the local commits has been pushed.
 
 **Last completed features:**
 
-F-026 Integration Testing and F-027 E2E Testing. The suite covers the required online, offline, duplicate-operation, conflict, and interrupted-synchronization scenarios plus user isolation, security, accessibility, responsive layout, cache safety, and performance.
+F-026 Integration Testing and F-027 E2E Testing remain the last committed features. The suite covers the required online, offline, duplicate-operation, conflict, and interrupted-synchronization scenarios plus user isolation, security, accessibility, responsive layout, cache safety, and performance. The approved post-QA fix F-031 is now implemented and verified but remains uncommitted.
 
 **Current phase:**
 
@@ -2479,32 +2586,38 @@ Phase 13 — Integration and Quality Assurance (Completed). Phase 14 — Deploym
 
 **Current feature status:**
 
-Completed, verified, and committed locally as `b706dde feat: implement phase 13 integration and qa`; not pushed.
+F-031 is implemented and verified: offline downloads are explicit, note-only edits persist, and saved answers/notes/results are visible in both inspector and admin detail views. The changes are not committed. Phase 13 remains the last completed and committed phase; Phase 14 is still not started.
 
 **Last completed task:**
 
-Built the integrated QA harness and fixed the defects it exposed: offline identity restoration after refresh, duplicate-pull conflict regression, accessible sync-button naming, success-badge contrast, stale Sync Center retry state, E2E API URL configuration, and Vitest E2E exclusion. Recorded evidence in `docs/phase13-qa-report.md` and added `.github/workflows/qa.yml`.
+Fixed the approved post-QA defects and extended automated coverage: explicit inspector download/refresh actions, no implicit online caching, durable note-only edits, pending offline submission display, authoritative result exposure through `InspectionDetailResponse.result`, result pull caching, and a shared read-only review component. Verified with 79 backend tests, 101 frontend tests, lint/typechecks/build, and all 8 Playwright scenarios against an isolated port-8011 backend.
 
 **Current stopping point:**
 
-Phase 13 is committed locally. Stop at the phase boundary and do not start Phase 14 without explicit approval.
+Phase 13 remains committed locally at `b706dde`. F-031 is verified but uncommitted. Stop and wait for review/commit direction; do not start Phase 14 without explicit approval.
 
 ## Files to inspect first
 
-1. `progress-tracker.md`
+1. `progress-tracker.md` — especially section 14D and this latest handoff
 2. `docs/development-phases.md` — Phase 13 acceptance criteria and Phase 14 boundary
-3. `docs/phase13-qa-report.md` — final test evidence, defect report, and limitations
-4. `.github/workflows/qa.yml` — CI quality gate
-5. `frontend/playwright.config.ts` and `frontend/tsconfig.e2e.json` — Playwright harness configuration
-6. `frontend/e2e/globalSetup.ts` and `backend/scripts/seed_e2e_admin.py` — test administrator provisioning
-7. `frontend/e2e/utils/api.ts`, `ui.ts`, `browser.ts`, `fixtures.ts` — fixtures and assertions
-8. `frontend/e2e/scenarios/` — all eight E2E specs
-9. `frontend/src/services/auth/session.ts` and `session.test.ts` — bounded offline session restore
-10. `frontend/src/db/localRepositories.ts` and `localRepositories.test.ts` — durable offline identity helpers
-11. `frontend/src/db/syncRepositories.ts` and `syncRepositories.test.ts` — duplicate pull no-op regression
-12. `frontend/src/layouts/components/ManualSyncButton.tsx` — accessible sync action
-13. `frontend/src/styles/theme.css` — WCAG contrast fixes
-14. `README.md` — E2E commands and CI/QA documentation
+3. `docs/phase13-qa-report.md` — baseline QA evidence, defect report, and limitations
+4. `docs/api-contracts.md` and `docs/frontend-design.md` — updated detail/result and review UI contracts
+5. `frontend/src/features/inspections/components/InspectionReview.tsx` — shared read-only review view
+6. `frontend/src/features/inspections/pages/MyInspectionsPage.tsx` — explicit offline download action
+7. `frontend/src/features/inspections/pages/InspectionDetailsPage.tsx` — refresh action and review rendering
+8. `frontend/src/features/inspections/pages/InspectionsPage.tsx` — admin detail loading and review rendering
+9. `frontend/src/features/inspections/pages/ExecuteInspectionPage.tsx` — note-only persistence and offline submission invalidation
+10. `frontend/src/features/inspections/services/offlineInspectionService.ts` — explicit-download boundary
+11. `frontend/src/db/localRepositories.ts` — pending submission derivation
+12. `frontend/src/db/syncRepositories.ts` and `syncRepositories.test.ts` — result pull application and regression test
+13. `backend/app/schemas/inspections.py`, `repositories/inspection_repository.py`, and `services/inspection_service.py` — authoritative result contract
+14. `frontend/e2e/scenarios/online-workflow.spec.ts` and `offline-workflow.spec.ts` — expanded both-role result/notes coverage
+15. `.github/workflows/qa.yml` — CI quality gate
+16. `frontend/playwright.config.ts` and `frontend/tsconfig.e2e.json` — Playwright harness configuration
+17. `frontend/e2e/globalSetup.ts` and `backend/scripts/seed_e2e_admin.py` — test administrator provisioning
+18. `frontend/e2e/utils/api.ts`, `ui.ts`, `browser.ts`, `fixtures.ts` — fixtures and assertions
+19. `frontend/src/styles/theme.css` — WCAG contrast fixes
+20. `README.md` — E2E commands and CI/QA documentation
 
 ## Work remaining
 
@@ -2517,11 +2630,14 @@ Phase 13 is committed locally. Stop at the phase boundary and do not start Phase
 - [x] Fix all release-blocking defects found during Phase 13.
 - [x] Add QA report, CI quality gate, and Phase 13 documentation updates.
 - [x] Commit the verified Phase 13 changes locally as `b706dde`; not pushed.
+- [x] Implement and verify approved F-031 offline download, note persistence, and review-visibility fixes.
+- [ ] Review and commit the uncommitted F-031 changes only when explicitly requested.
 - [ ] Start Phase 14 only after explicit approval.
 
 ## Known problems
 
 - Non-blocking: Node emits a `--localstorage-file` warning during Vitest runs in this environment. Tests pass with the injected test Storage shim.
+- Non-blocking local environment: a pre-existing backend process on port 8000 accepts the Vite dev origin only, so the default built-preview E2E run fails at login there. The verified F-031 run used an isolated port-8011 backend with matching `VITE_API_BASE_URL` and `E2E_API_BASE_URL`; all 8 scenarios passed.
 - Non-blocking: Vite reports chunk-size and Zod comment-annotation warnings. The production build succeeds.
 - Non-blocking: Starlette TestClient and passlib/argon2 backend versions emit deprecation warnings. No backend tests fail.
 - Non-blocking: optional PATCH fields are displayed as nullable in OpenAPI even though runtime validators reject `null` for non-clearable fields; runtime behavior is correct.
@@ -2545,11 +2661,15 @@ The next agent must:
 7. Preserve conflict snapshots; do not introduce last-write-wins for inspection answers.
 8. Keep IndexedDB as the durable business store and the service worker as shell/static caching only.
 9. Preserve the in-memory access-token policy and HTTP-only refresh-cookie strategy.
-10. Do not start Phase 14 — Deployment and Release without a new explicit approval.
+10. Preserve explicit offline downloads; do not reintroduce implicit caching when an online detail page is opened.
+11. Keep note-only edits durable and keep pending submissions clearly distinct from server-confirmed results.
+12. Keep `InspectionDetailResponse.result` authoritative and keep result pull application from overwriting pending local answers.
+13. Do not commit the uncommitted F-031 work unless explicitly asked; review the diff first.
+14. Do not start Phase 14 — Deployment and Release without a new explicit approval.
 
 **Exact next action:**
 
-Do not start Phase 14 — Deployment and Release. Wait for explicit approval, then inspect the Phase 13 QA report and the locally committed Phase 13 source before beginning deployment work.
+Review the verified but uncommitted F-031 diff and wait for explicit direction to commit it. Do not start Phase 14 — Deployment and Release; that requires separate explicit approval.
 
 ---
 

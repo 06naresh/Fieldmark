@@ -346,11 +346,28 @@ export async function getLocalInspectionDetail(
     (answer) => !localAnswers.some((local) => local.checklist_item_id === answer.checklist_item_id),
   );
 
+  let pendingSubmission: InspectionDetail['pending_submission'] = null;
+  if (record.submit_operation_id) {
+    const submission = await fieldmarkLocalDb.sync_queue.get(record.submit_operation_id);
+    const status = submission?.payload.overall_status;
+    if (
+      submission &&
+      submission.status !== 'SYNCED' &&
+      (status === 'PASS' || status === 'FAIL' || status === 'NEEDS_REVIEW')
+    ) {
+      pendingSubmission = {
+        summary: typeof submission.payload.summary === 'string' ? submission.payload.summary : null,
+        overall_status: status,
+      };
+    }
+  }
+
   return {
     ...record.detail,
     status: record.status,
     version: record.server_version,
     answers: [...serverAnswers, ...localAnswers],
+    pending_submission: pendingSubmission,
   };
 }
 

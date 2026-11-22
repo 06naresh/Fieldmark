@@ -21,6 +21,7 @@ from app.schemas.inspections import (
     InspectionCreate,
     InspectionDetailResponse,
     InspectionResponse,
+    InspectionResultResponse,
     InspectionStatus,
     InspectionUpdate,
     StartRequest,
@@ -119,6 +120,7 @@ class InspectionService:
                 for item in self.templates.list_items(template.id)
             ],
             answers=[answer_response(answer) for answer in self.repository.get_answers(inspection.id)],
+            result=result_response(self.repository.get_latest_result(inspection.id)),
         )
 
     def update(self, inspection: Inspection, payload: InspectionUpdate) -> Inspection:
@@ -262,6 +264,8 @@ class InspectionService:
                     "id": result.id,
                     "inspection_id": result.inspection_id,
                     "submission_id": result.submission_id,
+                    "submission_number": result.submission_number,
+                    "submitted_version": result.submitted_version,
                     "overall_status": result.overall_status,
                     "summary": result.summary,
                     "submitted_at": result.submitted_at,
@@ -358,6 +362,21 @@ def answer_response(answer: InspectionAnswer) -> AnswerResponse:
         answer_value=answer.answer_value,
         notes=answer.notes,
         version=answer.version,
+    )
+
+
+def result_response(result: InspectionResult | None) -> InspectionResultResponse | None:
+    if result is None:
+        return None
+    return InspectionResultResponse(
+        id=result.id,
+        inspection_id=result.inspection_id,
+        submission_id=result.submission_id,
+        submission_number=result.submission_number,
+        submitted_version=result.submitted_version,
+        submitted_at=result.submitted_at,
+        summary=result.summary,
+        overall_status=result.overall_status,
     )
 
 

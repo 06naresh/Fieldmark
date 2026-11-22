@@ -11,6 +11,7 @@ import {
   inspectorCurrentUser,
   paginationFixture,
   siteFixture,
+  submittedResultFixture,
   templateFixture,
 } from '@/test/fixtures';
 import { ExecuteInspectionPage } from '@/features/inspections/pages/ExecuteInspectionPage';
@@ -234,5 +235,66 @@ describe('inspector workflow', () => {
 
     expect(api.submit.mock.calls[0][1].submission_id).toBe(submissionId);
     expect(api.submit.mock.calls[1][1].submission_id).toBe(submissionId);
+  });
+
+  it('queues a note-only change on an existing answer', async () => {
+    const user = userEvent.setup();
+    api.detail.mockResolvedValue({
+      ...inspectionDetailFixture,
+      status: 'IN_PROGRESS',
+      answers: [
+        {
+          id: 'answer-text',
+          inspection_id: inspectionFixture.id,
+          checklist_item_id: 'item-text',
+          answer_value: 'Existing concern',
+          notes: 'Old note',
+          version: 1,
+        },
+      ],
+    });
+
+    renderInspectorRoutes(executionRoute);
+    expect(await screen.findByRole('heading', { name: 'Execute inspection' })).toBeVisible();
+    await fillRequiredAnswers(user);
+
+    const notesFields = await screen.findAllByLabelText('Notes');
+    await user.clear(notesFields[1]);
+    await user.type(notesFields[1], 'Updated note');
+    await user.selectOptions(screen.getByLabelText('Overall result'), 'PASS');
+    await user.click(screen.getByRole('button', { name: 'Save draft' }));
+
+    await waitFor(() =>
+      expect(api.saveAnswer).toHaveBeenCalledWith(inspectionFixture.id, 'item-text', {
+        answer_value: 'Existing concern',
+        notes: 'Updated note',
+        base_version: 1,
+      }),
+    );
+  });
+
+  it('shows saved answers, notes, and the submitted result on inspection details', async () => {
+    api.detail.mockResolvedValue({
+      ...inspectionDetailFixture,
+      status: 'SUBMITTED',
+      answers: [
+        {
+          id: 'answer-yes-no',
+          inspection_id: inspectionFixture.id,
+          checklist_item_id: 'item-yes-no',
+          answer_value: true,
+          notes: 'Guard was fitted.',
+          version: 1,
+        },
+      ],
+      result: submittedResultFixture,
+    });
+
+    renderInspectorRoutes('/inspector/inspections/inspection-1');
+
+    expect(await screen.findByText('Submission #1')).toBeInTheDocument();
+    expect(screen.getByText('Pass')).toBeInTheDocument();
+    expect(screen.getByText('All checks completed.')).toBeInTheDocument();
+    expect(screen.getByText('Guard was fitted.')).toBeInTheDocument();
   });
 });

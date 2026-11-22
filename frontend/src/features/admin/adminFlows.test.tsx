@@ -4,9 +4,11 @@ import userEvent from '@testing-library/user-event';
 import { useAuthStore } from '@/store/authStore';
 import {
   adminUser,
+  inspectionDetailFixture,
   inspectionFixture,
   paginationFixture,
   siteFixture,
+  submittedResultFixture,
   templateFixture,
   userFixture,
 } from '@/test/fixtures';
@@ -30,6 +32,7 @@ const api = vi.hoisted(() => ({
   createRevision: vi.fn(),
   setChecklistStatus: vi.fn(),
   listInspections: vi.fn(),
+  inspectionDetail: vi.fn(),
   createInspection: vi.fn(),
 }));
 
@@ -63,6 +66,7 @@ vi.mock('@/services/api/checklistsApi', () => ({
 vi.mock('@/services/api/inspectionsApi', () => ({
   inspectionsApi: {
     list: api.listInspections,
+    detail: api.inspectionDetail,
     create: api.createInspection,
     update: vi.fn(),
   },
@@ -91,6 +95,7 @@ beforeEach(() => {
     data: [inspectionFixture],
     pagination: paginationFixture,
   });
+  api.inspectionDetail.mockResolvedValue(inspectionDetailFixture);
   api.createInspection.mockResolvedValue(inspectionFixture);
 });
 
@@ -267,5 +272,35 @@ describe('administrator management workflows', () => {
         due_at: null,
       }),
     );
+  });
+
+  it('shows saved answers, notes, and the submitted result in inspection details', async () => {
+    const user = userEvent.setup();
+    api.inspectionDetail.mockResolvedValue({
+      ...inspectionDetailFixture,
+      status: 'SUBMITTED',
+      answers: [
+        {
+          id: 'answer-1',
+          inspection_id: inspectionFixture.id,
+          checklist_item_id: 'item-yes-no',
+          answer_value: true,
+          notes: 'Exit is clear.',
+          version: 1,
+        },
+      ],
+      result: submittedResultFixture,
+    });
+
+    renderWithProviders(<InspectionsPage />);
+    await screen.findByText(inspectionFixture.title);
+    await user.click(screen.getByRole('button', { name: 'View' }));
+
+    const dialog = await screen.findByRole('dialog', { name: inspectionFixture.title });
+    expect(await within(dialog).findByText('Submission #1')).toBeInTheDocument();
+    expect(within(dialog).getByText('Pass')).toBeInTheDocument();
+    expect(within(dialog).getByText('All checks completed.')).toBeInTheDocument();
+    expect(within(dialog).getByText('Exit is clear.')).toBeInTheDocument();
+    expect(api.inspectionDetail).toHaveBeenCalledWith(inspectionFixture.id);
   });
 });

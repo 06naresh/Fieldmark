@@ -31,6 +31,7 @@ import { sitesApi } from '@/services/api/sitesApi';
 import { usersApi } from '@/services/api/usersApi';
 import type { Inspection, InspectionStatus } from '@/types/entities';
 import { InspectionFormDialog } from '@/features/inspections/components/InspectionFormDialog';
+import { InspectionReview } from '@/features/inspections/components/InspectionReview';
 
 type StatusFilter = 'ALL' | InspectionStatus;
 
@@ -51,6 +52,7 @@ export function InspectionsPage(): React.JSX.Element {
   const [formOpen, setFormOpen] = useState(false);
   const [editingInspection, setEditingInspection] = useState<Inspection | null>(null);
   const [detailsInspection, setDetailsInspection] = useState<Inspection | null>(null);
+  const detailId = detailsInspection?.id ?? '';
 
   const inspectionsQuery = useQuery({
     queryKey: ['inspections', { page, search, statusFilter, siteFilter }],
@@ -62,6 +64,12 @@ export function InspectionsPage(): React.JSX.Element {
         status: statusFilter === 'ALL' ? undefined : statusFilter,
         site_id: siteFilter || undefined,
       }),
+  });
+
+  const detailsQuery = useQuery({
+    queryKey: ['inspection', detailId, 'detail'],
+    queryFn: () => inspectionsApi.detail(detailId),
+    enabled: detailId.length > 0,
   });
 
   const sitesQuery = useQuery({
@@ -309,6 +317,14 @@ export function InspectionsPage(): React.JSX.Element {
               value={detailsInspection?.instructions || 'No instructions supplied.'}
             />
           </dl>
+          {detailsQuery.isLoading ? <LoadingIndicator label="Loading inspection details…" /> : null}
+          {detailsQuery.error ? (
+            <ErrorState
+              message={normalizeApiError(detailsQuery.error).message}
+              onRetry={() => void detailsQuery.refetch()}
+            />
+          ) : null}
+          {detailsQuery.data ? <InspectionReview detail={detailsQuery.data} /> : null}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDetailsInspection(null)}>
               Close

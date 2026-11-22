@@ -20,6 +20,8 @@ test('Scenario A — administrator and inspector complete an online inspection',
   const siteCode = uniqueName('ONL').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 20);
   const templateName = uniqueName('Online E2E Checklist');
   const question = 'Were all safety guards present?';
+  const note = 'Guard verified during the E2E walkthrough.';
+  const summary = 'All safety checks completed.';
   const inspectionTitle = uniqueName('Online E2E Inspection');
 
   await loginAs(page, adminEmail, E2E_ADMIN_PASSWORD);
@@ -89,10 +91,15 @@ test('Scenario A — administrator and inspector complete an online inspection',
 
   await expect(page.getByRole('heading', { name: 'Execute inspection' })).toBeVisible();
   await page.getByRole('group', { name: question }).getByLabel('Yes').check();
+  await page.getByLabel('Notes').first().fill(note);
   await page.getByLabel('Overall result').selectOption('PASS');
+  await page.getByLabel('Summary').fill(summary);
   await page.getByRole('button', { name: 'Submit inspection' }).click();
 
   await expect(page.getByText('Inspection submitted', { exact: true }).first()).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Submission #1/ })).toBeVisible();
+  await expect(page.getByText(summary, { exact: true })).toBeVisible();
+  await expect(page.getByText(note, { exact: true })).toBeVisible();
   const adminSession = await loginApi(request, adminEmail, E2E_ADMIN_PASSWORD);
   const inspectionList = await request.get(
     `${API_BASE_URL}/inspections?search=${encodeURIComponent(inspectionTitle)}`,
@@ -114,5 +121,9 @@ test('Scenario A — administrator and inspector complete an online inspection',
   const reviewedRow = page.getByRole('row', { name: new RegExp(inspectionTitle) });
   await expect(reviewedRow).toContainText('SUBMITTED');
   await reviewedRow.getByRole('button', { name: 'View' }).click();
-  await expect(page.getByRole('dialog', { name: inspectionTitle })).toBeVisible();
+  const detailsDialog = page.getByRole('dialog', { name: inspectionTitle });
+  await expect(detailsDialog).toBeVisible();
+  await expect(detailsDialog.getByRole('heading', { name: /Submission #1/ })).toBeVisible();
+  await expect(detailsDialog.getByText(summary, { exact: true })).toBeVisible();
+  await expect(detailsDialog.getByText(note, { exact: true })).toBeVisible();
 });

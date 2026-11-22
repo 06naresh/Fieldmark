@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { Search } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { CheckCircle2, Download, Search } from 'lucide-react';
 import {
   Badge,
   Button,
@@ -21,7 +21,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  toast,
 } from '@/components/ui';
+import { listLocalInspectionIds } from '@/db/localRepositories';
+import { normalizeOfflineError } from '@/db/localTypes';
 import { ROUTES } from '@/lib/constants';
 import { formatDateTime } from '@/lib/date';
 import { normalizeApiError } from '@/lib/error';
@@ -30,7 +33,10 @@ import { useAuthStore } from '@/store/authStore';
 import type { InspectionStatus } from '@/types/entities';
 import { InspectionStatusBadge } from '@/features/inspections/components/InspectionStatusBadge';
 import { useInspectionReferences } from '@/features/inspections/hooks/useInspectionReferences';
-import { getAssignedInspections } from '@/features/inspections/services/offlineInspectionService';
+import {
+  cacheInspectionForOffline,
+  getAssignedInspections,
+} from '@/features/inspections/services/offlineInspectionService';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 
 type StatusFilter = 'ALL' | InspectionStatus;
@@ -48,6 +54,7 @@ export function MyInspectionsPage(): React.JSX.Element {
   const currentUser = useAuthStore((state) => state.user);
   const isOnline = useOnlineStatus();
   const ownerId = currentUser?.id ?? 'anonymous';
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [page, setPage] = useState(1);
@@ -64,6 +71,43 @@ export function MyInspectionsPage(): React.JSX.Element {
         }),
       ),
   });
+  const offlineCopies = useQuery({
+    queryKey: ['inspections', 'offline-copies', ownerId],
+    queryFn: () => listLocalInspectionIds(ownerId),
+    enabled: ownerId !== 'anonymous',
+  });
+
+  const download = useMutation({
+    mutationFn: async (inspectionId: string) => {
+      const detail = await inspectionsApi.detail(inspectionId);
+      if (detail.assigned_to !== ownerId) {
+        throw new Error('You are not assigned to this inspection.');
+      }
+      await cacheInspectionForOffline(ownerId, detail);
+      return inspectionId;
+    },
+    onSuccess: async (inspectionId) => {
+      await Promise.all([
+        offlineCopies.refetch(),
+        queryClient.invalidateQueries({
+          queryKey: ['inspection', inspectionId, 'offline-status'],
+        }),
+      ]);
+      toast({
+        title: 'Available offline',
+        description: 'The checklist, site, and answers are stored on this device.',
+        variant: 'success',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Could not download inspection',
+        description: normalizeOfflineError(error),
+        variant: 'destructive',
+      });
+    },
+  });
+
   const references = useInspectionReferences();
 
   if (inspections.isLoading || references.isLoading) {
@@ -160,6 +204,7 @@ export function MyInspectionsPage(): React.JSX.Element {
                     <TableHead>Checklist</TableHead>
                     <TableHead>Scheduled</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Offline</TableHead>
                     <TableHead className="text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -185,6 +230,30 @@ export function MyInspectionsPage(): React.JSX.Element {
                         <TableCell>{formatDateTime(inspection.scheduled_at)}</TableCell>
                         <TableCell>
                           <InspectionStatusBadge status={inspection.status} />
+                        </TableCell>
+                        <TableCell>
+                          {offlineCopies.data?.includes(inspection.id) ? (
+                            <span className="inline-flex items-center gap-1 text-sm text-success">
+                              <CheckCircle2 className="h-4 w-4" />
+                              Downloaded
+                            </span>
+                          ) : isOnline ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              aria-label={`Download ${inspection.title} for offline use`}
+                              disabled={
+                                download.isPending && download.variables === inspection.id
+                              }
+                              onClick={() => download.mutate(inspection.id)}
+                            >
+                              <Download className="h-4 w-4" />
+                              Download
+                            </Button>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">Not downloaded</span>
+                          )}
                         </TableCell>
                         <TableCell className="text-right">
                           <Button asChild variant="ghost" size="sm">

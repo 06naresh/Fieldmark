@@ -871,9 +871,10 @@ The response should include:
 - Site information.
 - Assigned template revision.
 - Checklist items.
-- Current answers.
+- Current answers, including notes.
 - Current version.
 - Current lifecycle status.
+- The latest submission result when one exists. The result includes `id`, `inspection_id`, `submission_id`, `submission_number`, `submitted_version`, `submitted_at`, `summary`, and `overall_status`; it is `null` before submission.
 
 ## 10.4 Update Inspection Assignment
 
