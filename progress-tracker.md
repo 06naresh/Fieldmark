@@ -92,9 +92,9 @@ The next agent must be able to continue without repeating completed work.
 | Authentication | JWT |
 | State management | Zustand + TanStack Query |
 | Testing | pytest, Vitest, React Testing Library, Playwright |
-| Current development phase | Phase 13 — Integration and Quality Assurance (Completed, commit pending) |
+| Current development phase | Phase 13 — Integration and Quality Assurance (Completed) |
 | Current feature | F-026 Integration and Quality Assurance / F-027 E2E Testing |
-| Overall status | Phases 9–12 and F-030 committed; Phase 13 verified with 79 backend tests, 97 frontend tests, and 8 E2E tests passing |
+| Overall status | Phases 9–13 and F-030 committed; Phase 13 verified with 79 backend tests, 97 frontend tests, and 8 E2E tests passing |
 
 ---
 
@@ -144,9 +144,9 @@ Update this section whenever a new feature implementation session begins.
 |---|---|
 | Session date | 2026-11-22 |
 | Agent/session identifier | OpenCode (Big Pickle) |
-| Current phase | Phase 13 — Integration and Quality Assurance (Completed, commit pending) |
+| Current phase | Phase 13 — Integration and Quality Assurance (Completed) |
 | Current feature | F-026 Integration and Quality Assurance / F-027 E2E Testing |
-| Feature status | Completed and verified |
+| Feature status | Completed, verified, and committed locally |
 | Last updated | 2026-11-22 |
 
 ## 5.1 Phase 13 objective (completed)
@@ -174,7 +174,7 @@ Validate the integrated offline-first application through real frontend, backend
 | Fix integration defects | Completed | Offline identity restoration, duplicate-pull conflict regression, accessible sync label, badge contrast, stale Sync Center retry, and harness selectors |
 | Verify acceptance criteria | Completed | 79 backend tests, 97 frontend tests, 8 E2E tests, migration check, typechecks, lint, build, audit, and diff check pass |
 | Record QA evidence and CI gate | Completed | `docs/phase13-qa-report.md` and `.github/workflows/qa.yml` added |
-| Commit Phase 13 | Pending | Verified changes remain uncommitted |
+| Commit Phase 13 | Completed | Committed as `b706dde feat: implement phase 13 integration and qa`; not pushed |
 
 ## 5.1A Prior objective (Phase 12)
 
@@ -2435,6 +2435,10 @@ Keep older history entries. Do not rewrite historical entries to make incomplete
 - `npx playwright test --reporter=list --timeout=120000` — 8 passed in 52.3s.
 - `git diff --check` — no errors.
 
+### Commit
+
+- `b706dde feat: implement phase 13 integration and qa` — local commit; not pushed.
+
 ### Acceptance criteria
 
 - [x] Core online workflows pass.
@@ -2463,7 +2467,7 @@ Update it before stopping work.
 
 **Last completed phase:**
 
-Phase 13 — Integration and Quality Assurance. All acceptance criteria were verified: 79 backend tests, 97 frontend tests, 8 Playwright scenarios, clean typechecks/lint/build, migration check, dependency audit, and diff check. Phase 12 is committed as `9af8197 feat: implement phase 12 pwa offline shell`; Phase 13 is verified locally and is ready to commit. None of the local commits has been pushed.
+Phase 13 — Integration and Quality Assurance. All acceptance criteria were verified: 79 backend tests, 97 frontend tests, 8 Playwright scenarios, clean typechecks/lint/build, migration check, dependency audit, and diff check. Phase 12 is committed as `9af8197 feat: implement phase 12 pwa offline shell`; Phase 13 is committed as `b706dde feat: implement phase 13 integration and qa`. None of the local commits has been pushed.
 
 **Last completed features:**
 
@@ -2471,11 +2475,11 @@ F-026 Integration Testing and F-027 E2E Testing. The suite covers the required o
 
 **Current phase:**
 
-Phase 13 — Integration and Quality Assurance (Completed, commit pending). Phase 14 — Deployment and Release is not started.
+Phase 13 — Integration and Quality Assurance (Completed). Phase 14 — Deployment and Release is not started.
 
 **Current feature status:**
 
-Completed and verified; not yet committed.
+Completed, verified, and committed locally as `b706dde feat: implement phase 13 integration and qa`; not pushed.
 
 **Last completed task:**
 
@@ -2483,7 +2487,7 @@ Built the integrated QA harness and fixed the defects it exposed: offline identi
 
 **Current stopping point:**
 
-Commit the verified Phase 13 work locally, then stop at the phase boundary. Do not start Phase 14 without explicit approval.
+Phase 13 is committed locally. Stop at the phase boundary and do not start Phase 14 without explicit approval.
 
 ## Files to inspect first
 
@@ -2512,7 +2516,7 @@ Commit the verified Phase 13 work locally, then stop at the phase boundary. Do n
 - [x] Implement all five required E2E scenarios and three quality specs.
 - [x] Fix all release-blocking defects found during Phase 13.
 - [x] Add QA report, CI quality gate, and Phase 13 documentation updates.
-- [ ] Commit the verified Phase 13 changes locally; do not push.
+- [x] Commit the verified Phase 13 changes locally as `b706dde`; not pushed.
 - [ ] Start Phase 14 only after explicit approval.
 
 ## Known problems
@@ -2545,7 +2549,7 @@ The next agent must:
 
 **Exact next action:**
 
-Commit the verified Phase 13 work locally with `feat: implement phase 13 integration and qa` (or the user's chosen message), then stop and wait for Phase 14 approval.
+Do not start Phase 14 — Deployment and Release. Wait for explicit approval, then inspect the Phase 13 QA report and the locally committed Phase 13 source before beginning deployment work.
 
 ---
 
