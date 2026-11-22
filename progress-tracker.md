@@ -94,7 +94,7 @@ The next agent must be able to continue without repeating completed work.
 | Testing | pytest, Vitest, React Testing Library, Playwright |
 | Current development phase | Phase 14 — Deployment and Release (Blocked — deployment verification pending) |
 | Current feature | F-032 Vercel Production Deployment Preparation |
-| Overall status | Phases 0–13 complete; F-031 committed as `029b0a6`; F-032 Phase 14 deployment preparation committed locally; Vercel configuration is handled manually by the operator; deployed verification remains pending |
+| Overall status | Phases 0–13 complete; F-031 committed as `029b0a6`; F-032 Phase 14 deployment preparation committed locally as `e944195`; Vercel configuration is handled manually by the operator; deployed verification remains pending |
 
 ---
 
@@ -2595,6 +2595,7 @@ Fix the approved post-QA defects where inspectors could not reliably find or cre
 | Started date | 2026-11-22 |
 | Last updated | 2026-11-22 |
 | Implemented by | OpenCode (Big Pickle) |
+| Commit | `e944195 feat: prepare vercel production deployment` — local only, not pushed |
 | Vercel configuration | Performed manually by the operator; no deployment was performed by this session |
 
 ### F-032.1 Objective
@@ -2714,11 +2715,11 @@ Update it before stopping work.
 
 **Last completed phase:**
 
-Phase 13 — Integration and Quality Assurance. Its committed baseline was verified with 79 backend tests, 97 frontend tests, 8 Playwright scenarios, clean typechecks/lint/build, migration check, dependency audit, and diff check. Phase 12 is committed as `9af8197 feat: implement phase 12 pwa offline shell`; Phase 13 is committed as `b706dde feat: implement phase 13 integration and qa`; the approved F-031 follow-up is committed as `029b0a6 fix: expose inspection review and explicit offline downloads`. None of the local commits has been pushed.
+Phase 13 — Integration and Quality Assurance. Its committed baseline was verified with 79 backend tests, 97 frontend tests, 8 Playwright scenarios, clean typechecks/lint/build, migration check, dependency audit, and diff check. Phase 12 is committed as `9af8197 feat: implement phase 12 pwa offline shell`; Phase 13 is committed as `b706dde feat: implement phase 13 integration and qa`; the approved F-031 follow-up is committed as `029b0a6 fix: expose inspection review and explicit offline downloads`; Phase 14 preparation is committed as `e944195 feat: prepare vercel production deployment`. None of the local commits has been pushed.
 
 **Last completed features:**
 
-F-026 Integration Testing and F-027 E2E Testing remain the last phase-level committed features. The suite covers the required online, offline, duplicate-operation, conflict, and interrupted-synchronization scenarios plus user isolation, security, accessibility, responsive layout, cache safety, and performance. F-031 was committed after explicit approval. F-032 deployment preparation is committed locally after explicit approval.
+F-026 Integration Testing and F-027 E2E Testing remain the last phase-level committed features. The suite covers the required online, offline, duplicate-operation, conflict, and interrupted-synchronization scenarios plus user isolation, security, accessibility, responsive layout, cache safety, and performance. F-031 was committed after explicit approval. F-032 deployment preparation was committed locally as `e944195` after explicit approval.
 
 **Current phase:**
 
@@ -2726,11 +2727,11 @@ Phase 14 — Deployment and Release remains blocked on deployment verification. 
 
 **Current feature status:**
 
-F-032 is implemented, locally verified, and committed locally: Vercel Services routing, production backend hardening, build-time migrations, secure cookies, smoke checks, and deployment documentation are in place. Vercel configuration is handled manually by the operator. Phase 14 remains incomplete until deployed verification is available.
+F-032 is implemented, locally verified, and committed locally as `e944195`: Vercel Services routing, production backend hardening, build-time migrations, secure cookies, smoke checks, and deployment documentation are in place. Vercel configuration is handled manually by the operator. Phase 14 remains incomplete until deployed verification is available.
 
 **Last completed task:**
 
-Committed the locally verified Vercel release configuration. Final verification: 85 backend tests, 101 frontend tests, clean lint/typechecks/build, 8 Playwright scenarios, 9 local production-style smoke checks, and valid `vercel.json` schema. A CORS `PUT` omission and a root health-route routing gap were found and fixed during validation.
+Committed the locally verified Vercel release configuration as `e944195`. Final verification: 85 backend tests, 101 frontend tests, clean lint/typechecks/build, 8 Playwright scenarios, 9 local production-style smoke checks, and valid `vercel.json` schema. A CORS `PUT` omission and a root health-route routing gap were found and fixed during validation.
 
 **Current stopping point:**
 
@@ -2774,7 +2775,7 @@ Do not push or deploy unless explicitly asked. Vercel configuration is handled m
 - [x] Commit F-031 locally as `029b0a6` after explicit approval.
 - [x] Start Phase 14 after explicit approval.
 - [x] Implement and locally verify F-032 Vercel deployment preparation.
-- [x] Commit F-032 Phase 14 changes locally after explicit approval.
+- [x] Commit F-032 Phase 14 changes locally as `e944195` after explicit approval.
 - [x] Hand Vercel configuration to the operator for manual setup in Vercel.
 - [ ] Verify manually configured Vercel Services project, managed PostgreSQL, secrets, and trusted origins.
 - [ ] Deploy a preview, run deployed smoke checks, and verify offline/synchronization flows.
@@ -2795,7 +2796,7 @@ Do not push or deploy unless explicitly asked. Vercel configuration is handled m
 - Chromium only; multi-tab E2E, OS-level PWA installation prompts, and bundle splitting remain future work.
 - Phase 14 blocker: Vercel configuration is handled manually by the operator; deployment details and verification results have not been supplied to this repository session.
 - Phase 14 blocker: deployed HTTPS, secure-cookie behavior, migrations, offline workflows, synchronization, backups, monitoring, and production smoke checks remain unverified without a deployment.
-- F-032 Phase 14 changes are committed locally; do not push them without explicit direction.
+- F-032 Phase 14 changes are committed locally as `e944195`; do not push them without explicit direction.
 
 ## Next agent instructions
 
@@ -2814,7 +2815,7 @@ The next agent must:
 11. Keep note-only edits durable and keep pending submissions clearly distinct from server-confirmed results.
 12. Keep `InspectionDetailResponse.result` authoritative and keep result pull application from overwriting pending local answers.
 13. F-031 is already committed; do not recreate or rewrite that commit.
-14. F-032 Phase 14 changes are committed locally; do not push them without explicit direction.
+14. F-032 Phase 14 changes are committed locally as `e944195`; do not push them without explicit direction.
 15. Preserve the single-origin Vercel Services design; do not split the API to another origin without a reviewed cookie/CSRF redesign.
 16. Preserve same-origin `/api/v1` and explicit `/health` and `/health/ready` backend rewrites.
 17. Keep production secrets in Vercel environment variables and never paste or commit real values.
