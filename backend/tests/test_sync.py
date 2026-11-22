@@ -901,10 +901,14 @@ def test_conflicts_are_listed_and_detailed_with_owner_scoping(scenario) -> None:
         ),
         200,
     )
+    assert detail["operation_id"] == inspector_list[0]["operation_id"]
     assert detail["base_version"] == 1
     assert detail["server_version"] == 2
     assert "answer_value" in detail["local_payload"]
     assert "answer_value" in detail["server_payload"]
+    assert detail["resolution_type"] is None
+    assert detail["resolved_by"] is None
+    assert detail["resolved_at"] is None
 
     forbidden = scenario.client.get(
         f"{API}/sync/conflicts/{conflict_id}", headers=scenario.other_headers
@@ -926,6 +930,13 @@ def test_conflict_resolution_enforces_permissions_and_version(scenario) -> None:
     )
     assert_error(stale, 409, "VERSION_CONFLICT")
 
+    invalid = scenario.client.post(
+        f"{API}/sync/conflicts/{conflict_id}/resolve",
+        json={"resolution_type": "LAST_WRITE_WINS", "expected_server_version": 2},
+        headers=scenario.inspector_headers,
+    )
+    assert_error(invalid, 422, "VALIDATION_ERROR")
+
     forbidden = scenario.client.post(
         f"{API}/sync/conflicts/{conflict_id}/resolve",
         json={"resolution_type": "ADMIN_RESOLUTION", "expected_server_version": 2},
@@ -943,6 +954,24 @@ def test_conflict_resolution_enforces_permissions_and_version(scenario) -> None:
     )
     assert resolved["status"] == "RESOLVED"
     assert resolved["resolution_type"] == "KEEP_SERVER"
+
+    audit_detail = assert_data(
+        scenario.client.get(
+            f"{API}/sync/conflicts/{conflict_id}", headers=scenario.admin_headers
+        ),
+        200,
+    )
+    assert audit_detail["status"] == "RESOLVED"
+    assert audit_detail["resolution_type"] == "KEEP_SERVER"
+    assert audit_detail["resolved_by"] == str(scenario.admin.id)
+    assert audit_detail["resolved_at"] is not None
+
+    repeated = scenario.client.post(
+        f"{API}/sync/conflicts/{conflict_id}/resolve",
+        json={"resolution_type": "KEEP_SERVER", "expected_server_version": 2},
+        headers=scenario.admin_headers,
+    )
+    assert_error(repeated, 409, "CONFLICT")
 
     open_conflicts = assert_data(
         scenario.client.get(

@@ -812,6 +812,7 @@ export async function recordSyncConflict(input: {
       id: createId(),
       user_id: input.userId,
       operation_id: input.operationId,
+      server_conflict_id: null,
       entity_type: input.entityType,
       entity_id: input.entityId,
       local_snapshot: input.localSnapshot,

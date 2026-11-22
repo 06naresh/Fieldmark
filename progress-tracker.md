@@ -92,9 +92,9 @@ The next agent must be able to continue without repeating completed work.
 | Authentication | JWT |
 | State management | Zustand + TanStack Query |
 | Testing | pytest, Vitest, React Testing Library, Playwright |
-| Current development phase | Phase 10 — Synchronization Engine (Completed) |
-| Current feature | F-030 Public Inspector Signup (post-commit account access feature) |
-| Overall status | Phase 9 committed as `45c03ff`; Phase 10 committed as `cb4face`; F-030 committed as `fcb2828`; Phase 11 approved but not started |
+| Current development phase | Phase 11 — Conflict Management (Completed, awaiting commit) |
+| Current feature | F-022 Conflict Detection, F-023 Conflict Resolution, and F-024 Sync Center |
+| Overall status | Phases 9–11 and F-030 verified; Phase 11 implementation complete and not yet committed |
 
 ---
 
@@ -115,7 +115,7 @@ Update this table whenever a development phase changes.
 | 8 | Inspector Workflow | Completed | 100% |
 | 9 | Offline Persistence | Completed | 100% |
 | 10 | Synchronization Engine | Completed | 100% |
-| 11 | Conflict Management | Not Started | 0% |
+| 11 | Conflict Management | Completed | 100% |
 | 12 | PWA and Offline Application Shell | Not Started | 0% |
 | 13 | Integration and Quality Assurance | Not Started | 0% |
 | 14 | Deployment and Release | Not Started | 0% |
@@ -1704,9 +1704,9 @@ Add a new row when a feature is identified.
 | F-020 | Pull synchronization | 10 | Completed | offline-sync-design.md, api-contracts.md |
 | F-021 | Retry mechanism | 10 | Completed | offline-sync-design.md |
 | F-030 | Public inspector signup | Post-Phase 10 | Completed | PRD.md, api-contracts.md, security-design.md, frontend-design.md |
-| F-022 | Conflict detection | 11 | Not Started | offline-sync-design.md |
-| F-023 | Conflict resolution | 11 | Not Started | offline-sync-design.md |
-| F-024 | Sync Center | 11 | Not Started | frontend-design.md |
+| F-022 | Conflict detection | 11 | Completed | offline-sync-design.md |
+| F-023 | Conflict resolution | 11 | Completed | offline-sync-design.md |
+| F-024 | Sync Center | 11 | Completed | frontend-design.md |
 | F-025 | PWA support | 12 | Not Started | frontend-design.md |
 | F-026 | Integration testing | 13 | Not Started | testing-strategy.md |
 | F-027 | E2E testing | 13 | Not Started | testing-strategy.md |
@@ -1984,6 +1984,14 @@ Do not report tests as passed if they were not actually executed.
 | 2026-11-22 | `npm run build` (F-030) | Production build | 1 | 0 | Vite build succeeded with non-blocking chunk-size and Zod annotation warnings |
 | 2026-11-22 | `npm audit --audit-level=moderate` (F-030) | Security check | 1 | 0 | Zero reported vulnerabilities |
 | 2026-11-22 | `git diff --check` (F-030) | Diff hygiene | 1 | 0 | No whitespace errors; line-ending normalization notices only |
+| 2026-11-22 | `.venv/Scripts/python.exe -m pytest -q` (Phase 11) | Full backend suite | 79 | 0 | PostgreSQL temporary schema; includes new conflict audit assertions |
+| 2026-11-22 | `.venv/Scripts/python.exe -m pytest tests/test_sync.py -q` (Phase 11) | Backend conflict suite | 20 | 0 | Scoping, detail, invalid choice, stale/repeated resolution, and audit checks passed |
+| 2026-11-22 | `npx vitest run --reporter=dot` (Phase 11) | Frontend suite | 77 | 0 | 17 test files; includes 9 new conflict repository/UI tests |
+| 2026-11-22 | `npx tsc --noEmit` (Phase 11) | TypeScript check | 1 | 0 | Strict check passed |
+| 2026-11-22 | `npm run lint` (Phase 11) | Lint | 1 | 0 | Zero warnings |
+| 2026-11-22 | `npm run build` (Phase 11) | Production build | 1 | 0 | Succeeded with pre-existing Zod/comment and chunk-size warnings |
+| 2026-11-22 | `npm audit --audit-level=moderate` (Phase 11) | Security check | 1 | 0 | Zero vulnerabilities |
+| 2026-11-22 | `git diff --check` (Phase 11) | Diff hygiene | 1 | 0 | No whitespace errors; line-ending normalization notices only |
 
 ---
 
@@ -2136,6 +2144,7 @@ Add a new entry whenever a development session makes meaningful changes.
 | 2026-11-22 | OpenCode (Big Pickle) | Post-commit | Account access setup | Reviewed approved auth contracts after the user requested a signup page; initially blocked because public registration was not defined and user creation was ADMIN-only | Resolved |
 | 2026-11-22 | OpenCode (Big Pickle) | Post-Phase 10 | F-030 | User explicitly approved public signup; added INSPECTOR-only backend registration, independent rate limiting, signup page/form, normal login-after-signup flow, route wiring, documentation updates, and 13 new tests; final verification was 79 backend tests, 68 frontend tests, clean typecheck/lint, successful build, and zero audit vulnerabilities | Completed |
 | 2026-11-22 | OpenCode (Big Pickle) | Post-Phase 10 | F-030 commit | Committed the verified signup implementation as `fcb2828 feat: add public inspector signup`; not pushed | Completed |
+| 2026-11-22 | OpenCode (Big Pickle) | Phase 11 | F-022/F-023/F-024 | Added full conflict audit metadata and correlation by `operation_id`, conflict API client, local conflict hydration/resolution repositories, version-checked keep-local/manual-merge workflows, shared Sync Center for both roles, conflict diff dialog with explicit confirmations and audit history, and 9 new frontend tests; final verification was 79 backend tests, 77 frontend tests, clean typecheck/lint, successful build, and zero audit vulnerabilities | Completed |
 
 For each entry, include a concise summary of:
 
@@ -2145,6 +2154,85 @@ For each entry, include a concise summary of:
 - Remaining work.
 
 Keep older history entries. Do not rewrite historical entries to make incomplete work appear complete.
+
+---
+
+# 14A. Phase 11 Implementation Record
+
+## Feature: F-022 Conflict Detection, F-023 Conflict Resolution, F-024 Sync Center
+
+| Property | Value |
+|---|---|
+| Feature ID | F-022 / F-023 / F-024 |
+| Development phase | Phase 11 — Conflict Management |
+| Status | Completed and verified; not yet committed |
+| Documentation source | `docs/development-phases.md`, `docs/api-contracts.md`, `docs/offline-sync-design.md`, `docs/frontend-design.md` |
+
+### Important decisions
+
+- Reused the approved Phase 5 backend conflict APIs instead of introducing a parallel resolution path.
+- Added `operation_id`, `resolution_type`, `resolved_by`, and `resolved_at` to conflict responses so a device can correlate server conflicts with durable local records and display audit history.
+- The client hydrates partial push-result snapshots from the authorized conflict detail endpoint before displaying a diff; it never constructs server state locally.
+- Accept-server and administrative resolutions require an explicit acknowledgement checkbox. Keep-local and manual-merge are themselves explicit actions.
+- Keep-local and manual-merge enqueue a new operation with `base_version` set to the confirmed server version and a dependency on the original operation. The obsolete operation is cancelled only after server confirmation.
+- Local conflict records retain their original local and server snapshots after resolution.
+- Resolved conflicts remain visible in the Sync Center with status and audit metadata.
+- `ADMIN_RESOLUTION` is only offered to administrators in the UI and is enforced on the backend.
+
+### Files created
+
+- `frontend/src/services/api/conflictApi.ts`
+- `frontend/src/db/conflictRepository.ts`
+- `frontend/src/db/conflictRepository.test.ts`
+- `frontend/src/services/sync/conflictResolutionService.ts`
+- `frontend/src/features/sync/types/conflictView.ts`
+- `frontend/src/features/sync/services/conflictViewService.ts`
+- `frontend/src/features/sync/components/ConflictDetailsDialog.tsx`
+- `frontend/src/features/sync/components/SyncQueueTable.tsx`
+- `frontend/src/features/sync/pages/SyncCenterPage.tsx`
+- `frontend/src/features/sync/conflictManagement.test.tsx`
+
+### Files modified
+
+- `backend/app/schemas/sync.py`
+- `backend/app/services/conflict_service.py`
+- `backend/tests/test_sync.py`
+- `frontend/src/db/localTypes.ts`
+- `frontend/src/db/localRepositories.ts`
+- `frontend/src/services/sync/syncTypes.ts`
+- `frontend/src/app/router.tsx`
+- `docs/api-contracts.md`
+- `docs/offline-sync-design.md`
+- `docs/frontend-design.md`
+- `docs/development-phases.md`
+- `progress-tracker.md`
+
+### Verification
+
+- Backend full suite: `.venv/Scripts/python.exe -m pytest -q` — 79 passed.
+- Backend conflict suite: `.venv/Scripts/python.exe -m pytest tests/test_sync.py -q` — 20 passed.
+- Frontend full suite: `npx vitest run --reporter=dot` — 77 passed.
+- TypeScript: `npx tsc --noEmit` — passed.
+- Lint: `npm run lint` — passed with zero warnings.
+- Build: `npm run build` — succeeded with pre-existing Zod annotation and chunk-size warnings.
+- Audit: `npm audit --audit-level=moderate` — zero vulnerabilities.
+
+### Acceptance criteria
+
+- [x] Conflicts are detected.
+- [x] Local data is preserved.
+- [x] Server data is preserved.
+- [x] Users can review differences.
+- [x] Resolution requires explicit user action.
+- [x] New operations use the correct base version.
+- [x] Unauthorized resolution is rejected.
+- [x] Conflict tests pass.
+
+### Known limitations
+
+- Conflict lists are capped at 100 records per request in the Sync Center; pagination controls are not yet part of the UI.
+- Administrative resolution applies the server-side decision but does not merge a different local payload from another user's device.
+- Browser-level E2E conflict scenarios remain scheduled for Phase 13; Phase 11 coverage is backend integration plus frontend component/repository tests.
 
 ---
 
@@ -2158,59 +2246,58 @@ Update it before stopping work.
 
 **Last completed phase:**
 
-Phase 10 — Synchronization Engine. All acceptance criteria were verified. Phase 9 was committed as `45c03ff feat: implement phase 9 offline persistence`; Phase 10 was committed as `cb4face feat: implement phase 10 synchronization engine`. Neither commit was pushed.
+Phase 11 — Conflict Management. All acceptance criteria were verified. Phase 9 was committed as `45c03ff feat: implement phase 9 offline persistence`, Phase 10 as `cb4face feat: implement phase 10 synchronization engine`, and F-030 as `fcb2828 feat: add public inspector signup`. The Phase 11 working tree is verified but not yet committed.
 
 **Last completed feature:**
 
-F-030 Public Inspector Signup. The user explicitly approved public signup specifically for local account access/testing. Signup is implemented as an INSPECTOR-only exception; ADMIN accounts remain administrator-provisioned. The implementation and approved documentation are complete and verified, but the working tree still needs to be committed.
+F-022/F-023/F-024 — conflict detection correlation, explicit resolution, and the shared Sync Center. Conflict responses now carry audit metadata and the originating `operation_id`; the client hydrates full local/server snapshots, shows differences, and only updates local state after server confirmation.
 
 **Current phase:**
 
-Phase 10 — Synchronization Engine (Completed). Phase 11 — Conflict Management is explicitly approved but has not been started.
+Phase 11 — Conflict Management (Completed, awaiting commit). Phase 12 — PWA and Offline Application Shell is not started and must not be started without explicit approval.
 
 **Current feature:**
 
-F-030 Public Inspector Signup.
+F-022 Conflict Detection, F-023 Conflict Resolution, and F-024 Sync Center.
 
 **Current feature status:**
 
-Completed and verified; committed as `fcb2828` and not pushed.
+Completed and verified; not yet committed.
 
 **Last completed task:**
 
-Added `POST /api/v1/auth/signup`, INSPECTOR-only registration service logic, an independent signup rate limiter, a public `/signup` page with React Hook Form/Zod validation, normal login after account creation, route/link wiring, backend and frontend tests, and documentation updates. Final verification was 79 backend tests, 68 frontend tests, clean typecheck/lint, successful production build, and zero audit vulnerabilities.
+Added the conflict API client, local hydration/resolution repositories, version-checked keep-local and manual-merge workflows, the shared Sync Center for admin and inspector routes, the conflict diff dialog with explicit confirmations and audit history, queue retry controls, and 9 new frontend tests. Final verification was 79 backend tests, 77 frontend tests, clean typecheck/lint, successful production build, and zero audit vulnerabilities.
 
 **Current stopping point:**
 
-F-030 is committed and verified. Phase 11 — Conflict Management is already approved but has not been started in this session.
+Phase 11 is implemented and verified. The verified changes need to be committed; no Phase 12 files should be changed.
 
 ## Files to inspect first
 
 1. `progress-tracker.md`
-2. `backend/app/api/v1/endpoints/auth.py` — login/signup endpoint contracts
-3. `backend/app/schemas/auth.py` — strict signup request schema
-4. `backend/app/services/auth_service.py` — signup and session service
-5. `backend/app/core/rate_limit.py` — login and signup limiters
-6. `frontend/src/features/auth/components/SignupForm.tsx` — signup UI and error behavior
-7. `frontend/src/features/auth/schemas/signupSchema.ts` — signup validation
-8. `frontend/src/services/auth/session.ts` — signup-to-login session flow
-9. `frontend/src/app/router.tsx` — public routes and guards
-10. `docs/api-contracts.md` and `docs/security-design.md` — approved signup exception
-11. `docs/development-phases.md` — Phase 10 acceptance criteria and Phase 11 boundary
-12. `docs/offline-sync-design.md` — queue, push, pull, retry, cursor, and conflict rules
-13. `frontend/src/services/sync/syncEngine.ts` — coordinating engine and triggers
-14. `frontend/src/services/sync/pushSync.ts` — bounded dependency-ordered push
-15. `frontend/src/services/sync/pullSync.ts` — paginated pull flow
-16. `frontend/src/services/sync/dependencyManager.ts` — explicit and implicit dependencies
-17. `frontend/src/services/sync/retryManager.ts` — retry classification, jitter, and `Retry-After`
-18. `frontend/src/services/sync/syncLock.ts` — cross-trigger lock
-19. `frontend/src/db/syncRepositories.ts` — atomic results, conflicts, batches, cursor, and recovery
-20. `frontend/src/services/api/syncApi.ts` — device, status, push, and pull client
-21. `frontend/src/store/syncStore.ts` — foreground sync state
-22. `frontend/src/services/sync/syncEngine.test.ts` — integration tests
-23. `frontend/src/db/syncRepositories.test.ts` — transaction and persistence tests
-24. `frontend/src/db/localRepositories.ts` — durable queue and dependency metadata
-25. `frontend/src/features/inspections/pages/ExecuteInspectionPage.tsx` — offline operation identities and versions
+2. `docs/development-phases.md` — Phase 11 acceptance criteria and Phase 12 boundary
+3. `docs/api-contracts.md` — conflict list/detail/resolve contracts
+4. `docs/offline-sync-design.md` — conflict detection, resolution, and audit rules
+5. `docs/frontend-design.md` — Sync Center and conflict dialog requirements
+6. `backend/app/schemas/sync.py` — conflict audit metadata contract
+7. `backend/app/services/conflict_service.py` — authorization, version checks, and audit persistence
+8. `backend/app/api/v1/endpoints/conflicts.py` — conflict endpoints
+9. `backend/tests/test_sync.py` — conflict scoping and resolution tests
+10. `frontend/src/services/api/conflictApi.ts` — remote conflict client
+11. `frontend/src/db/conflictRepository.ts` — local hydration, snapshot helpers, resolution application, and retry
+12. `frontend/src/services/sync/conflictResolutionService.ts` — server confirmation and new version-checked operations
+13. `frontend/src/features/sync/pages/SyncCenterPage.tsx` — shared Sync Center
+14. `frontend/src/features/sync/components/ConflictDetailsDialog.tsx` — diff and explicit resolution UI
+15. `frontend/src/features/sync/components/SyncQueueTable.tsx` — queue history and retry action
+16. `frontend/src/features/sync/services/conflictViewService.ts` — local/remote conflict merge
+17. `frontend/src/db/conflictRepository.test.ts` — repository persistence tests
+18. `frontend/src/features/sync/conflictManagement.test.tsx` — UI and resolution workflow tests
+19. `frontend/src/app/router.tsx` — admin and inspector Sync Center routes
+20. `frontend/src/services/sync/syncEngine.ts` — coordinating engine and triggers
+21. `frontend/src/db/syncRepositories.ts` — atomic push result and conflict persistence
+22. `frontend/src/db/localTypes.ts` and `frontend/src/db/localRepositories.ts` — durable local conflict shape and queue
+23. `frontend/src/store/syncStore.ts` — foreground sync state
+24. `frontend/src/features/inspections/pages/ExecuteInspectionPage.tsx` — offline operation identities and versions
 
 ## Work remaining
 
@@ -2224,8 +2311,12 @@ F-030 is committed and verified. Phase 11 — Conflict Management is already app
 - [x] Implement explicitly approved public INSPECTOR-only signup.
 - [x] Update approved documentation and verify signup tests.
 - [x] Commit F-030 signup work as `fcb2828 feat: add public inspector signup`; not pushed.
-- [ ] In Phase 11, build the Sync Center and conflict resolution UI on the persisted snapshots.
-- [ ] In later phases, complete the PWA shell, E2E scenarios, and deployment work.
+- [x] Add conflict audit metadata and `operation_id` correlation to backend conflict responses.
+- [x] Build the shared Sync Center and conflict diff/resolution UI on persisted snapshots.
+- [x] Implement explicit accept-server, keep-local, and manual-merge workflows with version-checked operations.
+- [x] Add and verify Phase 11 backend and frontend conflict tests.
+- [ ] Commit the verified Phase 11 changes.
+- [ ] In later phases, complete the PWA shell, E2E scenarios, and deployment work after explicit approval.
 
 ## Known problems
 
@@ -2237,7 +2328,9 @@ F-030 is committed and verified. Phase 11 — Conflict Management is already app
 - Public signup intentionally creates only INSPECTOR accounts; initial ADMIN provisioning remains a deployment responsibility.
 - The signup rate limiter is process-local, like the login limiter; a multi-instance deployment needs a shared limiter.
 - If login fails immediately after successful signup, the account exists but must be signed in manually.
-- The full Sync Center and conflict resolution UI remain Phase 11; the header action only reports results through a toast.
+- Resolved: the full Sync Center and conflict resolution UI were implemented in Phase 11; the header sync action now coexists with the dedicated Sync Center.
+- Phase 11 Sync Center lists at most 100 remote conflicts per request; UI pagination remains a later enhancement.
+- Administrative resolution records the server-side decision; it does not automatically merge local work that exists only on another user's device.
 - Browser-level multi-tab E2E coverage remains Phase 13; the lock has concurrent-trigger unit coverage and uses Web Locks/localStorage where available.
 - Offline access uses a seven-day default validity window and is not revalidated with the server until connectivity returns.
 
@@ -2246,19 +2339,19 @@ F-030 is committed and verified. Phase 11 — Conflict Management is already app
 The next agent must:
 
 1. Read `AGENTS.md`, the approved documentation, and this progress tracker.
-2. Inspect the actual F-030 and Phase 10 source files listed above before changing behavior.
-3. Confirm F-030 is committed before starting any later phase.
+2. Inspect the actual Phase 11 source files listed above before changing behavior.
+3. Commit the verified Phase 11 changes when instructed; do not push unless explicitly asked.
 4. Preserve the INSPECTOR-only signup boundary; do not add self-assigned ADMIN registration without a new explicit security/product decision.
 5. Preserve stable operation IDs, immutable payloads, dependency order, and idempotent result handling.
 6. Keep the pull cursor inside the same Dexie transaction as the applied batch.
 7. Preserve conflict snapshots; do not introduce last-write-wins for inspection answers.
 8. Keep API and IndexedDB access outside presentation components.
 9. Preserve the in-memory access-token policy and HTTP-only refresh-cookie strategy.
-10. Start Phase 11 — Conflict Management only after F-030 is committed; Phase 11 approval has already been given.
+10. Do not start Phase 12 — PWA and Offline Application Shell without explicit approval.
 
 **Exact next action:**
 
-Wait for the next instruction before implementing Phase 11 — Conflict Management. Phase 11 approval is already recorded, but no Phase 11 files should be changed in this session.
+Commit the verified Phase 11 work as `feat: implement phase 11 conflict management` (or the user's chosen message), then stop at the phase boundary and wait for approval before Phase 12.
 
 ---
 

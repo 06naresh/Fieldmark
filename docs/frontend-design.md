@@ -865,6 +865,8 @@ Actions:
 
 Require confirmation before discarding local changes.
 
+Implementation note: the Sync Center combines durable IndexedDB queue/conflict records with authorized server conflict details. Both snapshots are shown before any decision. Accept-server updates the local record only after the server response; keep-local and manual-merge enqueue a new version-checked operation; resolved conflicts remain available with their resolution actor, decision, and timestamp.
+
 ### 9.13 Profile and Settings
 
 Profile page:

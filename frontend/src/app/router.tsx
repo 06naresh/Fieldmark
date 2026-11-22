@@ -16,9 +16,9 @@ import { ExecuteInspectionPage } from '@/features/inspections/pages/ExecuteInspe
 import { InspectionDetailsPage } from '@/features/inspections/pages/InspectionDetailsPage';
 import { InspectorDashboardPage } from '@/features/inspections/pages/InspectorDashboardPage';
 import { MyInspectionsPage } from '@/features/inspections/pages/MyInspectionsPage';
+import { SyncCenterPage } from '@/features/sync/pages/SyncCenterPage';
 import { ROUTES } from '@/lib/constants';
 import { NotFoundPage } from '@/pages/NotFoundPage';
-import { PlaceholderPage } from '@/pages/PlaceholderPage';
 
 export function AppRoutes(): React.JSX.Element {
   return (
@@ -55,10 +55,7 @@ export function AppRoutes(): React.JSX.Element {
         <Route path={ROUTES.admin.sites} element={<SitesPage />} />
         <Route path={ROUTES.admin.checklists} element={<ChecklistsPage />} />
         <Route path={ROUTES.admin.inspections} element={<InspectionsPage />} />
-        <Route
-          path={ROUTES.admin.sync}
-          element={<PlaceholderPage title="Sync Center" description="Synchronization monitoring is implemented in a later phase." />}
-        />
+        <Route path={ROUTES.admin.sync} element={<SyncCenterPage />} />
       </Route>
 
       <Route
@@ -72,10 +69,7 @@ export function AppRoutes(): React.JSX.Element {
         <Route path={ROUTES.inspector.inspections} element={<MyInspectionsPage />} />
         <Route path={ROUTES.inspector.inspectionDetails(':id')} element={<InspectionDetailsPage />} />
         <Route path={ROUTES.inspector.executeInspection(':id')} element={<ExecuteInspectionPage />} />
-        <Route
-          path={ROUTES.inspector.sync}
-          element={<PlaceholderPage title="Sync Center" description="Synchronization monitoring is implemented in a later phase." />}
-        />
+        <Route path={ROUTES.inspector.sync} element={<SyncCenterPage />} />
       </Route>
 
       <Route

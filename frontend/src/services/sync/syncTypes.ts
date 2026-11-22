@@ -94,6 +94,44 @@ export interface SyncRunResult {
   finishedAt: string;
 }
 
+export type ConflictStatus = 'OPEN' | 'RESOLVED' | 'DISMISSED';
+export type ConflictResolutionType =
+  | 'KEEP_SERVER'
+  | 'KEEP_LOCAL'
+  | 'MANUAL_MERGE'
+  | 'ADMIN_RESOLUTION';
+
+export interface ConflictSummary {
+  id: string;
+  operation_id: string;
+  entity_type: string;
+  entity_id: string;
+  base_version: number | null;
+  server_version: number | null;
+  status: ConflictStatus;
+  resolution_type: ConflictResolutionType | null;
+  resolved_by: string | null;
+  resolved_at: string | null;
+  created_at: string;
+}
+
+export interface ConflictDetail extends ConflictSummary {
+  local_payload: Record<string, unknown>;
+  server_payload: Record<string, unknown>;
+}
+
+export interface ConflictResolveRequest {
+  resolution_type: ConflictResolutionType;
+  expected_server_version: number;
+}
+
+export interface ConflictResolveResponse {
+  conflict_id: string;
+  status: ConflictStatus;
+  resolution_type: ConflictResolutionType;
+  resolved_at: string;
+}
+
 export class SyncError extends Error {
   readonly code: string;
 

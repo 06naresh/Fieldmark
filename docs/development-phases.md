@@ -854,14 +854,14 @@ Implement safe handling of concurrent changes.
 
 ## Acceptance criteria
 
-- [ ] Conflicts are detected.
-- [ ] Local data is preserved.
-- [ ] Server data is preserved.
-- [ ] Users can review differences.
-- [ ] Resolution requires explicit user action.
-- [ ] New operations use the correct base version.
-- [ ] Unauthorized resolution is rejected.
-- [ ] Conflict tests pass.
+- [x] Conflicts are detected.
+- [x] Local data is preserved.
+- [x] Server data is preserved.
+- [x] Users can review differences.
+- [x] Resolution requires explicit user action.
+- [x] New operations use the correct base version.
+- [x] Unauthorized resolution is rejected.
+- [x] Conflict tests pass.
 
 ---
 

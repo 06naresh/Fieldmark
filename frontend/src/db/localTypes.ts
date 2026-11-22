@@ -116,12 +116,15 @@ export interface LocalConflictRecord {
   id: string;
   user_id: string;
   operation_id: string;
+  server_conflict_id?: string | null;
   entity_type: string;
   entity_id: string;
   local_snapshot: unknown;
   server_snapshot: unknown;
   conflict_type: string;
   status: 'OPEN' | 'RESOLVED';
+  resolution_type?: string | null;
+  resolved_by?: string | null;
   created_at: string;
   resolved_at: string | null;
 }

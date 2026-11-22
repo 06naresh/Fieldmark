@@ -114,26 +114,23 @@ class ConflictService:
 def conflict_summary(conflict: SyncConflict) -> ConflictSummary:
     return ConflictSummary(
         id=conflict.id,
+        operation_id=conflict.operation.operation_id,
         entity_type=conflict.entity_type,
         entity_id=conflict.entity_id,
         base_version=conflict.base_version,
         server_version=conflict.server_version,
         status=conflict.status,  # type: ignore[arg-type]
+        resolution_type=conflict.resolution_type,  # type: ignore[arg-type]
+        resolved_by=conflict.resolved_by,
+        resolved_at=conflict.resolved_at,
         created_at=conflict.created_at,
     )
 
 
 def conflict_detail(conflict: SyncConflict) -> ConflictDetail:
+    summary = conflict_summary(conflict)
     return ConflictDetail(
-        id=conflict.id,
-        entity_type=conflict.entity_type,
-        entity_id=conflict.entity_id,
-        base_version=conflict.base_version,
-        server_version=conflict.server_version,
+        **summary.model_dump(),
         local_payload=conflict.local_payload,
         server_payload=conflict.server_payload,
-        status=conflict.status,  # type: ignore[arg-type]
-        created_at=conflict.created_at,
-        resolution_type=conflict.resolution_type,  # type: ignore[arg-type]
-        resolved_at=conflict.resolved_at,
     )

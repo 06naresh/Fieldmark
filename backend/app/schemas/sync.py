@@ -98,19 +98,21 @@ class SyncStatusResponse(BaseModel):
 
 class ConflictSummary(BaseModel):
     id: UUID
+    operation_id: UUID
     entity_type: str
     entity_id: UUID
     base_version: int | None
     server_version: int | None
     status: ConflictStatus
+    resolution_type: ResolutionType | None = None
+    resolved_by: UUID | None = None
+    resolved_at: datetime | None = None
     created_at: datetime
 
 
 class ConflictDetail(ConflictSummary):
     local_payload: dict[str, Any]
     server_payload: dict[str, Any]
-    resolution_type: ResolutionType | None
-    resolved_at: datetime | None
 
 
 class ConflictResolveRequest(BaseModel):

@@ -727,6 +727,8 @@ Possible resolution strategies:
 
 All resolution operations must be authenticated, authorized, version-checked, and auditable.
 
+Implementation note: the conflict list response includes the originating client `operation_id`. The client uses it to correlate a server conflict with its durable local queue and conflict records, hydrates the full local/server snapshots from the conflict detail endpoint before review, and only marks the local conflict resolved after the server confirms the decision. Keep-local and manual-merge decisions enqueue a new operation using the confirmed server version as `base_version`. Resolved conflicts remain available in the Sync Center for audit review.
+
 ---
 
 ## 13. Retry Strategy

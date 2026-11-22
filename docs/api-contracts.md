@@ -1406,11 +1406,15 @@ Administrators may see conflicts according to their administrative permissions.
   "data": [
     {
       "id": "d50e8400-e29b-41d4-a716-446655440000",
+      "operation_id": "c50e8400-e29b-41d4-a716-446655440000",
       "entity_type": "inspection_answer",
       "entity_id": "950e8400-e29b-41d4-a716-446655440000",
       "base_version": 1,
       "server_version": 2,
       "status": "OPEN",
+      "resolution_type": null,
+      "resolved_by": null,
+      "resolved_at": null,
       "created_at": "2026-12-01T12:00:00Z"
     }
   ],
@@ -1437,6 +1441,7 @@ GET /api/v1/sync/conflicts/{conflict_id}
 {
   "data": {
     "id": "d50e8400-e29b-41d4-a716-446655440000",
+    "operation_id": "c50e8400-e29b-41d4-a716-446655440000",
     "entity_type": "inspection_answer",
     "entity_id": "950e8400-e29b-41d4-a716-446655440000",
     "base_version": 1,
@@ -1449,12 +1454,17 @@ GET /api/v1/sync/conflicts/{conflict_id}
       "answer_value": true,
       "notes": "Server observation"
     },
-    "status": "OPEN"
+    "status": "OPEN",
+    "resolution_type": null,
+    "resolved_by": null,
+    "resolved_at": null
   }
 }
 ```
 
 Sensitive data must be filtered according to authorization rules.
+
+Conflict responses include the originating client `operation_id` so a device can correlate a server conflict with its local queue record. `resolution_type`, `resolved_by`, and `resolved_at` are audit metadata and are `null` while the conflict is open.
 
 ## 16.3 Resolve Conflict
 
