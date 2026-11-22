@@ -12,23 +12,32 @@ from app.middleware import RequestContextMiddleware
 def create_app() -> FastAPI:
     setup_logging(settings.LOG_LEVEL)
 
+    documentation_urls = (
+        {
+            "openapi_url": None,
+            "docs_url": None,
+            "redoc_url": None,
+        }
+        if settings.is_production
+        else {
+            "openapi_url": f"{settings.API_PREFIX}/openapi.json",
+            "docs_url": f"{settings.API_PREFIX}/docs",
+            "redoc_url": f"{settings.API_PREFIX}/redoc",
+        }
+    )
     application = FastAPI(
         title=settings.APP_NAME,
         version="0.1.0",
-        openapi_url=f"{settings.API_PREFIX}/openapi.json",
-        docs_url=f"{settings.API_PREFIX}/docs",
-        redoc_url=f"{settings.API_PREFIX}/redoc",
+        **documentation_urls,
     )
 
     application.add_middleware(RequestContextMiddleware)
     application.add_middleware(
         CORSMiddleware,
-        allow_origins=[
-            origin.strip() for origin in settings.FRONTEND_ORIGINS.split(",") if origin.strip()
-        ],
+        allow_origins=settings.frontend_origins,
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type", settings.CSRF_HEADER_NAME],
     )
 
     register_exception_handlers(application)

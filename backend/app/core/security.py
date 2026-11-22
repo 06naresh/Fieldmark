@@ -139,12 +139,8 @@ def clear_csrf_cookie(response: Response) -> None:
 def validate_csrf_request(request: Request) -> None:
     origin = request.headers.get("origin")
     if origin:
-        allowed_origins = {
-            value.strip()
-            for value in settings.FRONTEND_ORIGINS.split(",")
-            if value.strip()
-        }
-        if origin not in allowed_origins:
+        allowed_origins = set(settings.frontend_origins)
+        if origin.rstrip("/") not in allowed_origins:
             raise ForbiddenError("The request origin is not allowed.")
 
     cookie_token = request.cookies.get(settings.CSRF_COOKIE_NAME)

@@ -82,6 +82,24 @@ def test_cors_allows_configured_development_origin(client: TestClient) -> None:
     assert response.headers["access-control-allow-credentials"] == "true"
 
 
+def test_cors_allows_answer_save_preflight(client: TestClient) -> None:
+    origin = configured_origin()
+    response = client.options(
+        f"{settings.API_PREFIX}/inspections/00000000-0000-0000-0000-000000000000/answers/00000000-0000-0000-0000-000000000000",
+        headers={
+            "Origin": origin,
+            "Access-Control-Request-Method": "PUT",
+            "Access-Control-Request-Headers": (
+                "accept,authorization,content-type,x-csrf-token"
+            ),
+        },
+    )
+
+    assert response.status_code == 200
+    assert "PUT" in response.headers["access-control-allow-methods"]
+    assert "X-CSRF-Token" in response.headers["access-control-allow-headers"]
+
+
 def test_application_error_uses_standard_response(app: FastAPI) -> None:
     @app.get("/test/not-found")
     def not_found() -> None:

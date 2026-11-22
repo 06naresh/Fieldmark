@@ -15,11 +15,14 @@ test('Scenario A — administrator and inspector complete an online inspection',
 }) => {
   const adminEmail = E2E_ADMIN_EMAIL;
   const inspectorEmail = `${uniqueName('online.inspector.e2e')}@fieldmark.test`;
-  const inspectorName = 'Online E2E Inspector';
+  // Numeric prefix keeps the newly created inspector inside the assignment
+  // dialog's first page, which is sorted by full name.
+  const inspectorName = uniqueName('000 Online E2E Inspector');
   const siteName = uniqueName('Online E2E Site');
   const siteCode = uniqueName('ONL').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 20);
   const templateName = uniqueName('Online E2E Checklist');
-  const question = 'Were all safety guards present?';
+  const createdQuestion = 'Were all safety guards present?';
+  let question = '';
   const note = 'Guard verified during the E2E walkthrough.';
   const summary = 'All safety checks completed.';
   const inspectionTitle = uniqueName('Online E2E Inspection');
@@ -53,23 +56,65 @@ test('Scenario A — administrator and inspector complete an online inspection',
   await page.getByRole('button', { name: 'Create template' }).click();
   const templateDialog = page.getByRole('dialog', { name: 'Create checklist template' });
   await templateDialog.locator('#template-name').fill(templateName);
-  await templateDialog.locator('#item-question-0').fill(question);
+  await templateDialog.locator('#item-question-0').fill(createdQuestion);
   await templateDialog.getByRole('button', { name: 'Create template' }).click();
   await expect(page.getByText('Template created', { exact: true }).first()).toBeVisible();
   await page.getByLabel('Search checklists').fill(templateName);
   await page.getByRole('button', { name: 'Search' }).click();
   await expect(page.getByRole('row', { name: new RegExp(templateName) })).toBeVisible();
 
+  // The assignment dialog shows only the first page of active options. Resolve
+  // ids through the API so the scenario remains stable as test data accumulates.
+  const adminSession = await loginApi(request, adminEmail, E2E_ADMIN_PASSWORD);
+  const authHeaders = { Authorization: `Bearer ${adminSession.token}` };
+  const sitesResponse = await request.get(`${API_BASE_URL}/sites?is_active=true&page=1&page_size=1`, {
+    headers: authHeaders,
+  });
+  const templatesResponse = await request.get(
+    `${API_BASE_URL}/checklist-templates?is_active=true&page=1&page_size=1`,
+    { headers: authHeaders },
+  );
+  const inspectorResponse = await request.get(
+    `${API_BASE_URL}/users?page=1&page_size=100`,
+    { headers: authHeaders },
+  );
+  expect(sitesResponse.status()).toBe(200);
+  expect(templatesResponse.status()).toBe(200);
+  expect(inspectorResponse.status()).toBe(200);
+
+  const siteOptions = (await sitesResponse.json()) as { data: Array<{ id: string }> };
+  const templateOptions = (await templatesResponse.json()) as { data: Array<{ id: string }> };
+  const inspectorOptions = (await inspectorResponse.json()) as {
+    data: Array<{ id: string; email: string; is_active: boolean; role: string }>;
+  };
+  const selectedSite = siteOptions.data[0];
+  const selectedTemplate = templateOptions.data[0];
+  const selectedInspector = inspectorOptions.data.find(
+    (user) => user.email === inspectorEmail && user.is_active && user.role === 'INSPECTOR',
+  );
+  if (!selectedSite || !selectedTemplate || !selectedInspector) {
+    throw new Error('Assignment options were not available.');
+  }
+
+  const templateDetailResponse = await request.get(
+    `${API_BASE_URL}/checklist-templates/${selectedTemplate.id}`,
+    { headers: authHeaders },
+  );
+  expect(templateDetailResponse.status()).toBe(200);
+  const templateDetail = (await templateDetailResponse.json()) as {
+    data: { items: Array<{ question: string }> };
+  };
+  question = templateDetail.data.items[0]?.question ?? '';
+  expect(question).not.toBe('');
+
   await page.getByRole('link', { name: 'Inspections', exact: true }).click();
   await page.getByRole('button', { name: 'Assign inspection' }).click();
   const assignmentDialog = page.getByRole('dialog', { name: 'Assign inspection' });
   await expect(assignmentDialog.getByText('Loading assignment options…')).toBeHidden();
   await assignmentDialog.locator('#inspection-title').fill(inspectionTitle);
-  await assignmentDialog.locator('#inspection-site').selectOption({ label: `${siteName} (${siteCode})` });
-  await assignmentDialog.locator('#inspection-template').selectOption({ label: `${templateName} · v1` });
-  await assignmentDialog
-    .locator('#inspection-assignee')
-    .selectOption({ label: `${inspectorName} · ${inspectorEmail}` });
+  await assignmentDialog.locator('#inspection-site').selectOption(selectedSite.id);
+  await assignmentDialog.locator('#inspection-template').selectOption(selectedTemplate.id);
+  await assignmentDialog.locator('#inspection-assignee').selectOption(selectedInspector.id);
   await assignmentDialog.getByRole('button', { name: 'Assign inspection' }).click();
   await expect(page.getByText('Inspection assigned', { exact: true }).first()).toBeVisible();
   await page.getByLabel('Search inspections').fill(inspectionTitle);
@@ -100,7 +145,6 @@ test('Scenario A — administrator and inspector complete an online inspection',
   await expect(page.getByRole('heading', { name: /Submission #1/ })).toBeVisible();
   await expect(page.getByText(summary, { exact: true })).toBeVisible();
   await expect(page.getByText(note, { exact: true })).toBeVisible();
-  const adminSession = await loginApi(request, adminEmail, E2E_ADMIN_PASSWORD);
   const inspectionList = await request.get(
     `${API_BASE_URL}/inspections?search=${encodeURIComponent(inspectionTitle)}`,
     { headers: { Authorization: `Bearer ${adminSession.token}` } },

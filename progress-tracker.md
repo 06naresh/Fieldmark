@@ -92,9 +92,9 @@ The next agent must be able to continue without repeating completed work.
 | Authentication | JWT |
 | State management | Zustand + TanStack Query |
 | Testing | pytest, Vitest, React Testing Library, Playwright |
-| Current development phase | Phase 13 — Integration and Quality Assurance (Completed) |
-| Current feature | F-031 Post-QA Inspection Review and Offline Download Fixes |
-| Overall status | Phases 0–13 complete; F-031 implemented and verified with 79 backend tests, 101 frontend tests, and 8 E2E tests passing; changes remain uncommitted; Phase 14 not started |
+| Current development phase | Phase 14 — Deployment and Release (Blocked — deployment verification pending) |
+| Current feature | F-032 Vercel Production Deployment Preparation |
+| Overall status | Phases 0–13 complete; F-031 committed as `029b0a6`; F-032 Phase 14 deployment preparation committed locally; Vercel configuration is handled manually by the operator; deployed verification remains pending |
 
 ---
 
@@ -118,7 +118,7 @@ Update this table whenever a development phase changes.
 | 11 | Conflict Management | Completed | 100% |
 | 12 | PWA and Offline Application Shell | Completed | 100% |
 | 13 | Integration and Quality Assurance | Completed | 100% |
-| 14 | Deployment and Release | Not Started | 0% |
+| 14 | Deployment and Release | Blocked | 0% |
 
 ### Status values
 
@@ -144,10 +144,28 @@ Update this section whenever a new feature implementation session begins.
 |---|---|
 | Session date | 2026-11-22 |
 | Agent/session identifier | OpenCode (Big Pickle) |
-| Current phase | Phase 13 — Integration and Quality Assurance (Completed) |
-| Current feature | F-031 Post-QA Inspection Review and Offline Download Fixes |
-| Feature status | Implemented and verified with all relevant quality gates; uncommitted and awaiting review |
+| Current phase | Phase 14 — Deployment and Release (Blocked) |
+| Current feature | F-032 Vercel Production Deployment Preparation |
+| Feature status | Implementation complete and locally verified; production deployment blocked |
 | Last updated | 2026-11-22 |
+
+## 5.0 Phase 14 objective (current)
+
+**Objective:**
+
+Prepare a Vercel production release for Fieldmark while preserving same-origin cookie/CSRF behavior, offline-first persistence, idempotent synchronization, and safe migration deployment.
+
+**Included:**
+
+- One Vercel Services project with shared HTTPS origin routing for Vite and FastAPI.
+- Production backend settings, secure cookies, restricted CORS, bounded DB pooling, and disabled API docs.
+- Build-time Alembic migration bootstrap under a PostgreSQL advisory lock and optional initial administrator bootstrap.
+- Production smoke script, deployment/recovery runbook, local preview parity for Vercel routing and headers, and release-gate documentation.
+- Verified local release gates and all eight Playwright scenarios.
+
+**Blocker:**
+
+Actual Vercel/Neon provisioning, HTTPS domain configuration, secret entry, deployed smoke checks, and deployed offline/synchronization verification require operator credentials, final origin values, and explicit deployment direction.
 
 ## 5.1 Phase 13 objective (completed)
 
@@ -2465,7 +2483,7 @@ Keep older history entries. Do not rewrite historical entries to make incomplete
 |---|---|
 | Feature ID | F-031 |
 | Development phase | Phase 13 follow-up — not a new phase |
-| Status | Completed and verified; uncommitted |
+| Status | Completed, verified, and committed as `029b0a6` |
 | Priority | High |
 | Started date | 2026-11-22 |
 | Last updated | 2026-11-22 |
@@ -2547,8 +2565,8 @@ Fix the approved post-QA defects where inspectors could not reliably find or cre
 
 - The pending-submission card intentionally cannot show the authoritative submission number or submitted time until the server confirms synchronization.
 - The admin inspection dialog loads full detail asynchronously; loading and error states are shown inside the dialog.
-- No database migration was needed, and no Phase 14 deployment work was performed.
-- All changes are uncommitted; commit or further review requires explicit user instruction.
+- No database migration was needed for F-031.
+- F-031 was committed locally as `029b0a6`; Phase 14 deployment preparation was performed later under explicit approval.
 
 ### F-031.8 Acceptance criteria
 
@@ -2560,7 +2578,129 @@ Fix the approved post-QA defects where inspectors could not reliably find or cre
 - [x] Authoritative submission result is visible to both roles after synchronization.
 - [x] Pending offline submissions are labelled without being treated as server-confirmed.
 - [x] Duplicate synchronization and conflict behaviour remain covered by the passing E2E suite.
-- [x] Phase 14 remains not started.
+- [x] F-031 was committed locally before Phase 14 was started.
+
+---
+
+# 14E. Phase 14 — Vercel Production Deployment Preparation (F-032)
+
+## Feature: F-032 Vercel Production Deployment Preparation
+
+| Property | Value |
+|---|---|
+| Feature ID | F-032 |
+| Development phase | Phase 14 — Deployment and Release |
+| Status | Implementation complete, locally verified, and committed locally; production release verification pending |
+| Priority | High |
+| Started date | 2026-11-22 |
+| Last updated | 2026-11-22 |
+| Implemented by | OpenCode (Big Pickle) |
+| Vercel configuration | Performed manually by the operator; no deployment was performed by this session |
+
+### F-032.1 Objective
+
+Prepare Fieldmark for a Vercel production release without weakening offline-first behavior, idempotent synchronization, conflict safety, or HTTP-only refresh-cookie/CSRF security.
+
+### F-032.2 What changed
+
+- Added a single Vercel Services project that routes `/api/*`, `/health`, and `/health/ready` to FastAPI and all other paths to the Vite SPA.
+- Committed a same-origin production API base of `/api/v1` so refresh and CSRF cookies remain first-party.
+- Hardened production settings: origin derivation from `FRONTEND_ORIGINS`, `PUBLIC_APP_URL`, and `VERCEL_URL`; localhost origin rejection; secure cookies; secret validation; bounded DB pooling; and disabled production API docs.
+- Restricted CORS to the methods and headers Fieldmark actually uses and added `PUT` after E2E exposed the answer-save preflight requirement.
+- Added build-time Alembic migration execution under a PostgreSQL advisory lock and optional environment-driven initial administrator verification/creation.
+- Added a non-destructive production smoke script, deployment/recovery runbook, local preview parity for Vercel rewrites and headers, and an E2E build override for local isolated backends.
+- Corrected the health-check route assumption: the approved contract exposes `/health` and `/health/ready`, so both are routed to the backend and checked by smoke tests.
+
+### F-032.3 Files created
+
+| File path | Purpose |
+|---|---|
+| `vercel.json` | Vercel Services build, routing, and security header configuration |
+| `.vercelignore` | Excludes local secrets, tests, virtual environments, and build artifacts from deployment uploads |
+| `backend/.python-version` | Pins the Python runtime used by the backend service |
+| `backend/scripts/deploy_setup.py` | Build-time Alembic upgrade protected by a PostgreSQL advisory lock |
+| `backend/scripts/bootstrap_admin.py` | Environment-driven initial administrator verification/creation |
+| `backend/tests/test_deployment_config.py` | Production configuration, secure cookie, origin, and secret validation tests |
+| `docs/deployment.md` | Vercel/Neon deployment, backup, restore, monitoring, rollback, and release verification runbook |
+| `frontend/.env.production` | Same-origin `/api/v1` production API base |
+| `frontend/scripts/build-e2e.mjs` | Isolated local E2E build that restores an absolute backend API base after building |
+| `scripts/smoke_production.py` | Non-destructive deployed-build smoke checks |
+
+### F-032.4 Files modified
+
+| File path | Modification |
+|---|---|
+| `README.md` | Added Vercel deployment documentation and commands |
+| `backend/.env.example` | Documented production origin, Vercel, pooling, and bootstrap variables |
+| `backend/app/core/config.py` | Added production origin derivation, secret validation, secure cookies, and pool settings |
+| `backend/app/core/security.py` | Uses derived trusted origins for refresh-Cookie origin checks |
+| `backend/app/database/session.py` | Uses bounded SQLAlchemy pooling from settings |
+| `backend/app/main.py` | Production docs gating, derived CORS origins, and explicit allowed methods/headers |
+| `backend/pyproject.toml` | Added deployment script dependencies/configuration |
+| `backend/tests/test_backend_foundation.py` | Added a PUT answer-save CORS preflight regression test |
+| `docs/architecture.md` | Documented the Vercel Services deployment topology |
+| `docs/frontend-design.md` | Documented production API base and preview parity |
+| `docs/security-design.md` | Documented production cookie/origin behavior |
+| `frontend/.env.example` | Documented production API base behavior |
+| `frontend/e2e/scenarios/online-workflow.spec.ts` | Made assignment-option selection deterministic and stable across accumulated E2E data |
+| `frontend/eslint.config.js` | Allowed build/preview scripts to use Node globals |
+| `frontend/package.json` | Added the isolated E2E build script |
+| `frontend/vite.config.ts` | Added local preview `/api` and `/health` proxies plus Vercel-equivalent cache headers |
+| `progress-tracker.md` | Recorded status, decisions, verification, and handoff |
+
+### F-032.5 Important decisions
+
+- One Vercel Services project is used so the browser and API share one HTTPS origin; splitting them would require redesigning first-party cookie and CSRF handling.
+- `entrypoint` is `app.main:app`, relative to the `backend/` service root.
+- Production origins are derived rather than hardcoded; Vercel preview and custom-domain values are trusted only over HTTPS in production.
+- Migrations run during the backend build under an advisory lock so concurrent builds cannot apply the same migration set simultaneously.
+- Backward-compatible migrations remain required because old function instances may stay warm after a deployment.
+- Root health endpoints are routed explicitly to the backend because the approved API contract does not place them under `/api/v1`.
+- Local preview mirrors Vercel routing and cache headers so the smoke script validates deployed behavior rather than Vite defaults.
+- Background Sync remains an enhancement only; foreground synchronization and durable IndexedDB work remain the correctness path.
+
+### F-032.6 Verification
+
+- `python -m pytest -q` — 85 passed, 2 non-blocking deprecation warnings.
+- `npm run lint` — clean with zero warnings.
+- `npm test` — 19 files, 101 tests passed. A single transient `offlinePersistence.test.tsx` failure occurred in one intermediate combined run; the targeted test and final full run passed.
+- `npm run typecheck:e2e` — clean.
+- `npm run build` — passed; existing non-blocking chunk-size and Zod annotation warnings remain.
+- E2E build: `$env:E2E_BACKEND_PORT='8011'; $env:E2E_API_BASE_URL='http://localhost:8011/api/v1'; node scripts/build-e2e.mjs` — passed.
+- E2E run: `$env:E2E_BACKEND_PORT='8011'; $env:E2E_API_BASE_URL='http://localhost:8011/api/v1'; npm run test:e2e` — 8 passed in 55.1s.
+- Local production-style smoke: `python scripts/smoke_production.py http://localhost:4173 --allow-http` with test administrator credentials — 9 checks passed, covering API health, database readiness, PWA manifest, service worker revalidation, hashed assets, SPA fallback, protected API, login cookies, and authenticated session.
+- `vercel.json` validated against the published Vercel schema; the published draft-04 schema was normalized to draft-07 only for local AJV validation. Result: `vercel.json valid`.
+- `python -m json.tool vercel.json`, `python -m compileall -q backend/app backend/scripts scripts`, and `git diff --check` — passed; Git emitted non-blocking LF-to-CRLF notices.
+- An E2E validation defect was found and fixed: the tightened CORS method list omitted `PUT`, which the answer-save endpoint uses. A regression test now asserts the preflight response.
+
+### F-032.7 Known limitations
+
+- Vercel project, database, domain, and environment-secret configuration is performed manually by the operator; no deployment evidence was provided to this session.
+- No production or preview deployment verification was performed here; deployed HTTPS, HSTS, secure-cookie behavior, migrations, offline workflows, and synchronization remain unverified in the target environment.
+- Backup retention and monitoring are documented but must be enabled and verified by the operator.
+- Login rate limiting remains process-local per serverless instance.
+- The production bundle still reports a non-blocking large-chunk warning.
+- Phase 14 is therefore not complete even though F-032 preparation is committed and locally verified.
+
+### F-032.8 Preparation acceptance criteria
+
+- [x] Production frontend build uses the same-origin API path.
+- [x] Backend production configuration and secure cookies are implemented and tested.
+- [x] CORS, API docs, pooling, migrations, and administrator bootstrap are handled.
+- [x] Vercel Services routing, headers, and schema validation pass.
+- [x] Local production-style smoke checks pass.
+- [x] Deployment, backup, restore, monitoring, rollback, and release documentation exists.
+- [x] All local automated gates and E2E scenarios pass.
+- [ ] Frontend is deployed.
+- [ ] Backend is deployed.
+- [ ] Production PostgreSQL connection works.
+- [ ] Migrations are applied successfully in the deployed environment.
+- [ ] HTTPS works on the deployment domain.
+- [ ] Secure authentication works in the deployed environment.
+- [ ] Offline workflows work in the deployed environment.
+- [ ] Synchronization works in the deployed environment.
+- [ ] Backup and restoration procedures are confirmed.
+- [ ] Production smoke tests pass against the deployed origin.
 
 ---
 
@@ -2574,50 +2714,50 @@ Update it before stopping work.
 
 **Last completed phase:**
 
-Phase 13 — Integration and Quality Assurance. Its committed baseline was verified with 79 backend tests, 97 frontend tests, 8 Playwright scenarios, clean typechecks/lint/build, migration check, dependency audit, and diff check. Phase 12 is committed as `9af8197 feat: implement phase 12 pwa offline shell`; Phase 13 is committed as `b706dde feat: implement phase 13 integration and qa`. None of the local commits has been pushed.
+Phase 13 — Integration and Quality Assurance. Its committed baseline was verified with 79 backend tests, 97 frontend tests, 8 Playwright scenarios, clean typechecks/lint/build, migration check, dependency audit, and diff check. Phase 12 is committed as `9af8197 feat: implement phase 12 pwa offline shell`; Phase 13 is committed as `b706dde feat: implement phase 13 integration and qa`; the approved F-031 follow-up is committed as `029b0a6 fix: expose inspection review and explicit offline downloads`. None of the local commits has been pushed.
 
 **Last completed features:**
 
-F-026 Integration Testing and F-027 E2E Testing remain the last committed features. The suite covers the required online, offline, duplicate-operation, conflict, and interrupted-synchronization scenarios plus user isolation, security, accessibility, responsive layout, cache safety, and performance. The approved post-QA fix F-031 is now implemented and verified but remains uncommitted.
+F-026 Integration Testing and F-027 E2E Testing remain the last phase-level committed features. The suite covers the required online, offline, duplicate-operation, conflict, and interrupted-synchronization scenarios plus user isolation, security, accessibility, responsive layout, cache safety, and performance. F-031 was committed after explicit approval. F-032 deployment preparation is committed locally after explicit approval.
 
 **Current phase:**
 
-Phase 13 — Integration and Quality Assurance (Completed). Phase 14 — Deployment and Release is not started.
+Phase 14 — Deployment and Release remains blocked on deployment verification. Preparation work is committed; the official acceptance criteria require deployed Vercel/PostgreSQL verification, smoke checks, and offline/synchronization checks.
 
 **Current feature status:**
 
-F-031 is implemented and verified: offline downloads are explicit, note-only edits persist, and saved answers/notes/results are visible in both inspector and admin detail views. The changes are not committed. Phase 13 remains the last completed and committed phase; Phase 14 is still not started.
+F-032 is implemented, locally verified, and committed locally: Vercel Services routing, production backend hardening, build-time migrations, secure cookies, smoke checks, and deployment documentation are in place. Vercel configuration is handled manually by the operator. Phase 14 remains incomplete until deployed verification is available.
 
 **Last completed task:**
 
-Fixed the approved post-QA defects and extended automated coverage: explicit inspector download/refresh actions, no implicit online caching, durable note-only edits, pending offline submission display, authoritative result exposure through `InspectionDetailResponse.result`, result pull caching, and a shared read-only review component. Verified with 79 backend tests, 101 frontend tests, lint/typechecks/build, and all 8 Playwright scenarios against an isolated port-8011 backend.
+Committed the locally verified Vercel release configuration. Final verification: 85 backend tests, 101 frontend tests, clean lint/typechecks/build, 8 Playwright scenarios, 9 local production-style smoke checks, and valid `vercel.json` schema. A CORS `PUT` omission and a root health-route routing gap were found and fixed during validation.
 
 **Current stopping point:**
 
-Phase 13 remains committed locally at `b706dde`. F-031 is verified but uncommitted. Stop and wait for review/commit direction; do not start Phase 14 without explicit approval.
+Do not push or deploy unless explicitly asked. Vercel configuration is handled manually by the operator. Verify the deployed origin with `python scripts/smoke_production.py <deployed-origin>` and confirm deployed offline/synchronization flows before marking Phase 14 complete.
 
 ## Files to inspect first
 
-1. `progress-tracker.md` — especially section 14D and this latest handoff
-2. `docs/development-phases.md` — Phase 13 acceptance criteria and Phase 14 boundary
-3. `docs/phase13-qa-report.md` — baseline QA evidence, defect report, and limitations
-4. `docs/api-contracts.md` and `docs/frontend-design.md` — updated detail/result and review UI contracts
-5. `frontend/src/features/inspections/components/InspectionReview.tsx` — shared read-only review view
-6. `frontend/src/features/inspections/pages/MyInspectionsPage.tsx` — explicit offline download action
-7. `frontend/src/features/inspections/pages/InspectionDetailsPage.tsx` — refresh action and review rendering
-8. `frontend/src/features/inspections/pages/InspectionsPage.tsx` — admin detail loading and review rendering
-9. `frontend/src/features/inspections/pages/ExecuteInspectionPage.tsx` — note-only persistence and offline submission invalidation
-10. `frontend/src/features/inspections/services/offlineInspectionService.ts` — explicit-download boundary
-11. `frontend/src/db/localRepositories.ts` — pending submission derivation
-12. `frontend/src/db/syncRepositories.ts` and `syncRepositories.test.ts` — result pull application and regression test
-13. `backend/app/schemas/inspections.py`, `repositories/inspection_repository.py`, and `services/inspection_service.py` — authoritative result contract
-14. `frontend/e2e/scenarios/online-workflow.spec.ts` and `offline-workflow.spec.ts` — expanded both-role result/notes coverage
-15. `.github/workflows/qa.yml` — CI quality gate
-16. `frontend/playwright.config.ts` and `frontend/tsconfig.e2e.json` — Playwright harness configuration
-17. `frontend/e2e/globalSetup.ts` and `backend/scripts/seed_e2e_admin.py` — test administrator provisioning
-18. `frontend/e2e/utils/api.ts`, `ui.ts`, `browser.ts`, `fixtures.ts` — fixtures and assertions
-19. `frontend/src/styles/theme.css` — WCAG contrast fixes
-20. `README.md` — E2E commands and CI/QA documentation
+1. `progress-tracker.md` — especially section 14E and this latest handoff
+2. `vercel.json` — Services, rewrites, health routing, headers, and maxDuration
+3. `docs/deployment.md` — deployment, backup, restore, monitoring, rollback, and release checklist
+4. `scripts/smoke_production.py` — deployed-build smoke checks
+5. `backend/scripts/deploy_setup.py` and `backend/scripts/bootstrap_admin.py` — build-time migration and administrator bootstrap
+6. `backend/app/core/config.py`, `main.py`, `core/security.py`, and `database/session.py` — production hardening
+7. `backend/tests/test_deployment_config.py` and `test_backend_foundation.py` — production and CORS regression coverage
+8. `frontend/.env.production`, `frontend/scripts/build-e2e.mjs`, and `frontend/vite.config.ts` — production API base, E2E override, and preview parity
+9. `docs/development-phases.md` — Phase 14 acceptance criteria
+10. `docs/api-contracts.md` — approved root health endpoints and detail/result contract
+11. `frontend/src/features/inspections/components/InspectionReview.tsx` — shared read-only review view
+12. `frontend/src/features/inspections/pages/MyInspectionsPage.tsx` — explicit offline download action
+13. `frontend/src/features/inspections/pages/InspectionDetailsPage.tsx` — refresh action and review rendering
+14. `frontend/src/features/inspections/pages/ExecuteInspectionPage.tsx` — note-only persistence and offline submission invalidation
+15. `frontend/src/db/localRepositories.ts` and `syncRepositories.ts` — durable queue, pending submission, and result pull application
+16. `frontend/e2e/scenarios/online-workflow.spec.ts` and `offline-workflow.spec.ts` — expanded both-role result/notes coverage
+17. `frontend/playwright.config.ts` and `frontend/tsconfig.e2e.json` — Playwright harness configuration
+18. `frontend/e2e/globalSetup.ts` and `backend/scripts/seed_e2e_admin.py` — test administrator provisioning
+19. `.github/workflows/qa.yml` — CI quality gate
+20. `README.md` — E2E, deployment, and QA commands
 
 ## Work remaining
 
@@ -2631,13 +2771,19 @@ Phase 13 remains committed locally at `b706dde`. F-031 is verified but uncommitt
 - [x] Add QA report, CI quality gate, and Phase 13 documentation updates.
 - [x] Commit the verified Phase 13 changes locally as `b706dde`; not pushed.
 - [x] Implement and verify approved F-031 offline download, note persistence, and review-visibility fixes.
-- [ ] Review and commit the uncommitted F-031 changes only when explicitly requested.
-- [ ] Start Phase 14 only after explicit approval.
+- [x] Commit F-031 locally as `029b0a6` after explicit approval.
+- [x] Start Phase 14 after explicit approval.
+- [x] Implement and locally verify F-032 Vercel deployment preparation.
+- [x] Commit F-032 Phase 14 changes locally after explicit approval.
+- [x] Hand Vercel configuration to the operator for manual setup in Vercel.
+- [ ] Verify manually configured Vercel Services project, managed PostgreSQL, secrets, and trusted origins.
+- [ ] Deploy a preview, run deployed smoke checks, and verify offline/synchronization flows.
+- [ ] Deploy to production and verify Phase 14 acceptance criteria.
 
 ## Known problems
 
 - Non-blocking: Node emits a `--localstorage-file` warning during Vitest runs in this environment. Tests pass with the injected test Storage shim.
-- Non-blocking local environment: a pre-existing backend process on port 8000 accepts the Vite dev origin only, so the default built-preview E2E run fails at login there. The verified F-031 run used an isolated port-8011 backend with matching `VITE_API_BASE_URL` and `E2E_API_BASE_URL`; all 8 scenarios passed.
+- Non-blocking local environment: a pre-existing backend process on port 8000 accepts the Vite dev origin only, so the default built-preview E2E run fails at login there. The verified F-031 and F-032 runs used an isolated port-8011 backend with matching `VITE_API_BASE_URL` and `E2E_API_BASE_URL`; all 8 scenarios passed.
 - Non-blocking: Vite reports chunk-size and Zod comment-annotation warnings. The production build succeeds.
 - Non-blocking: Starlette TestClient and passlib/argon2 backend versions emit deprecation warnings. No backend tests fail.
 - Non-blocking: optional PATCH fields are displayed as nullable in OpenAPI even though runtime validators reject `null` for non-clearable fields; runtime behavior is correct.
@@ -2646,13 +2792,16 @@ Phase 13 remains committed locally at `b706dde`. F-031 is verified but uncommitt
 - Offline access uses a seven-day default validity window and is not revalidated with the server until connectivity returns.
 - Sync Center remote-conflict listing is capped at 100 records per request; UI pagination remains a later enhancement.
 - Administrative resolution records the server-side decision; it does not automatically merge local work that exists only on another user's device.
-- Chromium only; multi-tab E2E, OS-level PWA installation prompts, deployed reload smoke tests, bundle splitting, backups, monitoring, and production smoke tests remain future or Phase 14 work.
+- Chromium only; multi-tab E2E, OS-level PWA installation prompts, and bundle splitting remain future work.
+- Phase 14 blocker: Vercel configuration is handled manually by the operator; deployment details and verification results have not been supplied to this repository session.
+- Phase 14 blocker: deployed HTTPS, secure-cookie behavior, migrations, offline workflows, synchronization, backups, monitoring, and production smoke checks remain unverified without a deployment.
+- F-032 Phase 14 changes are committed locally; do not push them without explicit direction.
 
 ## Next agent instructions
 
 The next agent must:
 
-1. Read `AGENTS.md`, the approved documentation, this tracker, and `docs/phase13-qa-report.md`.
+1. Read `AGENTS.md`, the approved documentation, this tracker, `docs/phase13-qa-report.md`, and `docs/deployment.md`.
 2. Inspect the actual files listed above before changing behavior.
 3. Preserve all local commits and never push unless explicitly asked.
 4. Preserve the INSPECTOR-only signup boundary; do not add self-assigned ADMIN registration without a new explicit security/product decision.
@@ -2664,12 +2813,18 @@ The next agent must:
 10. Preserve explicit offline downloads; do not reintroduce implicit caching when an online detail page is opened.
 11. Keep note-only edits durable and keep pending submissions clearly distinct from server-confirmed results.
 12. Keep `InspectionDetailResponse.result` authoritative and keep result pull application from overwriting pending local answers.
-13. Do not commit the uncommitted F-031 work unless explicitly asked; review the diff first.
-14. Do not start Phase 14 — Deployment and Release without a new explicit approval.
+13. F-031 is already committed; do not recreate or rewrite that commit.
+14. F-032 Phase 14 changes are committed locally; do not push them without explicit direction.
+15. Preserve the single-origin Vercel Services design; do not split the API to another origin without a reviewed cookie/CSRF redesign.
+16. Preserve same-origin `/api/v1` and explicit `/health` and `/health/ready` backend rewrites.
+17. Keep production secrets in Vercel environment variables and never paste or commit real values.
+18. Keep migrations backward-compatible and build-time migration execution protected by the advisory lock.
+19. Do not mark Phase 14 complete until deployed acceptance criteria are verified.
+20. Do not push any local commits unless explicitly asked.
 
 **Exact next action:**
 
-Review the verified but uncommitted F-031 diff and wait for explicit direction to commit it. Do not start Phase 14 — Deployment and Release; that requires separate explicit approval.
+Treat Vercel setup as operator-managed. Do not push unless explicitly asked. Once a deployed origin is available, run `python scripts/smoke_production.py <deployed-origin>`, verify deployed offline/synchronization flows, and only then mark Phase 14 acceptance criteria complete.
 
 ---
 

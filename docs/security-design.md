@@ -347,6 +347,8 @@ FRONTEND_ORIGINS=http://localhost:5173
 
 Production origins must be configured explicitly.
 
+On Vercel, Fieldmark uses one Services project and one shared HTTPS origin. The API is reached through the relative `/api/v1` path, which keeps refresh and CSRF cookies first-party. Production CORS origins are derived from `FRONTEND_ORIGINS`, `PUBLIC_APP_URL`, and the Vercel-injected `VERCEL_URL`; localhost origins are ignored when `APP_ENV=production`. Interactive API documentation is disabled in production.
+
 Do not hardcode production secrets or trusted origins into frontend source code.
 
 ---

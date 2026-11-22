@@ -1154,6 +1154,20 @@ Use environment variables for:
 
 Provide an `.env.example` file containing placeholders, not real secrets.
 
+### 17.5 Vercel Implementation
+
+The approved Vercel implementation uses one Services project with a shared HTTPS origin:
+
+- `/api/(.*)` is routed to the FastAPI service in `backend/`.
+- All other paths are routed to the Vite static service in `frontend/`, with an SPA fallback to `index.html`.
+- The production frontend uses the relative API base `/api/v1`, so refresh and CSRF cookies remain first-party cookies.
+- `vercel.json` owns public routing, PWA cache headers, and security headers. Service-level configuration owns each build, function timeout, and service entrypoint.
+- The backend build applies Alembic migrations under a PostgreSQL advisory lock before the deployment serves traffic.
+- Production settings derive trusted CORS origins from `FRONTEND_ORIGINS`, `PUBLIC_APP_URL`, and the Vercel-injected `VERCEL_URL`; localhost origins are ignored in production.
+- Interactive API documentation is disabled in production.
+
+Operational commands, environment variables, backup, restore, monitoring, rollback, and release verification are defined in `docs/deployment.md`.
+
 ---
 
 ## 18. Important Architecture Decisions

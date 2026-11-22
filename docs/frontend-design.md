@@ -1242,6 +1242,8 @@ Example:
 VITE_API_BASE_URL=http://localhost:8000/api/v1
 ```
 
+The committed `frontend/.env.production` sets `VITE_API_BASE_URL=/api/v1`. On Vercel, the root routing configuration sends that same-origin path to FastAPI so authentication cookies remain first-party.
+
 Requirements:
 
 - Keep environment-specific configuration outside application logic.

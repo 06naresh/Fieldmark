@@ -65,9 +65,19 @@ Open `http://localhost:5173/signup` to create an `INSPECTOR` account, then sign 
 
 ### Quality assurance
 
-E2E tests require the production build, a running PostgreSQL database, and backend dependencies. `npm run qa:frontend` performs the frontend build before starting Playwright; Playwright starts the FastAPI backend and production preview automatically. `E2E_API_BASE_URL`, `E2E_BACKEND_PORT`, and `E2E_FRONTEND_ORIGIN` can override the default `http://localhost:8000/api/v1`, port `8000`, and preview origin `http://localhost:4173`. `E2E_ADMIN_EMAIL` and `E2E_ADMIN_PASSWORD` control the test-only administrator seeded by `backend/scripts/seed_e2e_admin.py`.
+E2E tests require the production build, a running PostgreSQL database, and backend dependencies. `npm run qa:frontend` performs the frontend build before starting Playwright and overrides the Vercel-relative API base with the E2E API URL; Playwright starts the FastAPI backend and production preview automatically. `E2E_API_BASE_URL`, `E2E_BACKEND_PORT`, and `E2E_FRONTEND_ORIGIN` can override the default `http://localhost:8000/api/v1`, port `8000`, and preview origin `http://localhost:4173`. `E2E_ADMIN_EMAIL` and `E2E_ADMIN_PASSWORD` control the test-only administrator seeded by `backend/scripts/seed_e2e_admin.py`.
 
 The CI quality gate is defined in `.github/workflows/qa.yml`. It runs backend tests and migration checks, frontend checks and unit tests, a dependency audit, the production build, and the Chromium E2E suite against a PostgreSQL service. Phase 13 results and resolved defects are recorded in `docs/phase13-qa-report.md`.
+
+## Deployment
+
+Fieldmark deploys to Vercel as a single Services project: `/api/*` routes to the FastAPI service and all other paths route to the Vite/PWA service on the same HTTPS origin. The root `vercel.json` contains the routing, migration build hook, function timeout, PWA cache headers, and security headers. Production builds use the same-origin `/api/v1` API base from `frontend/.env.production`.
+
+See `docs/deployment.md` for Vercel project setup, environment variables, migrations, initial administrator provisioning, health and smoke checks, offline verification, backups and restoration, monitoring, rollback, and the release checklist. Run post-deployment checks with:
+
+```bash
+python scripts/smoke_production.py https://<deployment-domain>
+```
 
 ## Documentation
 
@@ -82,3 +92,4 @@ Full architectural specifications are located in `docs/`:
 - `development-phases.md`
 - `testing-strategy.md`
 - `phase13-qa-report.md`
+- `deployment.md`
