@@ -3,6 +3,7 @@ import { Route, Routes } from 'react-router-dom';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useAuthStore } from '@/store/authStore';
+import { clearAllLocalData, ensureLocalAccount } from '@/db/localRepositories';
 import { renderWithProviders } from '@/test/renderWithProviders';
 import {
   inspectionDetailFixture,
@@ -63,8 +64,10 @@ function renderInspectorRoutes(route: string): void {
   );
 }
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.clearAllMocks();
+  await clearAllLocalData();
+  await ensureLocalAccount(inspectorCurrentUser);
   useAuthStore.setState({ user: inspectorCurrentUser, status: 'authenticated' });
   useInspectionDraftStore.setState({ drafts: {} });
 

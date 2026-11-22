@@ -92,9 +92,9 @@ The next agent must be able to continue without repeating completed work.
 | Authentication | JWT |
 | State management | Zustand + TanStack Query |
 | Testing | pytest, Vitest, React Testing Library, Playwright |
-| Current development phase | Phase 8 — Inspector Workflow (Completed) |
-| Current feature | F-012 Inspection Execution and F-016 Inspector Dashboard |
-| Overall status | Phase 8 verified; awaiting approval for Phase 9 |
+| Current development phase | Phase 9 — Offline Persistence (Completed; uncommitted changes in working tree) |
+| Current feature | F-017 IndexedDB Persistence and F-018 Durable Sync Queue |
+| Overall status | Phase 8 committed as `c5c9eec`; Phase 9 implemented and verified, awaiting commit decision |
 
 ---
 
@@ -113,7 +113,7 @@ Update this table whenever a development phase changes.
 | 6 | Frontend Foundation | Completed | 100% |
 | 7 | Frontend Authentication and Admin Features | Completed | 100% |
 | 8 | Inspector Workflow | Completed | 100% |
-| 9 | Offline Persistence | Not Started | 0% |
+| 9 | Offline Persistence | Completed | 100% |
 | 10 | Synchronization Engine | Not Started | 0% |
 | 11 | Conflict Management | Not Started | 0% |
 | 12 | PWA and Offline Application Shell | Not Started | 0% |
@@ -144,8 +144,8 @@ Update this section whenever a new feature implementation session begins.
 |---|---|
 | Session date | 2026-11-21 |
 | Agent/session identifier | OpenCode (Big Pickle) |
-| Current phase | Phase 8 — Inspector Workflow (Completed) |
-| Current feature | F-012 Inspection Execution and F-016 Inspector Dashboard |
+| Current phase | Phase 9 — Offline Persistence (Completed; stopped at phase boundary) |
+| Current feature | F-017 IndexedDB Persistence and F-018 Durable Sync Queue |
 | Feature status | Completed |
 | Last updated | 2026-11-21 |
 
@@ -153,46 +153,48 @@ Update this section whenever a new feature implementation session begins.
 
 **Objective:**
 
-Implement Phase 8 Inspector Workflow: inspector layout, dashboard, My Inspections, inspection details, execution UI, dynamic checklist controls, validation, progress calculation, draft preservation, and backend submission integration.
+Implement Phase 9 Offline Persistence: configure Dexie, define the approved local tables and versioning, add account-scoped repositories, download inspections and checklist templates, persist answers and a durable operation queue locally, handle IndexedDB errors, expose offline status, and verify refresh/restart behavior.
 
 ## 5.2 Current implementation scope
 
 **Included:**
 
-- Inspector layout and role-aware navigation.
-- Backend-backed inspector dashboard and assigned-inspection list.
-- Inspection details and execution pages.
-- Dynamic answer controls for all approved response types.
-- Required-answer validation and progress calculation.
-- Local draft persistence through an account-scoped in-memory Zustand repository; durable Dexie/IndexedDB storage is intentionally deferred to Phase 9.
-- Backend start, answer, and submission integration with local-first save ordering and a stable submission ID.
+- Dexie database `fieldmark_local_db` with the eight approved local tables.
+- Local users, sites, inspections, templates, answers, metadata, conflicts, and synchronization queue records.
+- Account-scoped local repositories and atomic local transactions.
+- Inspection and checklist download services.
+- Durable replacement for the Phase 8 in-memory draft repository.
+- Local answer persistence before server confirmation.
+- Offline-aware data access and status indicators for inspector workflows.
+- IndexedDB tests, including refresh/restart and account isolation.
 
 **Not included:**
 
-- Full Phase 9 IndexedDB schema, inspection downloads, and local checklist cache.
-- Durable synchronization queue, push/pull engine, retry/backoff, and Sync Center behavior.
-- Conflict resolution UI and PWA offline shell.
+- Push/pull synchronization engine, retry/backoff, dependency execution, and Sync Center behavior; these remain Phase 10+.
+- Conflict resolution UI; Phase 9 only defines local conflict records.
+- PWA installation and offline application shell; these remain Phase 12.
 
 **Dependencies:**
 
-- Phases 0–7 are completed and verified.
-- Phase 7 was committed as `3c75a6d feat: implement phase 7 frontend authentication and admin features`; it was not pushed.
-- Backend inspection, answer, and submission contracts were inspected in `docs/api-contracts.md` and the FastAPI endpoints.
+- Phases 0–8 are completed and verified.
+- Phase 8 was committed as `c5c9eec feat: implement phase 8 inspector workflow`; it was not pushed.
+- Approved local schema and behavior were reviewed in `docs/offline-sync-design.md` and `docs/development-phases.md`.
 
 ## 5.3 Current progress
 
 | Task | Status | Notes |
 |---|---|---|
-| Review Phase 8 documentation | Completed | Phase tasks, frontend design, API contracts, offline-sync principles, and testing strategy reviewed |
-| Inspect existing implementation | Completed | Phase 7 router/layouts/services, backend inspection endpoints/schemas, and test helpers inspected |
-| Commit Phase 7 work | Completed | Committed as `3c75a6d feat: implement phase 7 frontend authentication and admin features`; includes `.gitignore` and `frontend/src/lib/` sources |
-| Implement inspector layout and dashboard | Completed | `InspectorLayout`, `InspectorNav`, shared sidebar/mobile navigation, and `InspectorDashboardPage` |
-| Implement My Inspections and details pages | Completed | Filterable assignment list and version-aware inspection details with start action |
-| Implement execution UI and answer controls | Completed | Dynamic checklist rendering for YES_NO, TEXT, NUMBER, SINGLE_CHOICE, and MULTIPLE_CHOICE |
-| Implement local draft persistence | Completed | Account-scoped in-memory draft repository with local save before server calls |
-| Implement validation, progress, and submission | Completed | Dynamic Zod validation, progress bar, required-answer checks, and stable-ID submission |
-| Add frontend tests | Completed | 5 new inspector workflow tests plus updated router test coverage |
-| Run verification | Completed | 34/34 tests, clean typecheck and lint, successful build/preview, zero audit vulnerabilities |
+| Review Phase 9 documentation | Completed | Development phases, offline-sync design, frontend design, and testing strategy reviewed |
+| Inspect existing implementation | Completed | Phase 8 draft store, execution page, API services, fixtures, and test setup inspected |
+| Commit Phase 8 work | Completed | Committed as `c5c9eec feat: implement phase 8 inspector workflow` |
+| Configure Dexie and versioned local tables | Completed | `fieldmark_local_db` v1 with all eight approved tables |
+| Implement account-scoped local repositories | Completed | Owner-scoped IDs, offline-session checks, and atomic transactions |
+| Implement inspection/checklist downloads | Completed | Detail download caches site, template revision, and answers |
+| Replace in-memory drafts with durable answer storage | Completed | Dexie is the source of truth; Zustand remains a synchronous mirror |
+| Add durable sync queue and metadata records | Completed | Stable IDs, canonical payload hashes, account/device context, conflicts, and metadata |
+| Add offline status indicators and error handling | Completed | Offline banners, local-save labels, typed offline errors, and persisted error state |
+| Add IndexedDB and offline persistence tests | Completed | 12 repository tests plus 3 offline workflow tests |
+| Run verification | Completed | 49/49 frontend tests, clean lint/typecheck, build, preview, and audit passed |
 
 Update the task statuses as work progresses.
 
@@ -1287,6 +1289,125 @@ Phase 8 is complete and verified. Stop at the phase boundary. Begin Phase 9 — 
 
 ---
 
+## Feature: F-017/F-018 Offline Persistence
+
+| Property | Value |
+|---|---|
+| Feature ID | F-017, F-018 |
+| Development phase | Phase 9 |
+| Status | Completed |
+| Priority | Critical |
+| Started date | 2026-11-21 |
+| Last updated | 2026-11-21 |
+| Completed date | 2026-11-21 |
+| Implemented by | OpenCode (Big Pickle) |
+
+### Phase9.1 Feature objective
+
+Implement durable browser-side persistence: a versioned Dexie database, approved local tables, account-scoped repositories, offline inspection and checklist access, local answer storage, a durable operation queue, offline status indicators, and verified refresh/restart behavior.
+
+### Phase9.2 Current implementation scope
+
+**Included:** Dexie v1 schema with all eight approved local tables; account-scoped local records and offline-session checks; atomic download and answer/queue writes; durable draft persistence behind the existing synchronous page contract; offline detail/list/reference fallbacks; offline start, save, and submit paths; conflict and metadata records; offline UI status; and IndexedDB/offline tests.
+
+**Not included:** Push/pull execution, retry/backoff, dependency runners, Sync Center, conflict resolution UI, and PWA installation/offline application shell. Those remain Phases 10–12.
+
+**Dependencies:** Phases 0–8 are complete. Phase 8 was committed as `c5c9eec feat: implement phase 8 inspector workflow`. The local schema followed `docs/offline-sync-design.md` and the Phase 9 acceptance criteria in `docs/development-phases.md`.
+
+### Phase9.3 Progress
+
+| Task | Status | Notes |
+|---|---|---|
+| Review Phase 9 documentation | Completed | Development phases, offline-sync design, and testing strategy reviewed |
+| Configure Dexie and versioned local tables | Completed | `fieldmark_local_db` version 1; all eight approved tables |
+| Implement account-scoped local repositories | Completed | Owner IDs, offline access validity, device metadata, and transactions |
+| Implement inspection/checklist downloads | Completed | Detail download caches site, template revision, and answers atomically |
+| Replace in-memory drafts with durable storage | Completed | Hydration waits for in-flight writes; writes are serialized per draft |
+| Add durable queue and metadata records | Completed | Stable operation IDs, canonical payload hashes, conflicts, and sync metadata |
+| Add offline status indicators and error handling | Completed | Offline banner, local-save label, typed errors, and failure toast state |
+| Add IndexedDB and offline persistence tests | Completed | Repository, restart, account isolation, storage failure, and workflow tests |
+| Run verification | Completed | 49/49 frontend tests and all quality gates passed |
+
+### Phase9.4 Files created
+
+| File path | Purpose | Status |
+|---|---|---|
+| `frontend/src/db/fieldmarkDb.ts` | Versioned Dexie database and approved table schema | Created |
+| `frontend/src/db/localTypes.ts` | Local record, queue, metadata, conflict, and error types | Created |
+| `frontend/src/db/localRepositories.ts` | Account-scoped repositories and durable transactions | Created |
+| `frontend/src/db/localRepositories.test.ts` | IndexedDB, account isolation, restart, and failure tests | Created |
+| `frontend/src/services/sync/operationFactory.ts` | Canonical payload hashing and stable queue operations | Created |
+| `frontend/src/lib/id.ts` | Reusable client identifier generator | Created |
+| `frontend/src/features/inspections/services/offlineInspectionService.ts` | Local/remote inspection and reference coordination | Created |
+| `frontend/src/features/inspections/offlinePersistence.test.tsx` | Offline workflow and durable UI behavior tests | Created |
+
+### Phase9.5 Files modified
+
+| File path | Modification | Reason |
+|---|---|---|
+| `frontend/package.json` | Added `fake-indexeddb` as a dev dependency | Provide IndexedDB in Vitest without adding a runtime dependency |
+| `frontend/package-lock.json` | Locked the test-only dependency | Keep installs deterministic |
+| `frontend/src/test/setup.ts` | Imported `fake-indexeddb/auto` | Enable Dexie in the test environment |
+| `frontend/src/features/inspections/store/inspectionDraftStore.ts` | Added durable hydration/persistence/removal with serialized writes | Preserve the synchronous page contract while making IndexedDB authoritative |
+| `frontend/src/features/inspections/pages/ExecuteInspectionPage.tsx` | Added offline detail access, draft hydration, durable saves, offline start/answer/submit, status banner, and render gate | Complete offline inspection execution |
+| `frontend/src/features/inspections/pages/InspectionDetailsPage.tsx` | Added download/status UI and offline start path | Make downloaded assignments usable without connectivity |
+| `frontend/src/features/inspections/pages/MyInspectionsPage.tsx` | Added offline-aware assignment list and status text | Show only downloaded work when offline |
+| `frontend/src/features/inspections/pages/InspectorDashboardPage.tsx` | Added local sync summary and offline-safe queries | Surface pending local work and avoid unavailable server calls |
+| `frontend/src/features/inspections/hooks/useInspectionReferences.ts` | Added local site/template cache fallback | Keep assignment labels available offline |
+| `frontend/src/features/inspections/inspectorFlows.test.tsx` | Clear local data and seed local account context | Prevent Dexie cross-test leakage |
+| `frontend/src/services/auth/session.ts` | Record bounded local account context after authentication and clear the in-memory draft mirror on sign-out | Enable offline access and isolate account switches without storing credentials |
+| `progress-tracker.md` | Recorded Phase 9 implementation, verification, and handoff | Mandatory progress tracking |
+
+### Phase9.6 Important decisions
+
+- IndexedDB through Dexie is the durable source of truth; Zustand remains a synchronous rendering mirror with the original `readInspectionDraft` contract.
+- Draft writes are serialized per account/inspection key, and hydration waits for pending writes so a fast unmount/remount cannot restore a stale draft.
+- Answer records and queue operations are written in one Dexie transaction; local persistence completes before any server request.
+- Only confirmed server responses move answers and operations to `synced`; offline work remains `pending`.
+- Pending unsent answer operations may coalesce, but their payload hash is recomputed when the payload changes. Sent or terminal operations are immutable and receive a new ID for later edits.
+- Local account records contain bounded offline-session context only — no passwords, access tokens, or refresh tokens.
+- Offline start, save, and submit avoid API calls entirely and queue durable operations for Phase 10 processing.
+- The database is named `fieldmark_local_db`; future schema changes require a new Dexie version rather than editing version 1 in place.
+
+### Phase9.7 Verification
+
+| Check | Result |
+|---|---|
+| `npx tsc --noEmit` | Passed |
+| `npm run lint` | Passed with zero warnings |
+| `npm test -- --run` | 49 passed across 10 test files |
+| `npx vitest run src/db/localRepositories.test.ts` | 12 passed |
+| `npx vitest run src/features/inspections/offlinePersistence.test.tsx` | 3 passed |
+| `npm run build` | Passed; non-blocking chunk-size and Zod annotation warnings |
+| Vite preview smoke check | HTTP 200 |
+| `npm audit --audit-level=moderate` | 0 vulnerabilities |
+
+### Phase9.8 Known issues
+
+- Queued operations are durable but are not sent to the backend until Phase 10; this is intentional.
+- Restart behavior is verified by closing and reopening Dexie with the in-memory mirror cleared; full browser/E2E restart belongs to Phase 13.
+- Offline access uses a default seven-day validity window configurable with `VITE_OFFLINE_SESSION_EXPIRE_DAYS`; server-side permission changes are not revalidated until connectivity returns.
+- Vitest emits a non-blocking `--localstorage-file` warning in this environment.
+- The production bundle emits a non-blocking chunk-size warning.
+- `fake-indexeddb` is test-only and is not bundled into the application.
+
+### Phase9.9 Acceptance criteria
+
+- [x] Downloaded inspections are available offline.
+- [x] Checklist templates remain available offline.
+- [x] Answers save locally.
+- [x] Local changes survive refresh.
+- [x] Local changes survive application restart (verified by Dexie close/reopen with the in-memory mirror cleared).
+- [x] Local data is isolated by account.
+- [x] IndexedDB errors are handled.
+- [x] Offline persistence tests pass.
+
+### Phase9.10 Handoff instructions
+
+Phase 9 is complete and verified. Stop at the phase boundary. The Phase 9 changes are uncommitted; commit them only if requested. Phase 10 may begin with the durable queue records and operation factory already in place, but must add the actual push/pull engine, retry behavior, dependency execution, cursor handling, and Sync Center.
+
+---
+
 # 7. Feature Register
 
 Maintain a summary of all features.
@@ -1313,8 +1434,8 @@ Add a new row when a feature is identified.
 | F-015 | Frontend authentication and admin features | 7 | Completed | frontend-design.md, development-phases.md, api-contracts.md, security-design.md |
 | F-015 | Admin dashboard | 7 | Completed | frontend-design.md |
 | F-016 | Inspector dashboard | 8 | Completed | frontend-design.md |
-| F-017 | IndexedDB persistence | 9 | Not Started | offline-sync-design.md |
-| F-018 | Durable sync queue | 9 | Not Started | offline-sync-design.md |
+| F-017 | IndexedDB persistence | 9 | Completed | offline-sync-design.md, development-phases.md |
+| F-018 | Durable sync queue | 9 | Completed | offline-sync-design.md, development-phases.md |
 | F-019 | Push synchronization | 10 | Not Started | offline-sync-design.md |
 | F-020 | Pull synchronization | 10 | Not Started | offline-sync-design.md |
 | F-021 | Retry mechanism | 10 | Not Started | offline-sync-design.md |
@@ -1411,13 +1532,13 @@ Because synchronization is a critical Fieldmark feature, maintain its progress s
 
 | Capability | Status | Verified |
 |---|---|---|
-| Dexie database initialization | Not Started | No |
-| Local inspection repository | Not Started | No |
-| Local answer persistence | Not Started | No |
-| In-memory account-scoped inspection drafts | Completed | Yes — Phase 8 only; not durable across browser restarts |
-| Durable operation queue | Not Started | No |
-| Stable operation IDs | Completed | Yes |
-| Payload hash validation | Completed | Yes |
+| Dexie database initialization | Completed | Yes — `fieldmark_local_db` v1 with eight approved tables |
+| Local inspection repository | Completed | Yes — account-scoped cache, detail, draft, and reference access |
+| Local answer persistence | Completed | Yes — 12 repository tests plus offline workflow tests |
+| In-memory account-scoped inspection drafts | Completed | Yes — Phase 8 contract retained as a durable-write mirror |
+| Durable operation queue | Completed | Yes — start, answer, and submit operations queued locally |
+| Stable operation IDs | Completed | Yes — backend push and frontend queue IDs; coalescing only before send |
+| Payload hash validation | Completed | Yes — canonical JSON hashing on the backend and local operation factory |
 | Dependency ordering | Not Started | No |
 | Push synchronization | Completed | Yes |
 | Per-operation push results | Completed | Yes |
@@ -1429,11 +1550,13 @@ Because synchronization is a critical Fieldmark feature, maintain its progress s
 | Conflict detection | Completed | Yes |
 | Conflict resolution | Completed | Yes |
 | Multi-tab coordination | Not Started | No |
-| Account-scoped local data | Not Started | No |
+| Account-scoped local data | Completed | Yes — owner IDs, offline-session checks, sign-out mirror clearing, and isolation tests |
 | Interrupted-sync recovery | Not Started | No |
 | Sync Center UI | Not Started | No |
 
-**Phase 5 verification note:** The capabilities marked Completed above are backend capabilities verified by `backend/tests/test_sync.py` and the existing commit-order cursor test. Conflict resolution here means the backend conflict list, detail, and resolve APIs with permission and version checks; the frontend conflict UI remains a later phase. IndexedDB queueing, dependency ordering, backoff/jitter, atomic local application, and multi-tab coordination remain Not Started.
+**Phase 5 verification note:** The backend capabilities marked Completed are verified by `backend/tests/test_sync.py` and the existing commit-order cursor test. Conflict resolution here means the backend conflict list, detail, and resolve APIs with permission and version checks; the frontend conflict UI remains a later phase.
+
+**Phase 9 verification note:** Dexie initialization, local repositories, local answer persistence, durable queue creation, account scoping, and IndexedDB error surfacing are now verified by `frontend/src/db/localRepositories.test.ts` and `frontend/src/features/inspections/offlinePersistence.test.tsx`. Dependency ordering, retry/backoff/jitter, atomic local pull application, interrupted-sync recovery, multi-tab coordination, and the Sync Center remain Phase 10+ work.
 
 Do not mark a capability as verified merely because its code exists. Record the test that proves it works.
 
@@ -1451,11 +1574,11 @@ Track testing at project level.
 | Database tests | Completed | 8 passed | Schema, constraints, relationships, latest migrations, unique `submission_id`, `submitted_version`, `template_key`, and cursor ordering; expected head now `0005_sync_scope_and_retry` |
 | Authentication tests | Completed | 19 passed | 4 password-hashing and 15 authentication tests |
 | RBAC tests | Completed | 12 passed | Phase 3 authorization tests plus Phase 4 and Phase 5 endpoint authorization coverage |
-| Frontend unit tests | Completed | 34 passed | Full Vitest suite for API client, theme, online status, router, admin flows, inspector workflow, and shared UI |
+| Frontend unit tests | Completed | 49 passed | Full Vitest suite for API client, theme, online status, router, admin flows, inspector workflow, IndexedDB, and shared UI |
 | Component tests | Completed | 5 passed | Shared UI component test suite covering rendering, interactions, dialogs, menus, tabs, toast, and error states |
 | Inspector workflow tests | Completed | 5 passed | Assignment list, start action, validation, local drafts, answer saves, draft restore, and stable submission ID |
-| IndexedDB tests | Not Started | Not Run | |
-| Offline tests | Not Started | Not Run | |
+| IndexedDB tests | Completed | 12 passed | Schema, account isolation, offline-session errors, storage failures, answer coalescing, start/submit IDs, conflicts, and Dexie reopen |
+| Offline tests | Completed | 3 passed | Downloaded inspection fallback, offline start without API, durable answers, remount restoration, and offline submission queue |
 | Sync tests | Completed | 20 passed | `backend/tests/test_sync.py`; PostgreSQL integration tests for idempotency, conflicts, pull, tombstones, and devices |
 | Conflict tests | Completed | 2 passed | Conflict list/detail scoping and conflict-resolution permission/version enforcement in `test_sync.py` |
 | PWA tests | Not Started | Not Run | |
@@ -1555,6 +1678,16 @@ Do not report tests as passed if they were not actually executed.
 | 2026-11-21 | `npm run build` (Phase 8) | Production build | 1 | 0 | Vite build succeeded; non-blocking chunk-size and Zod annotation warnings |
 | 2026-11-21 | Vite preview smoke check (Phase 8) | Frontend startup | 1 | 0 | HTTP 200 |
 | 2026-11-21 | `npm audit --audit-level=moderate` (Phase 8) | Security check | 1 | 0 | Zero reported vulnerabilities |
+| 2026-11-21 | `npx tsc --noEmit` (Phase 9) | TypeScript check | 1 | 0 | Strict TypeScript configuration passed after Dexie table typing was corrected |
+| 2026-11-21 | `npm run lint` (Phase 9) | Lint | 1 | 0 | ESLint passed with zero warnings |
+| 2026-11-21 | `npm test -- --run` (first Phase 9 full run) | Frontend tests | 47 | 2 | Fixed account-isolation expectation, draft hydration race, and offline test UI assumptions |
+| 2026-11-21 | `npm test -- --run` (second Phase 9 full run) | Frontend tests | 47 | 0 | All 10 frontend test files passed after hydration awaited in-flight writes |
+| 2026-11-21 | `npx vitest run src/db/localRepositories.test.ts` | IndexedDB tests | 12 | 0 | Schema, isolation, restart, queue, conflict, and storage-failure tests passed |
+| 2026-11-21 | `npx vitest run src/features/inspections/offlinePersistence.test.tsx` | Offline workflow tests | 3 | 0 | Download fallback, offline start, durable answers, remount, and offline submission passed |
+| 2026-11-21 | `npm test -- --run` (final Phase 9 run) | Frontend tests | 49 | 0 | All 10 frontend test files passed; non-blocking Node localStorage warning remains |
+| 2026-11-21 | `npm run build` (Phase 9) | Production build | 1 | 0 | Vite build succeeded; non-blocking chunk-size and Zod annotation warnings |
+| 2026-11-21 | Vite preview smoke check (Phase 9) | Frontend startup | 1 | 0 | HTTP 200 |
+| 2026-11-21 | `npm audit --audit-level=moderate` (Phase 9) | Security check | 1 | 0 | Zero reported vulnerabilities |
 
 ---
 
@@ -1610,6 +1743,15 @@ Maintain a chronological record of significant implementation decisions.
 | D-044 | 2026-11-21 | Build nested React Hook Form error objects from Zod issue paths | Dynamic checklist fields need per-item validation messages; flat dotted keys are not recognized by React Hook Form | `frontend/src/lib/formResolver.ts`, `ChecklistAnswerField.tsx` |
 | D-045 | 2026-11-21 | Allow `null` for optional multiple-choice answers and expose question text as each control's accessible name | Unanswered optional multi-selects are valid, and screen readers must identify the question rather than a generic “Answer” label | `inspectionExecutionSchemas.ts`, `ChecklistAnswerField.tsx` |
 | D-046 | 2026-11-21 | Send `base_version=1` for new answers and the stored answer version for existing answers | Matches backend answer validation and prevents stale answer overwrites | `ExecuteInspectionPage.tsx`, `inspectionWorkflow.ts` |
+| D-047 | 2026-11-21 | Use Dexie v1 `fieldmark_local_db` with the eight approved local tables | Phase 9 requires durable local storage with explicit versioning for future migrations | `frontend/src/db/fieldmarkDb.ts` |
+| D-048 | 2026-11-21 | Keep the Zustand draft store as a synchronous mirror of IndexedDB | Preserves the Phase 8 page contract and existing tests while making Dexie the durable source of truth | `frontend/src/features/inspections/store/inspectionDraftStore.ts` |
+| D-049 | 2026-11-21 | Serialize draft writes per account/inspection key and wait for in-flight writes during hydration | Prevents an unmount/remount race from restoring a stale draft after the final keystroke | `inspectionDraftStore.ts` |
+| D-050 | 2026-11-21 | Persist answer records and queue operations in one Dexie transaction | A crash must not leave a locally saved answer without its durable operation | `frontend/src/db/localRepositories.ts` |
+| D-051 | 2026-11-21 | Allow pending unsent operations to coalesce but recompute their payload hash; never mutate sent/terminal operations | Maintains retry identity semantics while preventing hash/payload mismatch | `localRepositories.ts`, `services/sync/operationFactory.ts` |
+| D-052 | 2026-11-21 | Store only bounded offline-session context in `local_users` | Authentication secrets must never enter IndexedDB; offline access still needs an expiry and owner scope | `localRepositories.ts`, `services/auth/session.ts` |
+| D-053 | 2026-11-21 | Avoid API calls for offline start, answer save, and submit; queue durable operations instead | Downloaded inspections must be completable without connectivity; Phase 10 will process the queue | Inspector pages and local repositories |
+| D-054 | 2026-11-21 | Fall back to cached details, summaries, sites, and templates when `navigator.onLine` is false | Keeps downloaded assignments and their labels available offline | `frontend/src/features/inspections/services/offlineInspectionService.ts` |
+| D-055 | 2026-11-21 | Use `fake-indexeddb` only in Vitest setup | Dexie needs IndexedDB in tests without adding a browser runtime dependency | `frontend/package.json`, `frontend/src/test/setup.ts` |
 
 When adding a decision:
 
@@ -1672,6 +1814,8 @@ Add a new entry whenever a development session makes meaningful changes.
 | 2026-11-21 | OpenCode (Big Pickle) | Phase 7 | F-015 | Added login/session lifecycle, CSRF and single-flight refresh handling, protected role-aware routes, admin shell, dashboard, user/site/checklist management, inspection assignment, profile/settings, and 16 new tests; final verification was 29/29 tests, clean lint and typecheck, successful build and preview, and zero audit vulnerabilities | Completed |
 | 2026-11-21 | OpenCode (Big Pickle) | Phase 7 | Commit | Committed verified Phase 7 work as `3c75a6d feat: implement phase 7 frontend authentication and admin features`; not pushed | Completed |
 | 2026-11-21 | OpenCode (Big Pickle) | Phase 8 | F-012/F-016 | Added inspector layout, dashboard, assignment list, details and execution pages, dynamic answer controls, validation, progress, account-scoped drafts, and stable-ID submission; final verification was 34/34 tests, clean lint and typecheck, successful build and preview, and zero audit vulnerabilities | Completed |
+| 2026-11-21 | OpenCode (Big Pickle) | Phase 8 | Commit | Committed verified Phase 8 work as `c5c9eec feat: implement phase 8 inspector workflow` after explicit user request; not pushed | Completed |
+| 2026-11-21 | OpenCode (Big Pickle) | Phase 9 | F-017/F-018 | Added versioned Dexie database, account-scoped repositories, offline inspection/checklist caches, durable drafts and answer/start/submit operation queue, offline UI states, and 15 new IndexedDB/offline tests; final verification was 49/49 tests, clean lint and typecheck, successful build and preview, and zero audit vulnerabilities | Completed |
 
 For each entry, include a concise summary of:
 
@@ -1694,15 +1838,15 @@ Update it before stopping work.
 
 **Last completed phase:**
 
-Phase 8 — Inspector Workflow. All acceptance criteria were verified. The implementation is complete but remains uncommitted because no Phase 8 commit was requested. Phase 7 was previously committed as `3c75a6d feat: implement phase 7 frontend authentication and admin features` and was not pushed.
+Phase 9 — Offline Persistence. All acceptance criteria were verified. Phase 8 was committed as `c5c9eec feat: implement phase 8 inspector workflow`; Phase 9 changes are complete but remain uncommitted in the working tree.
 
 **Current phase:**
 
-Phase 8 — Inspector Workflow (Completed; stopped at phase boundary).
+Phase 9 — Offline Persistence (Completed; stopped at phase boundary).
 
 **Current feature:**
 
-F-012 Inspection Execution and F-016 Inspector Dashboard.
+F-017 IndexedDB Persistence and F-018 Durable Sync Queue.
 
 **Current feature status:**
 
@@ -1710,38 +1854,38 @@ Completed.
 
 **Last completed task:**
 
-Implemented the inspector shell and navigation, dashboard, My Inspections, inspection details, dynamic checklist execution, validation, progress, account-scoped in-memory drafts, and backend start/answer/submit integration. Final verification was 34/34 frontend tests, clean TypeScript and lint checks, a successful production build and preview, and zero audit vulnerabilities.
+Implemented `fieldmark_local_db` v1 with the eight approved tables, account-scoped repositories, offline inspection/checklist caches, durable drafts and answer/start/submit operations, offline status UI, and 15 new IndexedDB/offline tests. Final verification was 49/49 frontend tests, clean TypeScript and lint checks, a successful production build and preview, and zero audit vulnerabilities.
 
 **Current stopping point:**
 
-Phase 8 is complete. Do not start Phase 9 — Offline Persistence without explicit approval. Phase 8 changes are present in the working tree and should be committed only if the user requests a commit.
+Phase 9 is complete. Do not start Phase 10 — Synchronization Engine without explicit approval. Phase 9 changes are uncommitted and should be committed only if the user requests a commit.
 
 ## Files to inspect first
 
 1. `progress-tracker.md`
-2. `docs/development-phases.md` — Phase 8 acceptance criteria and Phase 9 boundary
-3. `docs/frontend-design.md` — frontend architecture
-4. `frontend/src/app/router.tsx` — wired inspector routes
-5. `frontend/src/layouts/InspectorLayout.tsx` and `frontend/src/layouts/components/InspectorNav.tsx`
-6. `frontend/src/features/inspections/pages/` — dashboard, list, details, and execution pages
-7. `frontend/src/features/inspections/components/ChecklistAnswerField.tsx`
-8. `frontend/src/features/inspections/schemas/inspectionExecutionSchemas.ts`
-9. `frontend/src/features/inspections/store/inspectionDraftStore.ts`
-10. `frontend/src/services/api/inspectionsApi.ts`
-11. `frontend/src/lib/formResolver.ts`
-12. `frontend/src/features/inspections/inspectorFlows.test.tsx`
-13. `frontend/src/app/router.test.tsx`
-14. `frontend/src/test/fixtures.ts`
+2. `docs/development-phases.md` — Phase 9 acceptance criteria and Phase 10 boundary
+3. `docs/offline-sync-design.md` — local schema, queue, and authorization rules
+4. `frontend/src/db/fieldmarkDb.ts` — Dexie v1 schema
+5. `frontend/src/db/localTypes.ts` — durable record and error types
+6. `frontend/src/db/localRepositories.ts` — account-scoped repositories and transactions
+7. `frontend/src/services/sync/operationFactory.ts` — stable IDs and payload hashes
+8. `frontend/src/features/inspections/store/inspectionDraftStore.ts` — durable draft mirror
+9. `frontend/src/features/inspections/services/offlineInspectionService.ts` — offline fallbacks
+10. `frontend/src/features/inspections/pages/ExecuteInspectionPage.tsx` — offline execution
+11. `frontend/src/features/inspections/pages/InspectionDetailsPage.tsx` — download and offline start
+12. `frontend/src/features/inspections/offlinePersistence.test.tsx` — workflow tests
+13. `frontend/src/db/localRepositories.test.ts` — IndexedDB tests
+14. `frontend/src/services/auth/session.ts` — local account context and sign-out isolation
 
 ## Work remaining
 
-- [x] Complete Phase 7 and commit its verified work.
-- [x] Replace inspector placeholders with real role-aware pages.
-- [x] Implement and verify all Phase 8 acceptance criteria.
-- [ ] Wait for explicit approval before starting Phase 9 — Offline Persistence.
-- [ ] Commit Phase 8 only if the user requests it.
-- [ ] In Phase 9, replace account-scoped in-memory drafts with durable Dexie/IndexedDB storage while preserving the page-level draft contract.
-- [ ] In later phases, add the offline operation queue, synchronization engine, conflict UI, and PWA shell.
+- [x] Commit Phase 8 as requested.
+- [x] Implement Phase 9 durable local persistence.
+- [x] Implement Phase 9 durable queue records and stable operation IDs.
+- [x] Verify Phase 9 acceptance criteria.
+- [ ] Commit Phase 9 only if the user requests it.
+- [ ] In Phase 10, connect the durable queue to push/pull APIs with retries, dependency ordering, and cursor handling.
+- [ ] In later phases, add conflict resolution UI, Sync Center, and PWA shell.
 
 ## Known problems
 
@@ -1749,9 +1893,10 @@ Phase 8 is complete. Do not start Phase 9 — Offline Persistence without explic
 - Non-blocking: Vite reports chunk-size and Zod comment-annotation warnings. The production build succeeds.
 - Non-blocking: installed Starlette/TestClient and passlib/argon2 backend versions emit deprecation warnings. No backend tests fail.
 - Non-blocking: optional PATCH fields are displayed as nullable in OpenAPI even though runtime validators reject `null` for non-clearable fields; runtime behavior is correct.
-- Resolved: the original global `lib/` ignore rule was fixed and Phase 7 included `.gitignore` plus the newly trackable `frontend/src/lib/` sources.
-- Intentional Phase 8 limitation: drafts are not durable across a full browser restart; Phase 9 supplies Dexie/IndexedDB persistence.
-- Dashboard synchronization statistics reflect server-side operation records only; the frontend must combine them with its IndexedDB queue in a later phase, as required by `docs/api-contracts.md`.
+- Resolved: the original global `lib/` ignore rule was fixed and earlier phases included the newly trackable `frontend/src/lib/` sources.
+- Intentional Phase 9 limitation: queued operations are durable but are not transmitted until Phase 10.
+- Server dashboard counts and local queue counts are shown separately; a unified Sync Center remains Phase 10/11 work.
+- Offline access uses a seven-day default validity window and is not revalidated with the server until connectivity returns.
 - The login rate limiter remains process-local; a multi-instance deployment needs a shared limiter.
 
 ## Next agent instructions
@@ -1759,18 +1904,19 @@ Phase 8 is complete. Do not start Phase 9 — Offline Persistence without explic
 The next agent must:
 
 1. Read `AGENTS.md`, the approved documentation, and this progress tracker.
-2. Inspect the actual Phase 8 source files listed above before changing behavior.
-3. Confirm Phase 8 is marked Completed and verified.
-4. Stop at the phase boundary and wait for explicit approval before Phase 9.
-5. Preserve the Phase 8 local-first save order and stable `submission_id` behavior.
+2. Inspect the actual Phase 9 source files listed above before changing behavior.
+3. Confirm Phase 9 is marked Completed and verified.
+4. Stop at the phase boundary and wait for explicit approval before Phase 10 — Synchronization Engine.
+5. Preserve the account-scoped local IDs, offline-session checks, and durable transaction boundaries.
 6. Keep API and IndexedDB access outside presentation components.
-7. Preserve the in-memory access-token policy and HTTP-only refresh-cookie strategy.
-8. Do not use last-write-wins for inspection answers.
-9. Commit Phase 8 only when explicitly requested.
+7. Preserve stable operation IDs and payload hashes when implementing the sync engine.
+8. Preserve the in-memory access-token policy and HTTP-only refresh-cookie strategy.
+9. Do not use last-write-wins for inspection answers.
+10. Commit Phase 9 only when explicitly requested.
 
 **Exact next action:**
 
-Report Phase 8 completion and wait for approval to start Phase 9 — Offline Persistence.
+Report Phase 9 completion. Commit Phase 9 only if the user requests it; otherwise stop and wait for approval to start Phase 10 — Synchronization Engine.
 
 ---
 

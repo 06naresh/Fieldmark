@@ -1,6 +1,6 @@
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, CalendarDays, ClipboardList, MapPin, Play } from 'lucide-react';
+import { ArrowLeft, CalendarDays, CheckCircle2, ClipboardList, Download, MapPin, Play } from 'lucide-react';
 import {
   Badge,
   Button,
@@ -13,27 +13,74 @@ import {
   LoadingIndicator,
   toast,
 } from '@/components/ui';
+import { markInspectionStarted, queueInspectionStart } from '@/db/localRepositories';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { ROUTES } from '@/lib/constants';
 import { formatDateTime } from '@/lib/date';
 import { normalizeApiError } from '@/lib/error';
 import { inspectionsApi } from '@/services/api/inspectionsApi';
 import { useAuthStore } from '@/store/authStore';
 import { InspectionStatusBadge } from '@/features/inspections/components/InspectionStatusBadge';
+import {
+  cacheInspectionForOffline,
+  getInspectionDetail,
+  isInspectionAvailableOffline,
+} from '@/features/inspections/services/offlineInspectionService';
 
 export function InspectionDetailsPage(): React.JSX.Element {
   const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const currentUser = useAuthStore((state) => state.user);
+  const ownerId = currentUser?.id ?? 'anonymous';
+  const isOnline = useOnlineStatus();
 
   const detail = useQuery({
     queryKey: ['inspection', id, 'detail'],
-    queryFn: () => inspectionsApi.detail(id),
+    queryFn: () => getInspectionDetail(ownerId, id, () => inspectionsApi.detail(id)),
     enabled: id.length > 0,
   });
 
+  const offlineStatus = useQuery({
+    queryKey: ['inspection', id, 'offline-status'],
+    queryFn: () => isInspectionAvailableOffline(ownerId, id),
+    enabled: id.length > 0 && ownerId !== 'anonymous',
+  });
+
+  const download = useMutation({
+    mutationFn: async () => {
+      const result = await inspectionsApi.detail(id);
+      await cacheInspectionForOffline(ownerId, result);
+    },
+    onSuccess: async () => {
+      await offlineStatus.refetch();
+      toast({
+        title: 'Available offline',
+        description: 'The checklist, site, and answers are stored on this device.',
+        variant: 'success',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Could not download inspection',
+        description: normalizeApiError(error).message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   const start = useMutation({
-    mutationFn: (version: number) => inspectionsApi.start(id, version),
+    mutationFn: async (version: number) => {
+      if (!isOnline) {
+        if (!detail.data) {
+          throw new Error('Download this inspection before starting it offline.');
+        }
+        await queueInspectionStart(ownerId, detail.data);
+        return { status: 'IN_PROGRESS' as const, version, queuedOffline: true };
+      }
+      const result = await inspectionsApi.start(id, version);
+      return { ...result, queuedOffline: false };
+    },
     onSuccess: async (result) => {
       queryClient.setQueryData(['inspection', id, 'detail'], (previous: unknown) => {
         if (!previous || typeof previous !== 'object') {
@@ -41,15 +88,20 @@ export function InspectionDetailsPage(): React.JSX.Element {
         }
         return { ...previous, status: result.status, version: result.version };
       });
+      if (detail.data && !result.queuedOffline) {
+        await markInspectionStarted(ownerId, id, result.version);
+      }
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['inspections'] }),
         queryClient.invalidateQueries({ queryKey: ['dashboard', 'summary'] }),
         queryClient.invalidateQueries({ queryKey: ['inspection', id, 'detail'] }),
       ]);
       toast({
-        title: 'Inspection started',
-        description: 'You can now complete the assigned checklist.',
-        variant: 'success',
+        title: result.queuedOffline ? 'Inspection started offline' : 'Inspection started',
+        description: result.queuedOffline
+          ? 'The start is saved on this device and will synchronize when you reconnect.'
+          : 'You can now complete the assigned checklist.',
+        variant: result.queuedOffline ? 'warning' : 'success',
       });
       navigate(ROUTES.inspector.executeInspection(id));
     },
@@ -97,6 +149,36 @@ export function InspectionDetailsPage(): React.JSX.Element {
         </div>
         <InspectionStatusBadge status={inspection.status} />
       </div>
+
+      <Card>
+        <CardContent className="flex flex-col gap-3 pt-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 text-sm">
+            {offlineStatus.data ? (
+              <>
+                <CheckCircle2 className="h-4 w-4 text-success" />
+                <span>Available offline on this device</span>
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4 text-muted-foreground" />
+                <span>Not yet downloaded for offline use</span>
+              </>
+            )}
+          </div>
+          {!offlineStatus.data && isOnline ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => download.mutate()}
+              disabled={download.isPending}
+            >
+              <Download className="h-4 w-4" />
+              {download.isPending ? 'Downloading…' : 'Make available offline'}
+            </Button>
+          ) : null}
+        </CardContent>
+      </Card>
 
       {inspection.instructions ? (
         <Card>

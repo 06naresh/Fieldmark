@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { checklistsApi } from '@/services/api/checklistsApi';
 import { sitesApi } from '@/services/api/sitesApi';
+import { useAuthStore } from '@/store/authStore';
+import { getInspectionReferences } from '@/features/inspections/services/offlineInspectionService';
 import type { ChecklistTemplate, Site } from '@/types/entities';
 
 export interface InspectionReferences {
@@ -11,21 +13,25 @@ export interface InspectionReferences {
 }
 
 export function useInspectionReferences(): InspectionReferences {
-  const sites = useQuery({
-    queryKey: ['sites', 'inspector-labels'],
-    queryFn: () => sitesApi.list({ page_size: 100 }),
-  });
-  const checklists = useQuery({
-    queryKey: ['checklists', 'inspector-labels'],
-    queryFn: () => checklistsApi.list({ page_size: 100 }),
+  const currentUser = useAuthStore((state) => state.user);
+  const ownerId = currentUser?.id ?? 'anonymous';
+
+  const references = useQuery({
+    queryKey: ['inspection-references', ownerId],
+    queryFn: () =>
+      getInspectionReferences(
+        ownerId,
+        () => sitesApi.list({ page_size: 100 }),
+        () => checklistsApi.list({ page_size: 100 }),
+      ),
   });
 
   return {
-    sitesById: new Map((sites.data?.data ?? []).map((site) => [site.id, site])),
+    sitesById: new Map((references.data?.sites ?? []).map((site) => [site.id, site])),
     templatesById: new Map(
-      (checklists.data?.data ?? []).map((template) => [template.id, template]),
+      (references.data?.templates ?? []).map((template) => [template.id, template]),
     ),
-    isLoading: sites.isLoading || checklists.isLoading,
-    error: sites.error ?? checklists.error,
+    isLoading: references.isLoading,
+    error: references.error,
   };
 }

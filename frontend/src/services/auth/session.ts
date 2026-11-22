@@ -4,8 +4,10 @@ import {
   setAccessToken,
   setRefreshHandler,
 } from '@/lib/axios';
+import { ensureLocalAccount } from '@/db/localRepositories';
 import { queryClient } from '@/lib/queryClient';
 import { authApi } from '@/services/api/authApi';
+import { useInspectionDraftStore } from '@/features/inspections/store/inspectionDraftStore';
 import { useAuthStore } from '@/store/authStore';
 import type { CurrentUser, LoginCredentials, UserRole } from '@/types/auth';
 
@@ -44,6 +46,8 @@ export async function bootstrapSession(): Promise<void> {
   try {
     const user = await authApi.me();
     useAuthStore.getState().setAuthenticated(user);
+    // Establish a bounded offline context after a verified online session.
+    await ensureLocalAccount(user).catch(() => undefined);
   } catch {
     setAccessToken(null);
     useAuthStore.getState().clear();
@@ -56,6 +60,8 @@ export async function signIn(credentials: LoginCredentials): Promise<UserRole> {
 
   setAccessToken(result.access_token);
   useAuthStore.getState().setAuthenticated(user);
+  // Offline data access requires a prior successful online authentication.
+  await ensureLocalAccount(user).catch(() => undefined);
   queryClient.clear();
   return user.role;
 }
@@ -68,6 +74,9 @@ export async function signOut(logoutAllDevices = false): Promise<void> {
   } finally {
     setAccessToken(null);
     useAuthStore.getState().clear();
+    // Drop the in-memory mirror so another account cannot see these drafts.
+    // Durable IndexedDB records remain for offline access and synchronization.
+    useInspectionDraftStore.setState({ drafts: {} });
     queryClient.clear();
   }
 }

@@ -30,6 +30,8 @@ import { useAuthStore } from '@/store/authStore';
 import type { InspectionStatus } from '@/types/entities';
 import { InspectionStatusBadge } from '@/features/inspections/components/InspectionStatusBadge';
 import { useInspectionReferences } from '@/features/inspections/hooks/useInspectionReferences';
+import { getAssignedInspections } from '@/features/inspections/services/offlineInspectionService';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 
 type StatusFilter = 'ALL' | InspectionStatus;
 
@@ -44,6 +46,8 @@ const statusFilters: StatusFilter[] = [
 
 export function MyInspectionsPage(): React.JSX.Element {
   const currentUser = useAuthStore((state) => state.user);
+  const isOnline = useOnlineStatus();
+  const ownerId = currentUser?.id ?? 'anonymous';
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [page, setPage] = useState(1);
@@ -51,12 +55,14 @@ export function MyInspectionsPage(): React.JSX.Element {
   const inspections = useQuery({
     queryKey: ['inspections', 'inspector-list', { search, statusFilter, page }],
     queryFn: () =>
-      inspectionsApi.list({
-        page,
-        page_size: 20,
-        search: search.trim() || undefined,
-        status: statusFilter === 'ALL' ? undefined : statusFilter,
-      }),
+      getAssignedInspections(ownerId, () =>
+        inspectionsApi.list({
+          page,
+          page_size: 20,
+          search: search.trim() || undefined,
+          status: statusFilter === 'ALL' ? undefined : statusFilter,
+        }),
+      ),
   });
   const references = useInspectionReferences();
 
@@ -86,6 +92,11 @@ export function MyInspectionsPage(): React.JSX.Element {
         <p className="mt-1 text-muted-foreground">
           Review assignments and continue inspections that need your attention.
         </p>
+        {!isOnline ? (
+          <p className="mt-2 text-sm text-warning" role="status">
+            Offline — showing inspections downloaded to this device.
+          </p>
+        ) : null}
       </div>
 
       <Card>

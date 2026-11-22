@@ -16,12 +16,23 @@ import {
   Textarea,
   toast,
 } from '@/components/ui';
+import {
+  getAnswerRecord,
+  markAnswerConfirmed,
+  markInspectionStarted,
+  markInspectionSubmitted,
+  queueAnswerChange,
+  queueInspectionStart,
+  queueInspectionSubmission,
+} from '@/db/localRepositories';
+import { normalizeOfflineError } from '@/db/localTypes';
 import { ROUTES } from '@/lib/constants';
 import { normalizeApiError } from '@/lib/error';
 import { zodResolver } from '@/lib/formResolver';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { inspectionsApi } from '@/services/api/inspectionsApi';
 import { useAuthStore } from '@/store/authStore';
-import type { ChecklistItem, OverallStatus } from '@/types/entities';
+import type { ChecklistItem, InspectionDetail, OverallStatus } from '@/types/entities';
 import { ChecklistAnswerField } from '@/features/inspections/components/ChecklistAnswerField';
 import {
   calculateProgress,
@@ -31,8 +42,15 @@ import {
   overallStatusLabels,
 } from '@/features/inspections/schemas/inspectionExecutionSchemas';
 import {
+  getInspectionDetail,
+  isOffline,
+} from '@/features/inspections/services/offlineInspectionService';
+import {
+  hydrateInspectionDraft,
   inspectionDraftKey,
+  persistInspectionDraft,
   readInspectionDraft,
+  removeInspectionDraft,
   useInspectionDraftStore,
 } from '@/features/inspections/store/inspectionDraftStore';
 import {
@@ -42,7 +60,7 @@ import {
 } from '@/features/inspections/types/inspectionWorkflow';
 import { sameSavedAnswer } from '@/features/inspections/utils/inspectionAnswers';
 
-type SyncState = 'idle' | 'local' | 'saving' | 'synced' | 'failed';
+type SyncState = 'idle' | 'local' | 'saving' | 'synced' | 'offline' | 'failed';
 
 const EMPTY_ITEMS: ChecklistItem[] = [];
 
@@ -58,25 +76,31 @@ function formatSavedTime(value: string | null): string {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleTimeString();
 }
 
+/** Reuse the server answer ID when present; otherwise derive a stable local ID. */
+function answerIdFor(detail: InspectionDetail, checklistItemId: string): string {
+  const existing = detail.answers.find((answer) => answer.checklist_item_id === checklistItemId);
+  return existing?.id ?? `${detail.id}:${checklistItemId}`;
+}
+
 export function ExecuteInspectionPage(): React.JSX.Element {
   const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const currentUser = useAuthStore((state) => state.user);
+  const isOnline = useOnlineStatus();
   const ownerId = currentUser?.id ?? 'anonymous';
   const draftKey = inspectionDraftKey(ownerId, id);
-  const setDraft = useInspectionDraftStore((state) => state.setDraft);
-  const clearDraft = useInspectionDraftStore((state) => state.clearDraft);
   const draft = useInspectionDraftStore((state) => state.drafts[draftKey]);
 
   const [syncState, setSyncState] = useState<SyncState>('idle');
+  const [draftReady, setDraftReady] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const initializedKey = useRef<string | null>(null);
 
   const detail = useQuery({
     queryKey: ['inspection', id, 'detail'],
-    queryFn: () => inspectionsApi.detail(id),
+    queryFn: () => getInspectionDetail(ownerId, id, () => inspectionsApi.detail(id)),
     enabled: id.length > 0,
   });
 
@@ -89,7 +113,17 @@ export function ExecuteInspectionPage(): React.JSX.Element {
   });
 
   const start = useMutation({
-    mutationFn: (version: number) => inspectionsApi.start(id, version),
+    mutationFn: async (version: number) => {
+      if (isOffline()) {
+        if (!detail.data) {
+          throw new Error('Download this inspection before starting it offline.');
+        }
+        await queueInspectionStart(ownerId, detail.data);
+        return { status: 'IN_PROGRESS' as const, version, queuedOffline: true };
+      }
+      const result = await inspectionsApi.start(id, version);
+      return { ...result, queuedOffline: false };
+    },
     onSuccess: async (result) => {
       queryClient.setQueryData(['inspection', id, 'detail'], (previous: unknown) => {
         if (!previous || typeof previous !== 'object') {
@@ -99,16 +133,21 @@ export function ExecuteInspectionPage(): React.JSX.Element {
       });
       const existing = readInspectionDraft(draftKey);
       if (existing) {
-        setDraft(draftKey, { ...existing, inspectionVersion: result.version });
+        await persistInspectionDraft({ ...existing, inspectionVersion: result.version });
+      }
+      if (detail.data && !result.queuedOffline) {
+        await markInspectionStarted(ownerId, id, result.version);
       }
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['inspections'] }),
         queryClient.invalidateQueries({ queryKey: ['dashboard', 'summary'] }),
       ]);
       toast({
-        title: 'Inspection started',
-        description: 'The checklist is ready for answers.',
-        variant: 'success',
+        title: result.queuedOffline ? 'Inspection started offline' : 'Inspection started',
+        description: result.queuedOffline
+          ? 'The start is queued on this device and will synchronize later.'
+          : 'The checklist is ready for answers.',
+        variant: result.queuedOffline ? 'warning' : 'success',
       });
     },
     onError: (error) => {
@@ -125,43 +164,59 @@ export function ExecuteInspectionPage(): React.JSX.Element {
       return;
     }
 
-    const existing = readInspectionDraft(draftKey);
-    if (existing) {
-      form.reset(existing.values);
-      if (existing.inspectionVersion !== detail.data.version) {
-        setDraft(draftKey, {
-          ...existing,
-          inspectionVersion: detail.data.version,
-        });
+    const currentDetail = detail.data;
+    let cancelled = false;
+
+    async function initialize(): Promise<void> {
+      let draft = await hydrateInspectionDraft(ownerId, currentDetail.id).catch(() => null);
+      if (cancelled) {
+        return;
       }
-    } else {
-      const draftValues = createStoredDraft(detail.data, ownerId);
-      setDraft(draftKey, draftValues);
-      form.reset(draftValues.values);
+      if (!draft) {
+        draft = createStoredDraft(currentDetail, ownerId);
+        await persistInspectionDraft(draft).catch(() => undefined);
+      } else if (draft.inspectionVersion !== currentDetail.version) {
+        // Keep locally saved values; only record the updated server version.
+        draft = { ...draft, inspectionVersion: currentDetail.version };
+        await persistInspectionDraft(draft).catch(() => undefined);
+      }
+      if (cancelled) {
+        return;
+      }
+      form.reset(draft.values);
+      initializedKey.current = draftKey;
+      setDraftReady(true);
     }
 
-    initializedKey.current = draftKey;
-  }, [detail.data, draftKey, form, ownerId, setDraft]);
+    void initialize();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [detail.data, draftKey, form, ownerId]);
 
   useEffect(() => {
     const subscription = form.watch((values) => {
       const current = readInspectionDraft(draftKey);
-      if (!current) {
+      if (!current || initializedKey.current !== draftKey) {
         return;
       }
       const timestamp = new Date().toISOString();
-      setDraft(draftKey, {
+      void persistInspectionDraft({
         ...current,
         values: values as ExecutionFormValues,
         updatedAt: timestamp,
         localSavedAt: timestamp,
+      }).catch((error: unknown) => {
+        setSyncState('failed');
+        setSyncError(normalizeOfflineError(error));
       });
-      setSyncState('local');
+      setSyncState((state) => (state === 'saving' ? state : 'local'));
       setSyncError(null);
     });
 
     return () => subscription.unsubscribe();
-  }, [draftKey, form, setDraft]);
+  }, [draftKey, form]);
 
   if (!id) {
     return <ErrorState message="No inspection was selected." />;
@@ -240,6 +295,10 @@ export function ExecuteInspectionPage(): React.JSX.Element {
     );
   }
 
+  if (!draftReady) {
+    return <LoadingIndicator label="Preparing offline checklist…" />;
+  }
+
   const currentValues = form.watch();
   const progress = calculateProgress(items, currentValues.answers ?? {});
   const isSaving = syncState === 'saving';
@@ -263,14 +322,15 @@ export function ExecuteInspectionPage(): React.JSX.Element {
           localSavedAt: timestamp,
         };
 
-    // Local persistence happens before any network request.
-    setDraft(draftKey, workingDraft);
+    // Durable local persistence happens before any network request.
+    await persistInspectionDraft(workingDraft);
     setSyncState('saving');
     setSyncError(null);
 
     const answerVersions = { ...workingDraft.answerVersions };
     const serverAnswers = { ...workingDraft.serverAnswers };
     const errors: string[] = [];
+    const offline = isOffline();
 
     for (const item of items) {
       const value = values.answers[item.id] ?? null;
@@ -279,24 +339,51 @@ export function ExecuteInspectionPage(): React.JSX.Element {
         continue;
       }
 
+      const baseVersion = answerVersions[item.id] ?? 1;
+      const answerId = answerIdFor(inspection, item.id);
+
       try {
-        const answer = await inspectionsApi.saveAnswer(id, item.id, {
-          answer_value: value,
+        // Save the answer and its durable operation atomically, before the
+        // server call. The operation ID survives retries and restarts.
+        const queued = await queueAnswerChange({
+          ownerId,
+          inspectionId: inspection.id,
+          checklistItemId: item.id,
+          answerId,
+          value,
           notes,
-          base_version: answerVersions[item.id] ?? 1,
+          baseVersion,
         });
-        answerVersions[item.id] = answer.version;
-        serverAnswers[item.id] = { value, notes };
+        const localRecord = await getAnswerRecord(ownerId, answerId);
+        if (!localRecord) {
+          throw new Error('The answer was not persisted locally.');
+        }
+        if (localRecord.operation_id !== queued.id) {
+          throw new Error('The answer operation was not persisted locally.');
+        }
+
+        if (!offline) {
+          const answer = await inspectionsApi.saveAnswer(id, item.id, {
+            answer_value: value,
+            notes,
+            base_version: baseVersion,
+          });
+          answerVersions[item.id] = answer.version;
+          serverAnswers[item.id] = { value, notes };
+          await markAnswerConfirmed(ownerId, answerId, answer.version);
+        }
       } catch (error) {
-        errors.push(`${item.question}: ${normalizeApiError(error).message}`);
+        errors.push(
+          `${item.question}: ${offline ? normalizeOfflineError(error) : normalizeApiError(error).message}`,
+        );
       }
     }
 
-    setDraft(draftKey, {
+    await persistInspectionDraft({
       ...workingDraft,
       answerVersions,
       serverAnswers,
-      lastServerSavedAt: errors.length === 0 ? new Date().toISOString() : workingDraft.lastServerSavedAt,
+      lastServerSavedAt: errors.length === 0 && !offline ? new Date().toISOString() : workingDraft.lastServerSavedAt,
     });
 
     if (errors.length > 0) {
@@ -310,7 +397,7 @@ export function ExecuteInspectionPage(): React.JSX.Element {
       return false;
     }
 
-    setSyncState('synced');
+    setSyncState(offline ? 'offline' : 'synced');
     return true;
   }
 
@@ -319,7 +406,9 @@ export function ExecuteInspectionPage(): React.JSX.Element {
     if (saved) {
       toast({
         title: 'Draft saved',
-        description: 'Answers are saved on this device and confirmed by the server.',
+        description: isOffline()
+          ? 'Answers are saved on this device and queued for synchronization.'
+          : 'Answers are saved on this device and confirmed by the server.',
         variant: 'success',
       });
     }
@@ -339,14 +428,33 @@ export function ExecuteInspectionPage(): React.JSX.Element {
       }
 
       const current = readInspectionDraft(draftKey);
-      const result = await inspectionsApi.submit(id, {
-        summary: values.summary.trim() || null,
-        overall_status: values.overallStatus as OverallStatus,
-        version: inspection.version,
-        submission_id: current?.submissionId ?? createStoredDraft(inspection, ownerId).submissionId,
-      });
+      const submissionId =
+        current?.submissionId ?? createStoredDraft(inspection, ownerId).submissionId;
+      const summary = values.summary.trim() || null;
+      const overallStatus = values.overallStatus as OverallStatus;
 
-      clearDraft(draftKey);
+      // The submission operation is durable before any network request.
+      await queueInspectionSubmission(ownerId, inspection, submissionId, summary, overallStatus);
+
+      if (isOffline()) {
+        await removeInspectionDraft(ownerId, id);
+        toast({
+          title: 'Submission saved offline',
+          description: 'It will be synchronized automatically when connectivity returns.',
+          variant: 'warning',
+        });
+        navigate(ROUTES.inspector.inspectionDetails(id));
+        return;
+      }
+
+      const result = await inspectionsApi.submit(id, {
+        summary,
+        overall_status: overallStatus,
+        version: inspection.version,
+        submission_id: submissionId,
+      });
+      await markInspectionSubmitted(ownerId, id, result.inspection_status);
+      await removeInspectionDraft(ownerId, id);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['inspections'] }),
         queryClient.invalidateQueries({ queryKey: ['inspection', id, 'detail'] }),
@@ -374,13 +482,15 @@ export function ExecuteInspectionPage(): React.JSX.Element {
       ? 'Saving answers…'
       : syncState === 'failed'
         ? 'Saved locally — server confirmation failed'
-        : syncState === 'synced'
-          ? 'Saved locally and confirmed by server'
-          : syncState === 'local'
-            ? 'Saved on this device — waiting to sync'
-            : draft?.lastServerSavedAt
-              ? 'Saved locally and confirmed by server'
-              : 'Changes are saved as you type';
+        : syncState === 'offline'
+          ? 'Saved on this device — queued for synchronization'
+          : syncState === 'synced'
+            ? 'Saved locally and confirmed by server'
+            : syncState === 'local'
+              ? 'Saved on this device — waiting to sync'
+              : draft?.lastServerSavedAt
+                ? 'Saved locally and confirmed by server'
+                : 'Changes are saved as you type';
 
   return (
     <FormProvider {...form}>
@@ -391,6 +501,16 @@ export function ExecuteInspectionPage(): React.JSX.Element {
             Back to inspection details
           </Link>
         </Button>
+
+        {!isOnline ? (
+          <div
+            role="status"
+            className="flex items-center gap-2 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm"
+          >
+            <CloudOff className="h-4 w-4 text-warning" />
+            You are offline. Answers are saved on this device and will synchronize when you reconnect.
+          </div>
+        ) : null}
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>

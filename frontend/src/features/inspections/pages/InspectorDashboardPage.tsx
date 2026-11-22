@@ -25,6 +25,11 @@ import { normalizeApiError } from '@/lib/error';
 import { dashboardApi } from '@/services/api/dashboardApi';
 import { inspectionsApi } from '@/services/api/inspectionsApi';
 import { useAuthStore } from '@/store/authStore';
+import {
+  getAssignedInspections,
+  getSyncSummary,
+} from '@/features/inspections/services/offlineInspectionService';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { InspectionStatusBadge } from '@/features/inspections/components/InspectionStatusBadge';
 import { useInspectionReferences } from '@/features/inspections/hooks/useInspectionReferences';
 
@@ -52,17 +57,25 @@ function StatCard({ label, value, icon, description }: StatCardProps): React.JSX
 
 export function InspectorDashboardPage(): React.JSX.Element {
   const currentUser = useAuthStore((state) => state.user);
+  const isOnline = useOnlineStatus();
+  const ownerId = currentUser?.id ?? 'anonymous';
   const summary = useQuery({
     queryKey: ['dashboard', 'summary', 'inspector'],
     queryFn: dashboardApi.summary,
+    enabled: isOnline,
   });
   const assignments = useQuery({
     queryKey: ['inspections', 'inspector-dashboard'],
-    queryFn: () => inspectionsApi.list({ page_size: 20 }),
+    queryFn: () => getAssignedInspections(ownerId, () => inspectionsApi.list({ page_size: 20 })),
+  });
+  const localSync = useQuery({
+    queryKey: ['local-sync-summary', ownerId],
+    queryFn: () => getSyncSummary(ownerId),
+    enabled: ownerId !== 'anonymous',
   });
   const references = useInspectionReferences();
 
-  if (summary.isLoading || assignments.isLoading || references.isLoading) {
+  if ((isOnline && summary.isLoading) || assignments.isLoading || references.isLoading || localSync.isLoading) {
     return <LoadingIndicator label="Loading your work…" />;
   }
 
@@ -125,7 +138,7 @@ export function InspectorDashboardPage(): React.JSX.Element {
         />
         <StatCard
           label="Pending sync"
-          value={stats?.pending_operations ?? 0}
+          value={isOnline ? (stats?.pending_operations ?? 0) : (localSync.data?.pending ?? 0)}
           icon={<RefreshCw className="h-5 w-5" />}
           description="Operations awaiting confirmation"
         />
