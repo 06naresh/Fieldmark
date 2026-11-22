@@ -25,6 +25,7 @@ export interface LocalUserRecord {
   owner_id: string;
   server_user_id: string;
   email: string;
+  full_name?: string;
   role: UserRole;
   last_authenticated_at: string;
   offline_access_expires_at: string;

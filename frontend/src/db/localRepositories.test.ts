@@ -4,7 +4,9 @@ import {
   assertOfflineAccessAllowed,
   clearAllLocalData,
   countQueueOperations,
+  endOfflineSession,
   ensureLocalAccount,
+  getLatestOfflineAccount,
   getLocalInspectionDetail,
   getLocalSyncSummary,
   getSyncMetadata,
@@ -72,6 +74,32 @@ describe('Dexie local database', () => {
     expect(new Date(account?.offline_access_expires_at ?? 0).getTime()).toBeGreaterThan(Date.now());
     expect(JSON.stringify(account)).not.toContain('password');
     expect(JSON.stringify(account)).not.toContain('refresh_token');
+  });
+
+  it('selects the most recently authenticated valid offline account', async () => {
+    await ensureLocalAccount({
+      ...inspectorCurrentUser,
+      id: otherOwnerId,
+      email: 'second@fieldmark.test',
+      full_name: 'Second Inspector',
+    });
+    await fieldmarkLocalDb.local_users.update(otherOwnerId, {
+      last_authenticated_at: new Date(Date.now() + 60_000).toISOString(),
+    });
+
+    const latest = await getLatestOfflineAccount();
+
+    expect(latest?.id).toBe(otherOwnerId);
+    expect(latest?.full_name).toBe('Second Inspector');
+  });
+
+  it('ends offline access for one account without removing durable work', async () => {
+    await endOfflineSession(ownerId);
+
+    await expect(assertOfflineAccessAllowed(ownerId)).rejects.toMatchObject({
+      code: 'OFFLINE_SESSION_EXPIRED',
+    });
+    expect(await fieldmarkLocalDb.local_users.get(ownerId)).toBeDefined();
   });
 
   it('rejects offline access for an unknown or anonymous account', async () => {

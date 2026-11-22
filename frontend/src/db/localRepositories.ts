@@ -3,6 +3,7 @@ import {
   OfflinePersistenceError,
   type LocalInspectionAnswerRecord,
   type LocalInspectionRecord,
+  type LocalUserRecord,
   type QueueStatus,
   type SyncQueueRecord,
 } from '@/db/localTypes';
@@ -58,10 +59,39 @@ export async function ensureLocalAccount(user: CurrentUser): Promise<void> {
     owner_id: user.id,
     server_user_id: user.id,
     email: user.email,
+    full_name: user.full_name,
     role: user.role,
     last_authenticated_at: now.toISOString(),
     offline_access_expires_at: expires.toISOString(),
     created_at: existing?.created_at ?? now.toISOString(),
+  });
+}
+
+/** Return the most recently authenticated account whose offline window is still valid. */
+export async function getLatestOfflineAccount(): Promise<LocalUserRecord | null> {
+  const now = Date.now();
+  const accounts = await fieldmarkLocalDb.local_users.toArray();
+  return (
+    accounts
+      .filter((account) => new Date(account.offline_access_expires_at).getTime() > now)
+      .sort(
+        (left, right) =>
+          new Date(right.last_authenticated_at).getTime() -
+          new Date(left.last_authenticated_at).getTime(),
+      )[0] ?? null
+  );
+}
+
+/** End offline access for one account without removing its durable work. */
+export async function endOfflineSession(ownerId: string): Promise<void> {
+  assertOwner(ownerId);
+  const account = await fieldmarkLocalDb.local_users.get(ownerId);
+  if (!account) {
+    return;
+  }
+  await fieldmarkLocalDb.local_users.put({
+    ...account,
+    offline_access_expires_at: new Date(0).toISOString(),
   });
 }
 

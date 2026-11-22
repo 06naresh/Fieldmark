@@ -48,12 +48,11 @@ export function ManualSyncButton(): React.JSX.Element {
       size="sm"
       onClick={() => void handleSync()}
       disabled={!isOnline || isSyncing}
-      aria-label="Synchronize now"
       title={isOnline ? 'Synchronize pending work' : 'Connect to the internet to synchronize'}
       className="hidden sm:inline-flex"
     >
       <RefreshCw className={isSyncing ? 'h-4 w-4 animate-spin' : 'h-4 w-4'} />
-      {isSyncing ? 'Syncing…' : 'Sync now'}
+      {isSyncing ? 'Synchronizing…' : 'Synchronize now'}
       {pending > 0 ? ` (${pending})` : ''}
     </Button>
   );

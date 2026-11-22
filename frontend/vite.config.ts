@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
-import { defineConfig, type Plugin } from 'vitest/config';
+import { configDefaults, defineConfig, type Plugin } from 'vitest/config';
 
 const buildId =
   process.env.FIELDMARK_PWA_BUILD_ID ?? process.env.GITHUB_SHA ?? `${Date.now().toString(36)}-${process.pid}`;
@@ -60,5 +60,6 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     restoreMocks: true,
     css: true,
+    exclude: [...configDefaults.exclude, 'e2e/**'],
   },
 });

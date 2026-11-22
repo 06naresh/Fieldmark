@@ -92,9 +92,9 @@ The next agent must be able to continue without repeating completed work.
 | Authentication | JWT |
 | State management | Zustand + TanStack Query |
 | Testing | pytest, Vitest, React Testing Library, Playwright |
-| Current development phase | Phase 12 — PWA and Offline Application Shell (Completed, awaiting commit) |
-| Current feature | F-025 PWA Support |
-| Overall status | Phases 9–11 and F-030 committed; Phase 12 verified and uncommitted |
+| Current development phase | Phase 13 — Integration and Quality Assurance (Completed, commit pending) |
+| Current feature | F-026 Integration and Quality Assurance / F-027 E2E Testing |
+| Overall status | Phases 9–12 and F-030 committed; Phase 13 verified with 79 backend tests, 97 frontend tests, and 8 E2E tests passing |
 
 ---
 
@@ -117,7 +117,7 @@ Update this table whenever a development phase changes.
 | 10 | Synchronization Engine | Completed | 100% |
 | 11 | Conflict Management | Completed | 100% |
 | 12 | PWA and Offline Application Shell | Completed | 100% |
-| 13 | Integration and Quality Assurance | Not Started | 0% |
+| 13 | Integration and Quality Assurance | Completed | 100% |
 | 14 | Deployment and Release | Not Started | 0% |
 
 ### Status values
@@ -144,12 +144,39 @@ Update this section whenever a new feature implementation session begins.
 |---|---|
 | Session date | 2026-11-22 |
 | Agent/session identifier | OpenCode (Big Pickle) |
-| Current phase | Phase 12 — PWA and Offline Application Shell (Completed and verified) |
-| Current feature | F-025 PWA Support |
-| Feature status | Completed |
+| Current phase | Phase 13 — Integration and Quality Assurance (Completed, commit pending) |
+| Current feature | F-026 Integration and Quality Assurance / F-027 E2E Testing |
+| Feature status | Completed and verified |
 | Last updated | 2026-11-22 |
 
-## 5.1A Current objective (Phase 12)
+## 5.1 Phase 13 objective (completed)
+
+**Objective:**
+
+Validate the integrated offline-first application through real frontend, backend, PostgreSQL, IndexedDB, and production service-worker workflows, and resolve all release-blocking defects.
+
+**Included:**
+
+- Add a Playwright harness using the production preview and a real FastAPI/PostgreSQL backend.
+- Cover the five required E2E scenarios: online inspection, offline inspection, duplicate operation, conflict, and interrupted synchronization.
+- Add user-isolation, security, accessibility, responsive-layout, cache-safety, and performance checks.
+- Add a test-only administrator seed helper and CI quality gate.
+- Fix defects found during integration and add regression coverage.
+
+**Progress:**
+
+| Task | Status | Notes |
+|---|---|---|
+| Inspect Phase 13 requirements and verify prior phase state | Completed | Development phases, testing strategy, Phase 12 source, and tracker reviewed |
+| Build Playwright configuration and utilities | Completed | Real backend/preview servers, admin seeding, API fixtures, browser assertions, UI helpers |
+| Implement required E2E scenarios A–E | Completed | All five scenarios pass with stable operation IDs and durable IndexedDB work |
+| Add isolation, security, accessibility, responsive, and performance coverage | Completed | Three additional quality specs pass |
+| Fix integration defects | Completed | Offline identity restoration, duplicate-pull conflict regression, accessible sync label, badge contrast, stale Sync Center retry, and harness selectors |
+| Verify acceptance criteria | Completed | 79 backend tests, 97 frontend tests, 8 E2E tests, migration check, typechecks, lint, build, audit, and diff check pass |
+| Record QA evidence and CI gate | Completed | `docs/phase13-qa-report.md` and `.github/workflows/qa.yml` added |
+| Commit Phase 13 | Pending | Verified changes remain uncommitted |
+
+## 5.1A Prior objective (Phase 12)
 
 **Objective:**
 
@@ -173,7 +200,7 @@ Make the built frontend installable as a PWA and able to load its application sh
 | Implement update handling UX | Completed | Production registration, update hook, and accessible update banner |
 | Add and verify PWA tests | Completed | 15 new tests; full frontend suite 92 passed |
 | Verify acceptance criteria | Completed | Typecheck, lint, tests, build, dist artifact inspection, audit, and diff check passed |
-| Commit Phase 12 | Pending | Verified changes remain uncommitted |
+| Commit Phase 12 | Completed | Committed as `9af8197 feat: implement phase 12 pwa offline shell`; not pushed |
 
 ## 5.1 Prior objective (F-030, completed)
 
@@ -336,7 +363,7 @@ Establish the root directory layout, frontend repository scaffold, backend FastA
 | Database tests | Pending | Phase 1 |
 | Security tests | Completed | `.gitignore` & non-credentialed `.env.example` verified |
 | Frontend tests | Pending | Phase 6 |
-| E2E tests | Pending | Phase 13 |
+| E2E tests | Completed | Phase 13 — 8 scenarios passed against the production preview and real PostgreSQL backend |
 
 ### 6.9 Known issues
 
@@ -1557,7 +1584,7 @@ Connect the Phase 9 durable Dexie queue to the Phase 5 backend synchronization A
 ### Phase10.8 Known issues
 
 - Full Sync Center UI and conflict resolution workflows remain Phase 11; the header action only reports sync results through a toast.
-- Browser-level multi-tab E2E coverage remains Phase 13; the lock is covered by concurrent in-process trigger tests and uses Web Locks/localStorage where available.
+- Browser-level multi-tab E2E coverage was not added in Phase 13; the lock remains covered by concurrent in-process trigger tests and uses Web Locks/localStorage where available.
 - PWA installation and offline application shell remain Phase 12.
 - No backend source changed in Phase 10, so the Phase 5 backend test results are retained rather than rerun.
 - Vitest continues to emit a non-blocking `--localstorage-file` warning in this environment.
@@ -1678,7 +1705,7 @@ Provide a safe, self-service way for a user to create an `INSPECTOR` account and
 - Public signup does not create `ADMIN` accounts; a deployment-specific initial administrator provisioning process is still required.
 - The signup rate limiter is process-local, matching the existing login limiter; a multi-instance deployment needs a shared limiter.
 - If the normal login call fails after successful account creation, the account exists but no session is established; the user can sign in manually.
-- Browser-level E2E signup coverage remains Phase 13; component and router tests cover the current UI contract.
+- Browser-level E2E signup coverage was not added in Phase 13; component and router tests still cover the current UI contract.
 
 ### F-030.8 Acceptance criteria
 
@@ -1734,8 +1761,8 @@ Add a new row when a feature is identified.
 | F-023 | Conflict resolution | 11 | Completed | offline-sync-design.md |
 | F-024 | Sync Center | 11 | Completed | frontend-design.md |
 | F-025 | PWA support | 12 | Completed | frontend-design.md |
-| F-026 | Integration testing | 13 | Not Started | testing-strategy.md |
-| F-027 | E2E testing | 13 | Not Started | testing-strategy.md |
+| F-026 | Integration testing | 13 | Completed | testing-strategy.md, development-phases.md |
+| F-027 | E2E testing | 13 | Completed | testing-strategy.md, development-phases.md |
 | F-028 | Production deployment | 14 | Not Started | development-phases.md |
 
 This register is a planning baseline. Add or split feature entries when the approved implementation plan requires it. Do not remove required features without approval.
@@ -1869,7 +1896,7 @@ Track testing at project level.
 | Database tests | Completed | 8 passed | Schema, constraints, relationships, latest migrations, unique `submission_id`, `submitted_version`, `template_key`, and cursor ordering; expected head now `0005_sync_scope_and_retry` |
 | Authentication tests | Completed | 21 passed | 4 password-hashing, 15 authentication, and 6 public-signup tests |
 | RBAC tests | Completed | 12 passed | Phase 3 authorization tests plus Phase 4 and Phase 5 endpoint authorization coverage |
-| Frontend unit tests | Completed | 68 passed | Full Vitest suite for API client, signup, theme, online status, router, admin flows, inspector workflow, IndexedDB, sync engine, persistence, identifiers, and shared UI |
+| Frontend unit tests | Completed | 97 passed | Full Vitest suite for API client, signup, theme, online status, router, admin flows, inspector workflow, IndexedDB, sync engine, persistence, offline session, identifiers, and shared UI |
 | Component tests | Completed | 5 passed | Shared UI component test suite covering rendering, interactions, dialogs, menus, tabs, toast, and error states |
 | Inspector workflow tests | Completed | 5 passed | Assignment list, start action, validation, local drafts, answer saves, draft restore, and stable submission ID |
 | IndexedDB tests | Completed | 12 passed | Schema, account isolation, offline-session errors, storage failures, answer coalescing, start/submit IDs, conflicts, and Dexie reopen |
@@ -1878,11 +1905,11 @@ Track testing at project level.
 | Frontend identifier tests | Completed | 2 passed | UUID generation and deterministic answer identifier derivation |
 | Sync tests | Completed | 20 passed | `backend/tests/test_sync.py`; PostgreSQL integration tests for idempotency, conflicts, pull, tombstones, and devices |
 | Conflict tests | Completed | 2 passed | Conflict list/detail scoping and conflict-resolution permission/version enforcement in `test_sync.py` |
-| PWA tests | Not Started | Not Run | |
-| E2E tests | Not Started | Not Run | |
-| Security checks | Not Started | Not Run | |
-| Performance tests | Not Started | Not Run | |
-| Accessibility checks | Not Started | Not Run | |
+| PWA tests | Completed | 15 passed | Manifest, service-worker cache policy, offline shell, registration, and update UI |
+| E2E tests | Completed | 8 passed | Required scenarios A–E plus isolation, quality, and performance checks |
+| Security checks | Completed | Passed | Role protection, user isolation, auth storage, service-worker cache boundary, dependency audit |
+| Performance tests | Completed | Passed | Production shell loaded within the QA threshold in 731ms |
+| Accessibility checks | Completed | Passed | Axe WCAG 2.0/2.1 A/AA and control-label checks on login, admin, inspector, and Sync Center pages |
 
 ### Testing record requirements
 
@@ -2266,7 +2293,7 @@ Keep older history entries. Do not rewrite historical entries to make incomplete
 
 - Conflict lists are capped at 100 records per request in the Sync Center; pagination controls are not yet part of the UI.
 - Administrative resolution applies the server-side decision but does not merge a different local payload from another user's device.
-- Browser-level E2E conflict scenarios remain scheduled for Phase 13; Phase 11 coverage is backend integration plus frontend component/repository tests.
+- Browser-level E2E conflict scenarios were completed in Phase 13; Phase 11 coverage remains backend integration plus frontend component/repository tests.
 
 ---
 
@@ -2346,8 +2373,83 @@ Keep older history entries. Do not rewrite historical entries to make incomplete
 ### Known limitations
 
 - Service-worker registration is production-only; browser installation and offline reload must be demonstrated from `npm run preview` or a deployed HTTPS origin.
-- Browser-driven installation, reload-after-deploy, and offline E2E scenarios remain scheduled for Phase 13. Phase 12 covers manifest metadata, service-worker policy, registration, update UI, and offline shell fallback with automated unit/component tests.
+- Browser-driven installation and reload-after-deploy smoke tests remain deployment verification; Phase 13 verified production service-worker control, offline refresh with durable IndexedDB data, and cache-boundary safety from `npm run preview`.
 - The generated main JavaScript chunk still exceeds Vite's 500 kB warning threshold; performance reviews remain a later phase.
+
+---
+
+# 14C. Phase 13 Implementation Record
+
+## Features: F-026 Integration Testing and F-027 E2E Testing
+
+### Files created
+
+- `backend/scripts/seed_e2e_admin.py` — guarded test-only administrator provisioning.
+- `frontend/playwright.config.ts` — production-preview and real-backend web servers, single worker, list/HTML/JSON reporters.
+- `frontend/tsconfig.e2e.json` — strict TypeScript project for Playwright specs.
+- `frontend/e2e/globalSetup.ts` — seeds the deterministic E2E administrator.
+- `frontend/e2e/utils/api.ts`, `ui.ts`, `browser.ts`, `fixtures.ts` — API fixtures, role/label-based UI helpers, IndexedDB assertions, Axe/cache/storage checks.
+- `frontend/e2e/scenarios/online-workflow.spec.ts` — Scenario A.
+- `frontend/e2e/scenarios/offline-workflow.spec.ts` — Scenario B.
+- `frontend/e2e/scenarios/idempotency.spec.ts` — Scenario C.
+- `frontend/e2e/scenarios/conflict.spec.ts` — Scenario D.
+- `frontend/e2e/scenarios/interrupted-sync.spec.ts` — Scenario E.
+- `frontend/e2e/scenarios/user-isolation.spec.ts`, `security-and-accessibility.spec.ts`, `performance-baseline.spec.ts` — additional quality coverage.
+- `.github/workflows/qa.yml` — backend, frontend, migration, dependency, build, and E2E CI quality gate.
+- `docs/phase13-qa-report.md` — test evidence, integration matrix, defect report, and limitations.
+
+### Files modified
+
+- `.gitignore` — Playwright report/result output directories.
+- `frontend/package.json` and `frontend/package-lock.json` — Playwright/Axe dependencies and QA scripts.
+- `frontend/vite.config.ts` — exclude `e2e/**` from Vitest.
+- `frontend/src/services/auth/session.ts` and `session.test.ts` — bounded offline identity restore and sign-out teardown coverage.
+- `frontend/src/db/localRepositories.ts` and `localRepositories.test.ts` — latest offline account lookup, end-offline-session behavior, and tests.
+- `frontend/src/db/localTypes.ts` — `full_name` support for offline user records.
+- `frontend/src/db/syncRepositories.ts` and `syncRepositories.test.ts` — duplicate server-version pull no-op and regression test.
+- `frontend/src/layouts/components/ManualSyncButton.tsx` — accessible name aligned with visible text.
+- `frontend/src/styles/theme.css` — WCAG AA success-badge contrast and muted-foreground contrast.
+- `docs/development-phases.md` — Phase 13 acceptance criteria marked verified.
+- `docs/testing-strategy.md` — Phase 13 browser coverage reflected.
+- `README.md` — E2E commands, environment overrides, CI, and QA report link.
+
+### Important decisions
+
+- E2E tests use the real FastAPI backend and PostgreSQL; SQLite is never substituted.
+- The built frontend is served through `npm run preview` so the production service worker is active.
+- Local verification used port `8010` because port `8000` had a stale unrelated listener; CI uses the isolated Playwright default.
+- Public signup remains INSPECTOR-only, so administrator provisioning for E2E uses a guarded test-only script.
+- Local IndexedDB remains the durable business store; service-worker caching remains limited to shell/static assets.
+- Foreground synchronization is verified without depending on Background Sync.
+- Repeated pull delivery of the same server version is a no-op even while a local operation is queued.
+- Offline access is bounded and ends explicitly on sign-out without deleting unsynchronized work.
+
+### Verification
+
+- `.\.venv\Scripts\python.exe -m pytest -q` — 79 passed.
+- `.\.venv\Scripts\python.exe -m alembic check` — no new upgrade operations.
+- `npm test -- --run` — 19 files, 97 tests passed.
+- `npx tsc --noEmit`, `npm run typecheck:e2e`, `npm run lint` — clean.
+- Production build with `VITE_API_BASE_URL` — passed.
+- `npm audit --audit-level=high` — 0 vulnerabilities.
+- `npx playwright test --reporter=list --timeout=120000` — 8 passed in 52.3s.
+- `git diff --check` — no errors.
+
+### Acceptance criteria
+
+- [x] Core online workflows pass.
+- [x] Offline workflow passes.
+- [x] Duplicate retry tests pass.
+- [x] Conflict tests pass.
+- [x] Interrupted synchronization tests pass.
+- [x] User isolation tests pass.
+- [x] Responsive UI checks pass.
+- [x] No unresolved critical security defects remain.
+- [x] Release-blocking defects are resolved.
+
+### Known limitations
+
+- Chromium only; multi-tab E2E, OS-level PWA installation prompts, deployed reload smoke tests, large conflict-list pagination, multi-instance rate limiting, and bundle splitting remain future or Phase 14 work.
 
 ---
 
@@ -2361,19 +2463,15 @@ Update it before stopping work.
 
 **Last completed phase:**
 
-Phase 12 — PWA and Offline Application Shell. All acceptance criteria were verified. Phase 11 was committed as `bd024c9 feat: implement phase 11 conflict management`; Phase 12 is verified but uncommitted. The full verified commit sequence remains Phase 9 `45c03ff`, Phase 10 `cb4face`, F-030 `fcb2828`, and Phase 11 `bd024c9`. None of these commits was pushed.
+Phase 13 — Integration and Quality Assurance. All acceptance criteria were verified: 79 backend tests, 97 frontend tests, 8 Playwright scenarios, clean typechecks/lint/build, migration check, dependency audit, and diff check. Phase 12 is committed as `9af8197 feat: implement phase 12 pwa offline shell`; Phase 13 is verified locally and is ready to commit. None of the local commits has been pushed.
 
-**Last completed feature:**
+**Last completed features:**
 
-F-025 PWA Support. Production builds now emit a web manifest, generated icons, a versioned service worker, and a static-asset manifest. The worker caches only approved application resources, supports offline shell startup, cleans obsolete caches, and exposes update availability through an in-app banner.
+F-026 Integration Testing and F-027 E2E Testing. The suite covers the required online, offline, duplicate-operation, conflict, and interrupted-synchronization scenarios plus user isolation, security, accessibility, responsive layout, cache safety, and performance.
 
 **Current phase:**
 
-Phase 12 — PWA and Offline Application Shell (Completed, awaiting commit). Phase 13 — Integration and Quality Assurance remains unapproved.
-
-**Current feature:**
-
-F-025 PWA Support.
+Phase 13 — Integration and Quality Assurance (Completed, commit pending). Phase 14 — Deployment and Release is not started.
 
 **Current feature status:**
 
@@ -2381,90 +2479,73 @@ Completed and verified; not yet committed.
 
 **Last completed task:**
 
-Implemented the production PWA shell: manifest and icons, versioned service worker with shell/static-asset precache and network-first navigation fallback, API/authenticated request exclusions, update/activation handling, Vite asset-manifest generation, and 15 new PWA tests. Final verification was 92 frontend tests, clean typecheck/lint, successful production build with expected dist artifacts, and zero audit vulnerabilities.
+Built the integrated QA harness and fixed the defects it exposed: offline identity restoration after refresh, duplicate-pull conflict regression, accessible sync-button naming, success-badge contrast, stale Sync Center retry state, E2E API URL configuration, and Vitest E2E exclusion. Recorded evidence in `docs/phase13-qa-report.md` and added `.github/workflows/qa.yml`.
 
 **Current stopping point:**
 
-Phase 12 is implemented and verified. The verified changes need to be committed; no Phase 13 files should be changed.
+Commit the verified Phase 13 work locally, then stop at the phase boundary. Do not start Phase 14 without explicit approval.
 
 ## Files to inspect first
 
 1. `progress-tracker.md`
-2. `docs/development-phases.md` — Phase 12 acceptance criteria and Phase 13 boundary
-3. `docs/frontend-design.md` — PWA and offline application shell requirements
-4. `docs/offline-sync-design.md` — service-worker versus IndexedDB responsibilities
-5. `docs/testing-strategy.md` — PWA and service-worker testing requirements
-6. `frontend/vite.config.ts` — service-worker entry, build ID, and generated asset manifest
-7. `frontend/index.html` — manifest, icon, and theme metadata
-8. `frontend/public/manifest.webmanifest` — installability contract
-9. `frontend/public/icons/` and `frontend/scripts/generate-pwa-icons.py` — generated app icons
-10. `frontend/src/pwa/serviceWorkerCore.ts` — cache policy and offline shell behavior
-11. `frontend/src/pwa/sw.ts` — browser service-worker event wiring
-12. `frontend/src/pwa/registerServiceWorker.ts` — production registration
-13. `frontend/src/pwa/useServiceWorkerUpdate.ts` — update and activation state
-14. `frontend/src/pwa/components/ServiceWorkerUpdateBanner.tsx` — user-facing update action
-15. `frontend/src/pwa/serviceWorkerCore.test.ts` — manifest, cache, and offline startup tests
-16. `frontend/src/pwa/serviceWorkerUpdate.test.tsx` — registration and update UI tests
-17. `frontend/src/app/main.tsx` and `frontend/src/app/App.tsx` — registration and banner integration
+2. `docs/development-phases.md` — Phase 13 acceptance criteria and Phase 14 boundary
+3. `docs/phase13-qa-report.md` — final test evidence, defect report, and limitations
+4. `.github/workflows/qa.yml` — CI quality gate
+5. `frontend/playwright.config.ts` and `frontend/tsconfig.e2e.json` — Playwright harness configuration
+6. `frontend/e2e/globalSetup.ts` and `backend/scripts/seed_e2e_admin.py` — test administrator provisioning
+7. `frontend/e2e/utils/api.ts`, `ui.ts`, `browser.ts`, `fixtures.ts` — fixtures and assertions
+8. `frontend/e2e/scenarios/` — all eight E2E specs
+9. `frontend/src/services/auth/session.ts` and `session.test.ts` — bounded offline session restore
+10. `frontend/src/db/localRepositories.ts` and `localRepositories.test.ts` — durable offline identity helpers
+11. `frontend/src/db/syncRepositories.ts` and `syncRepositories.test.ts` — duplicate pull no-op regression
+12. `frontend/src/layouts/components/ManualSyncButton.tsx` — accessible sync action
+13. `frontend/src/styles/theme.css` — WCAG contrast fixes
+14. `README.md` — E2E commands and CI/QA documentation
 
 ## Work remaining
 
 - [x] Commit Phase 9 as requested.
-- [x] Implement Phase 10 push synchronization and per-operation results.
-- [x] Implement Phase 10 pull synchronization and transactional cursor advancement.
-- [x] Implement Phase 10 retry, dependency, connectivity, lock, trigger, and manual sync behavior.
-- [x] Add and verify Phase 10 synchronization tests.
-- [x] Commit Phase 10 as requested.
-- [x] Resolve the signup/bootstrap design decision before changing authentication behavior.
-- [x] Implement explicitly approved public INSPECTOR-only signup.
-- [x] Update approved documentation and verify signup tests.
-- [x] Commit F-030 signup work as `fcb2828 feat: add public inspector signup`; not pushed.
-- [x] Add conflict audit metadata and `operation_id` correlation to backend conflict responses.
-- [x] Build the shared Sync Center and conflict diff/resolution UI on persisted snapshots.
-- [x] Implement explicit accept-server, keep-local, and manual-merge workflows with version-checked operations.
-- [x] Add and verify Phase 11 backend and frontend conflict tests.
-- [x] Commit the verified Phase 11 changes as `bd024c9 feat: implement phase 11 conflict management`; not pushed.
-- [x] Implement Phase 12 PWA manifest, icons, service worker, offline shell, cache/update handling, and tests.
-- [ ] Commit the verified Phase 12 changes when instructed.
-- [ ] In later phases, complete E2E scenarios and deployment work after explicit approval.
+- [x] Implement and commit Phase 10 synchronization engine.
+- [x] Implement and commit explicitly approved public INSPECTOR-only signup.
+- [x] Implement and commit Phase 11 Sync Center and conflict management.
+- [x] Implement and commit Phase 12 PWA offline shell.
+- [x] Implement all five required E2E scenarios and three quality specs.
+- [x] Fix all release-blocking defects found during Phase 13.
+- [x] Add QA report, CI quality gate, and Phase 13 documentation updates.
+- [ ] Commit the verified Phase 13 changes locally; do not push.
+- [ ] Start Phase 14 only after explicit approval.
 
 ## Known problems
 
 - Non-blocking: Node emits a `--localstorage-file` warning during Vitest runs in this environment. Tests pass with the injected test Storage shim.
 - Non-blocking: Vite reports chunk-size and Zod comment-annotation warnings. The production build succeeds.
-- Non-blocking: installed Starlette/TestClient and passlib/argon2 backend versions emit deprecation warnings. No backend tests fail.
+- Non-blocking: Starlette TestClient and passlib/argon2 backend versions emit deprecation warnings. No backend tests fail.
 - Non-blocking: optional PATCH fields are displayed as nullable in OpenAPI even though runtime validators reject `null` for non-clearable fields; runtime behavior is correct.
-- Resolved: the original global `lib/` ignore rule was fixed and earlier phases included the newly trackable `frontend/src/lib/` sources.
 - Public signup intentionally creates only INSPECTOR accounts; initial ADMIN provisioning remains a deployment responsibility.
-- The signup rate limiter is process-local, like the login limiter; a multi-instance deployment needs a shared limiter.
-- If login fails immediately after successful signup, the account exists but must be signed in manually.
-- Resolved: the full Sync Center and conflict resolution UI were implemented in Phase 11; the header sync action now coexists with the dedicated Sync Center.
-- Phase 11 Sync Center lists at most 100 remote conflicts per request; UI pagination remains a later enhancement.
-- Administrative resolution records the server-side decision; it does not automatically merge local work that exists only on another user's device.
-- Browser-level multi-tab E2E coverage remains Phase 13; the lock has concurrent-trigger unit coverage and uses Web Locks/localStorage where available.
+- Signup and login rate limiting are process-local; a multi-instance deployment needs a shared limiter.
 - Offline access uses a seven-day default validity window and is not revalidated with the server until connectivity returns.
-- Browser-driven PWA installation, deployment reload, and offline E2E scenarios remain Phase 13; Phase 12 has manifest, cache-policy, registration, update UI, and offline shell fallback tests.
-- Service-worker registration is intentionally production-only; use `npm run preview` or a deployed HTTPS origin to exercise installation/offline startup.
+- Sync Center remote-conflict listing is capped at 100 records per request; UI pagination remains a later enhancement.
+- Administrative resolution records the server-side decision; it does not automatically merge local work that exists only on another user's device.
+- Chromium only; multi-tab E2E, OS-level PWA installation prompts, deployed reload smoke tests, bundle splitting, backups, monitoring, and production smoke tests remain future or Phase 14 work.
 
 ## Next agent instructions
 
 The next agent must:
 
-1. Read `AGENTS.md`, the approved documentation, and this progress tracker.
-2. Inspect the actual Phase 12 source files listed above before changing behavior.
-3. Preserve the Phase 11 commit `bd024c9`; commit Phase 12 only when instructed and never push unless explicitly asked.
+1. Read `AGENTS.md`, the approved documentation, this tracker, and `docs/phase13-qa-report.md`.
+2. Inspect the actual files listed above before changing behavior.
+3. Preserve all local commits and never push unless explicitly asked.
 4. Preserve the INSPECTOR-only signup boundary; do not add self-assigned ADMIN registration without a new explicit security/product decision.
 5. Preserve stable operation IDs, immutable payloads, dependency order, and idempotent result handling.
 6. Keep the pull cursor inside the same Dexie transaction as the applied batch.
 7. Preserve conflict snapshots; do not introduce last-write-wins for inspection answers.
-8. Keep API and IndexedDB access outside presentation components.
+8. Keep IndexedDB as the durable business store and the service worker as shell/static caching only.
 9. Preserve the in-memory access-token policy and HTTP-only refresh-cookie strategy.
-10. Do not start Phase 13 — Integration and Quality Assurance without a new explicit approval.
-11. Preserve the service-worker boundary: no API, authentication, health, documentation, cross-origin, or credentialed response caching.
+10. Do not start Phase 14 — Deployment and Release without a new explicit approval.
 
 **Exact next action:**
 
-Commit the verified Phase 12 work as `feat: implement phase 12 pwa offline shell` (or the user's chosen message), then stop at the phase boundary and wait for approval before Phase 13.
+Commit the verified Phase 13 work locally with `feat: implement phase 13 integration and qa` (or the user's chosen message), then stop and wait for Phase 14 approval.
 
 ---
 

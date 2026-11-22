@@ -710,7 +710,10 @@ async function applyInspectionChange(
   if (inspection.assigned_to !== ownerId) {
     return 'skipped';
   }
-  if (existing && existing.server_version > inspection.version) {
+  // A repeated delivery of the same server version must remain a no-op. The
+  // local operation already carries this version as its base, so treating the
+  // duplicate as a new server change would create a false conflict.
+  if (existing && existing.server_version >= inspection.version) {
     return 'skipped';
   }
 

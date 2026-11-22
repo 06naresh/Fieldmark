@@ -43,6 +43,9 @@ lerna-debug.log*
 .pnpm-debug.log*
 dist/
 dist-ssr/
+playwright-report/
+test-results/
+blob-report/
 *.local
 
 # IDE & OS

@@ -3,6 +3,7 @@ import { ApiError } from '@/lib/error';
 import { setAccessToken, setRefreshHandler } from '@/lib/axios';
 import { useAuthStore } from '@/store/authStore';
 import { adminUser } from '@/test/fixtures';
+import type { LocalUserRecord } from '@/db/localTypes';
 import {
   bootstrapSession,
   refreshAccessToken,
@@ -17,12 +18,45 @@ const api = vi.hoisted(() => ({
   logout: vi.fn(),
 }));
 
+const local = vi.hoisted(() => ({
+  ensureLocalAccount: vi.fn(),
+  getLatestOfflineAccount: vi.fn(),
+  endOfflineSession: vi.fn(),
+}));
+
 vi.mock('@/services/api/authApi', () => ({
   authApi: api,
 }));
 
+vi.mock('@/db/localRepositories', () => local);
+
+function setNavigatorOnline(online: boolean): void {
+  Object.defineProperty(window.navigator, 'onLine', {
+    configurable: true,
+    value: online,
+  });
+}
+
+function offlineAccount(): LocalUserRecord {
+  return {
+    id: 'offline-user-id',
+    owner_id: 'offline-user-id',
+    server_user_id: 'offline-user-id',
+    email: 'inspector@fieldmark.test',
+    full_name: 'Offline Inspector',
+    role: 'INSPECTOR',
+    last_authenticated_at: new Date().toISOString(),
+    offline_access_expires_at: new Date(Date.now() + 60_000).toISOString(),
+    created_at: new Date().toISOString(),
+  };
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
+  local.ensureLocalAccount.mockResolvedValue(undefined);
+  local.getLatestOfflineAccount.mockResolvedValue(null);
+  local.endOfflineSession.mockResolvedValue(undefined);
+  setNavigatorOnline(true);
   setAccessToken(null);
   setRefreshHandler(null);
   useAuthStore.setState({ user: null, status: 'unauthenticated' });
@@ -52,6 +86,10 @@ describe('auth session service', () => {
       email: adminUser.email,
       password: 'correct-password',
     });
+    expect(local.ensureLocalAccount).toHaveBeenCalledWith(expect.objectContaining({
+      id: adminUser.id,
+      role: 'ADMIN',
+    }));
     expect(useAuthStore.getState().user).toEqual(adminUser);
     expect(useAuthStore.getState().status).toBe('authenticated');
   });
@@ -67,6 +105,34 @@ describe('auth session service', () => {
     expect(useAuthStore.getState().status).toBe('authenticated');
   });
 
+  it('restores a bounded offline identity after a page reload while offline', async () => {
+    setNavigatorOnline(false);
+    local.getLatestOfflineAccount.mockResolvedValue(offlineAccount());
+
+    await bootstrapSession();
+
+    expect(api.refresh).not.toHaveBeenCalled();
+    expect(api.me).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().user).toEqual({
+      id: 'offline-user-id',
+      full_name: 'Offline Inspector',
+      email: 'inspector@fieldmark.test',
+      role: 'INSPECTOR',
+      is_active: true,
+    });
+    expect(useAuthStore.getState().status).toBe('authenticated');
+  });
+
+  it('does not restore an offline identity when no valid local account exists', async () => {
+    setNavigatorOnline(false);
+    local.getLatestOfflineAccount.mockResolvedValue(null);
+
+    await bootstrapSession();
+
+    expect(useAuthStore.getState().user).toBeNull();
+    expect(useAuthStore.getState().status).toBe('unauthenticated');
+  });
+
   it('clears the session when a refresh attempt fails', async () => {
     useAuthStore.setState({ user: adminUser, status: 'authenticated' });
     setAccessToken('expired-token');
@@ -80,7 +146,7 @@ describe('auth session service', () => {
     expect(useAuthStore.getState().status).toBe('unauthenticated');
   });
 
-  it('clears local session state even when server logout fails', async () => {
+  it('clears local session state and ends offline access even when server logout fails', async () => {
     useAuthStore.setState({ user: adminUser, status: 'authenticated' });
     setAccessToken('active-token');
     api.logout.mockRejectedValue(new Error('offline'));
@@ -88,6 +154,7 @@ describe('auth session service', () => {
     await signOut();
 
     expect(api.logout).toHaveBeenCalledWith(false);
+    expect(local.endOfflineSession).toHaveBeenCalledWith(adminUser.id);
     expect(useAuthStore.getState().user).toBeNull();
     expect(useAuthStore.getState().status).toBe('unauthenticated');
   });

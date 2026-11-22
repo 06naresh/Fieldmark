@@ -1001,15 +1001,15 @@ Validate the entire application as one integrated system.
 
 ## Acceptance criteria
 
-- [ ] Core online workflows pass.
-- [ ] Offline workflow passes.
-- [ ] Duplicate retry tests pass.
-- [ ] Conflict tests pass.
-- [ ] Interrupted synchronization tests pass.
-- [ ] User isolation tests pass.
-- [ ] Responsive UI checks pass.
-- [ ] No unresolved critical security defects remain.
-- [ ] Release-blocking defects are resolved.
+- [x] Core online workflows pass.
+- [x] Offline workflow passes.
+- [x] Duplicate retry tests pass.
+- [x] Conflict tests pass.
+- [x] Interrupted synchronization tests pass.
+- [x] User isolation tests pass.
+- [x] Responsive UI checks pass.
+- [x] No unresolved critical security defects remain.
+- [x] Release-blocking defects are resolved.
 
 ---
 

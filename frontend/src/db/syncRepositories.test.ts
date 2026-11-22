@@ -5,6 +5,7 @@ import {
   ensureLocalAccount,
   listQueueOperations,
   queueAnswerChange,
+  queueInspectionStart,
   setSyncMetadata,
 } from '@/db/localRepositories';
 import {
@@ -217,5 +218,47 @@ describe('pull batch safety', () => {
     expect(
       await fieldmarkLocalDb.sync_conflicts.where('operation_id').equals(`pull:88888888-8888-4888-8888-888888888888`).first(),
     ).toBeTruthy();
+  });
+
+  it('skips a repeated server inspection version while a local start operation is queued', async () => {
+    const timestamp = new Date().toISOString();
+    await fieldmarkLocalDb.local_inspections.put({
+      id: `${currentUser.id}:${detail.id}`,
+      owner_id: currentUser.id,
+      server_id: detail.id,
+      inspector_id: currentUser.id,
+      status: 'ASSIGNED',
+      server_version: detail.version,
+      local_updated_at: timestamp,
+      server_updated_at: timestamp,
+      sync_status: 'synced',
+      summary: detail,
+      detail,
+      draft: null,
+      start_operation_id: null,
+      submit_operation_id: null,
+    });
+    const startOperationId = await queueInspectionStart(currentUser.id, detail);
+
+    const outcome = await applyPullBatch(
+      currentUser.id,
+      [
+        {
+          change_id: '99999999-9999-4999-8999-999999999999',
+          entity_type: 'inspection',
+          entity_id: detail.id,
+          change_type: 'UPDATE',
+          entity_version: detail.version,
+          payload: detail as unknown as Record<string, unknown>,
+        },
+      ],
+      'cursor-1',
+    );
+
+    expect(outcome).toEqual({ applied: 0, skipped: 1, conflicts: 0 });
+    expect(await fieldmarkLocalDb.sync_conflicts.count()).toBe(0);
+    const stored = await fieldmarkLocalDb.local_inspections.get(`${currentUser.id}:${detail.id}`);
+    expect(stored?.status).toBe('IN_PROGRESS');
+    expect(stored?.start_operation_id).toBe(startOperationId);
   });
 });

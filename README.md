@@ -43,11 +43,14 @@ npm run dev
 ### Frontend commands
 
 ```bash
-npm run dev       # Vite development server on http://localhost:5173
-npm run build     # TypeScript check and production build
-npm run lint      # ESLint
-npm test          # Vitest and React Testing Library
-npm run preview   # Serve the production build locally
+npm run dev           # Vite development server on http://localhost:5173
+npm run build         # TypeScript check and production build
+npm run lint          # ESLint
+npm test              # Vitest and React Testing Library
+npm run preview       # Serve the production build locally
+npm run typecheck:e2e # Type-check Playwright specs
+npm run test:e2e      # Playwright end-to-end suite
+npm run qa:frontend   # E2E typecheck, lint, unit tests, build, and E2E suite
 ```
 
 `VITE_API_BASE_URL` defaults to `http://localhost:8000/api/v1` when it is not set. Access tokens are kept in application memory; refresh tokens are carried by the backend's HTTP-only cookie and are never read by frontend JavaScript.
@@ -59,6 +62,12 @@ Open `http://localhost:5173/signup` to create an `INSPECTOR` account, then sign 
 ### Production PWA shell
 
 `npm run build` produces an installable offline shell with a web manifest, generated icons, a versioned service worker, and a static-asset manifest. The service worker caches application resources only; inspection records, sync operations, and authenticated API responses are never placed in the service-worker cache. Serve the `dist/` directory over HTTPS (or localhost) for installation and offline startup support.
+
+### Quality assurance
+
+E2E tests require the production build, a running PostgreSQL database, and backend dependencies. `npm run qa:frontend` performs the frontend build before starting Playwright; Playwright starts the FastAPI backend and production preview automatically. `E2E_API_BASE_URL`, `E2E_BACKEND_PORT`, and `E2E_FRONTEND_ORIGIN` can override the default `http://localhost:8000/api/v1`, port `8000`, and preview origin `http://localhost:4173`. `E2E_ADMIN_EMAIL` and `E2E_ADMIN_PASSWORD` control the test-only administrator seeded by `backend/scripts/seed_e2e_admin.py`.
+
+The CI quality gate is defined in `.github/workflows/qa.yml`. It runs backend tests and migration checks, frontend checks and unit tests, a dependency audit, the production build, and the Chromium E2E suite against a PostgreSQL service. Phase 13 results and resolved defects are recorded in `docs/phase13-qa-report.md`.
 
 ## Documentation
 
@@ -72,3 +81,4 @@ Full architectural specifications are located in `docs/`:
 - `frontend-design.md`
 - `development-phases.md`
 - `testing-strategy.md`
+- `phase13-qa-report.md`
